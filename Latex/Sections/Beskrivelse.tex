@@ -1,10 +1,31 @@
 \section{Decision Making}
+\label{sec:decisionmaking}
 
-The decision making is distributed in a master-slave topology. Where all hall calls and cab calls are communicated with the master. The master decides what each cab should do. Which node who is the master is decided by the duration each node has been alive (on). The master shall ping all slaves at regular intervals to communicate its presence 
+The decision making is distributed in a master-slave topology, where all hall calls and cab calls are communicated with the master. The master decides what each cab should do. Which node who is the master is decided by the number of connections each node has and the duration each node has been alive. The master shall ping all slaves at regular intervals to communicate its presence. When an order is completed it is removed from the list of orders by the master.
 
+Each elevator has a list of requests it wants to serve, thise lists are updated by the master.
 
+All elevators send information about themselves to the master to allow for good decision-making
 
 \section{Error Handling}
+\label{sec:errorhandling}
+
+If an elevator loses power, the hierarchy of elevators might be changed. If the master dies, the slave that has been alive the longest takes over as the new mas
+
+
+
+If a node is having some error and there is no active trip on this node, it should perform a reboot, so it might solve the issue.
 
 \subsection{Network loss on node}
-If a node loses connection to the network, it will no longer recive information from it's master, so after 
+If a node loses connection to the network, it will no longer receive information from it's master, so after a certain time, the node reboots if it is in the idle state.
+
+If the node that lost connection is the master, a new master will be appointed using the logic defined in \autoref{sec:decisionmaking}.
+
+\subsection{Packet Loss}
+If a node doesn't confirm the packet received from the master, the TCP will send another packet until it's confirmed by the slaves. 
+
+\subsection{}
+
+
+\section{Programming Language}
+We are going to use the programming language Go, since channels and go-routines are features that will work well for this type of project. The implementation of these are good for concurrency and deals with race condition. 
