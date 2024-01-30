@@ -1,0 +1,10 @@
+\section{Decision Making}
+
+The decision making is distributed in a master-slave topology. Where all hall calls and cab calls are communicated with the master. The master decides what each cab should do. Which node who is the master is decided by the duration each node has been alive (on). The master shall ping all slaves at regular intervals to communicate its presence 
+
+
+
+\section{Error Handling}
+
+\subsection{Network loss on node}
+If a node loses connection to the network, it will no longer recive information from it's master, so after 
