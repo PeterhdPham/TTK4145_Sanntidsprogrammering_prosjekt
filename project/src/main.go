@@ -1,11 +1,16 @@
 package main
 
 import (
+	"os"
 	"project/pack"
-	"fmt"
 )
 
 func main() {
-	fmt.Print("Running main")
-	go pack.Broadcast_life()
+	if len(os.Args) == 1 {
+		go pack.Broadcast_life()
+		select {}
+	} else {
+		go pack.Look_for_life()
+		select {}
+	}
 }
