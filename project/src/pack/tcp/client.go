@@ -13,6 +13,6 @@ func startClient(serverAddr string) {
 }
 
 func TCP_Client() {
-	serverAddr := "100.10.23.34:9999" // Use the server's actual IP address and port
+	serverAddr := "10.100.23.34:9999" // Use the server's actual IP address and port
 	startClient(serverAddr)
 }
