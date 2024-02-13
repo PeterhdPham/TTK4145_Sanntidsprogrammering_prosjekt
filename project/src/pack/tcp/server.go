@@ -5,25 +5,6 @@ import (
 	"net"
 )
 
-func TCP_Master() {
-	listenAddr := "0.0.0.0:9999" // Listen on all available interfaces
-	ln, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		panic(err)
-	}
-	defer ln.Close()
-	fmt.Println("Server listening on", listenAddr)
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection:", err)
-			continue
-		}
-		go handleClient(conn) // Handle each client connection concurrently
-	}
-}
-
 func handleClient(conn net.Conn) {
 	defer conn.Close()
 	clientAddr := conn.RemoteAddr().String()
@@ -44,6 +25,21 @@ func handleClient(conn net.Conn) {
 	}
 }
 
-func TCP_Listener() {
+func TCP_Server() {
+	listenAddr := "0.0.0.0:9999" // Listen on all available interfaces
+	ln, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		panic(err)
+	}
+	defer ln.Close()
+	fmt.Println("Server listening on", listenAddr)
 
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err)
+			continue
+		}
+		go handleClient(conn) // Handle each client connection concurrently
+	}
 }
