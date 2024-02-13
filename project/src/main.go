@@ -1,8 +1,8 @@
 package main
 
-import pack "project/pack/tcp"
+import "project/tcp"
 
 func main() {
-	pack.TCP_Server()
-	// pack.TCP_Client()
+	tcp.TCP_Server()
+	// tcp.TCP_Client()
 }
