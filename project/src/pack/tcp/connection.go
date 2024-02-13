@@ -56,7 +56,7 @@ func handleConnection(conn net.Conn) {
 		mutex.Lock()
 		if msg != lastSentMessage {
 			// Send a confirmation if the received message is different from the last sent message
-			confirmation := "Message received."
+			confirmation := msg
 			_, err = conn.Write([]byte(confirmation + "\n"))
 			if err != nil {
 				fmt.Println("Error sending confirmation:", err)
