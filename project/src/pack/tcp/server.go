@@ -5,28 +5,29 @@ import (
 	"net"
 )
 
-func handleClient(conn net.Conn) {
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	clientAddr := conn.RemoteAddr().String()
-	fmt.Printf("Client connected: %s\n", clientAddr)
+	fmt.Println("Client connected:", conn.RemoteAddr())
 
-	// Send a welcome message to the client
-	conn.Write([]byte("Welcome, you are connected to the server.\n"))
+	// Read data from the connection
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		fmt.Println("Error reading:", err)
+		return
+	}
+	fmt.Println("Received:", string(buffer[:n]))
 
-	// Read messages from client and print them
-	for {
-		buffer := make([]byte, 1024)
-		n, err := conn.Read(buffer)
-		if err != nil {
-			fmt.Printf("Client %s disconnected.\n", clientAddr)
-			break
-		}
-		fmt.Printf("Message from %s: %s", clientAddr, string(buffer[:n]))
+	// Optionally, send a response
+	_, err = conn.Write([]byte("Hello, client!"))
+	if err != nil {
+		fmt.Println("Error writing:", err)
+		return
 	}
 }
 
 func TCP_Server() {
-	listenAddr := "0.0.0.0:9999" // Listen on all available interfaces
+	listenAddr := "0.0.0.0:9999" // Listen on all network interfaces
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		panic(err)
@@ -40,6 +41,6 @@ func TCP_Server() {
 			fmt.Println("Error accepting connection:", err)
 			continue
 		}
-		go handleClient(conn) // Handle each client connection concurrently
+		go handleConnection(conn)
 	}
 }

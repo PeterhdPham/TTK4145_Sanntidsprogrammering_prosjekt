@@ -4,24 +4,27 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
 )
 
 func TCP_Client() {
-	serverAddr := "127.0.0.1:9999" // Server address
+	serverAddr := "10.100.23.34:9999" // Use the server's IP address and port
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error connecting:", err)
+		os.Exit(1)
 	}
 	defer conn.Close()
-	fmt.Println("Connected to server")
+	fmt.Println("Connected to server", serverAddr)
 
 	// Send a message to the server
-	conn.Write([]byte("Hello from the client!\n"))
+	message := "Hello, server!"
+	conn.Write([]byte(message))
 
-	// Optionally, listen for a response
+	// Read the server's response
 	response, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading from server:", err)
+		fmt.Println("Error reading:", err)
 		return
 	}
 	fmt.Print("Server says: ", response)
