@@ -5,35 +5,13 @@ import (
 	"net"
 )
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	fmt.Println("Client connected:", conn.RemoteAddr())
-
-	// Read data from the connection
-	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Println("Error reading:", err)
-		return
-	}
-	fmt.Println("Received:", string(buffer[:n]))
-
-	// Optionally, send a response
-	_, err = conn.Write([]byte("Hello, client!"))
-	if err != nil {
-		fmt.Println("Error writing:", err)
-		return
-	}
-}
-
-func TCP_Server() {
-	listenAddr := "0.0.0.0:9999" // Listen on all network interfaces
-	ln, err := net.Listen("tcp", listenAddr)
+func startServer(port string) {
+	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		panic(err)
 	}
 	defer ln.Close()
-	fmt.Println("Server listening on", listenAddr)
+	fmt.Println("Server listening on port", port)
 
 	for {
 		conn, err := ln.Accept()
@@ -43,4 +21,9 @@ func TCP_Server() {
 		}
 		go handleConnection(conn)
 	}
+}
+
+func TCP_Server() {
+	port := "9999" // Example port
+	startServer(port)
 }

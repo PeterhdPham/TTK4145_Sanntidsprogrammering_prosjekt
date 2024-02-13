@@ -1,31 +1,18 @@
 package pack
 
-import (
-	"bufio"
-	"fmt"
-	"net"
-	"os"
-)
+import "net"
 
-func TCP_Client() {
-	serverAddr := "10.100.23.34:9999" // Use the server's IP address and port
+func startClient(serverAddr string) {
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
-		fmt.Println("Error connecting:", err)
-		os.Exit(1)
+		panic(err)
 	}
 	defer conn.Close()
-	fmt.Println("Connected to server", serverAddr)
 
-	// Send a message to the server
-	message := "Hello, server!"
-	conn.Write([]byte(message))
+	handleConnection(conn)
+}
 
-	// Read the server's response
-	response, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
-		fmt.Println("Error reading:", err)
-		return
-	}
-	fmt.Print("Server says: ", response)
+func TCP_Client() {
+	serverAddr := "100.10.23.34:9999" // Use the server's actual IP address and port
+	startClient(serverAddr)
 }
