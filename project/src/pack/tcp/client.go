@@ -12,7 +12,7 @@ func startClient(serverAddr string) {
 	handleConnection(conn)
 }
 
-func TCP_Client() {
-	serverAddr := "10.100.23.34:9999" // Use the server's actual IP address and port
+func TCP_Client(master_ip_addr string) {
+	serverAddr := master_ip_addr + ":9999" // Use the server's actual IP address and port
 	startClient(serverAddr)
 }
