@@ -57,9 +57,9 @@ func Broadcast_life() {
 
 	for {
 		select {
-		case t := <-ticker.C:
+		case <-ticker.C:
 			// Construct the message with timestamp and sender's IP
-			message := fmt.Sprintf("Hello, UDP world! Time: %s, Sender IP: %s", t.Format(time.RFC3339), localAddr.IP.String())
+			message := fmt.Sprintf("Hello")
 			_, err := conn.Write([]byte(message))
 			if err != nil {
 				fmt.Println(err)
@@ -91,7 +91,7 @@ func Look_for_life() {
 	fmt.Printf("Listening for UDP packets on %s...\n", port)
 	for {
 
-		err := pc.SetReadDeadline(time.Now().Add(10 * time.Second))
+		err := pc.SetReadDeadline(time.Now().Add(5 * time.Second))
 		if err != nil {
 			fmt.Println("Failed to set a deadline for the read operation:", err)
 			os.Exit(1)
@@ -99,10 +99,21 @@ func Look_for_life() {
 
 		// Read from the UDP socket.
 		n, addr, err := pc.ReadFrom(buffer)
+
 		if err != nil {
 			if os.IsTimeout(err) {
 				fmt.Println("Read timeout: No messages received for 5 seconds")
-				break // or continue, depending on whether you want to exit after timeout or keep listening
+
+
+				for _, a := range slice {
+					// Simple comparison; might need to be more complex depending on your needs
+					if a.Network() == addr.Network() && a.String() == addr.String() {
+						return true
+					}
+				}
+
+				
+				continue
 			}
 			fmt.Println("Read error:", err)
 			continue
