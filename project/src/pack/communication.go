@@ -90,10 +90,21 @@ func Look_for_life() {
 
 	fmt.Printf("Listening for UDP packets on %s...\n", port)
 	for {
+
+		err := pc.SetReadDeadline(time.Now().Add(10 * time.Second))
+		if err != nil {
+			fmt.Println("Failed to set a deadline for the read operation:", err)
+			os.Exit(1)
+		}
+
 		// Read from the UDP socket.
 		n, addr, err := pc.ReadFrom(buffer)
 		if err != nil {
-			fmt.Println(err)
+			if os.IsTimeout(err) {
+				fmt.Println("Read timeout: No messages received for 5 seconds")
+				break // or continue, depending on whether you want to exit after timeout or keep listening
+			}
+			fmt.Println("Read error:", err)
 			continue
 		}
 
