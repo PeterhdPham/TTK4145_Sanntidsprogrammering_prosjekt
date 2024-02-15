@@ -52,7 +52,7 @@ func Broadcast_life() {
 	fmt.Println("5")
 
 	// Create a ticker that ticks every 5 seconds
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -70,15 +70,15 @@ func Broadcast_life() {
 	}
 }
 
-func Look_for_life() {
+func Look_for_life(receiver chan<- []string) {
 
-	living_IPs := make([]net.Addr, 0)
+	IP_lifetimes := make(map[string]time.Time, 0)
 
 	// Define the UDP port on which to listen for messages.
 	port := ":9999"
 
 	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp6", port) // 'udp6' to listen on IPv6, use 'udp4' to force IPv4, or 'udp' for both
+	pc, err := net.ListenPacket("udp", port) // 'udp6' to listen on IPv6, use 'udp4' to force IPv4, or 'udp' for both
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -98,45 +98,49 @@ func Look_for_life() {
 		}
 
 		// Read from the UDP socket.
-		n, addr, err := pc.ReadFrom(buffer)
+		_, addr, err := pc.ReadFrom(buffer)
 
 		if err != nil {
 			if os.IsTimeout(err) {
-				fmt.Println("Read timeout: No messages received for 5 seconds")
-
-
-				for _, a := range slice {
-					// Simple comparison; might need to be more complex depending on your needs
-					if a.Network() == addr.Network() && a.String() == addr.String() {
-						return true
-					}
-				}
-
-				
+				fmt.Println("Read timeout: No messages received for 5 seconds\nAll other nodes assumed dead")
+				IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
+				receiver <- get_living_IPs(IP_lifetimes)
+				continue
+			} else {
+				fmt.Println("Read error:", err)
 				continue
 			}
-			fmt.Println("Read error:", err)
-			continue
-		}
-
-		if containsAddr(living_IPs, addr) {
-			fmt.Print("Adress already in list\n")
 		} else {
-			living_IPs = append(living_IPs, addr)
-			fmt.Print("Adress added to list\n")
+			// Handle the received message.
+			fmt.Println("Received message")
+			IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
+			receiver <- get_living_IPs(IP_lifetimes)
 		}
-
-		// Handle the received message.
-		fmt.Printf("Received message from %s: %s\n", addr.String(), string(buffer[:n]))
 	}
 }
 
-func containsAddr(slice []net.Addr, addr net.Addr) bool {
-	for _, a := range slice {
-		// Simple comparison; might need to be more complex depending on your needs
-		if a.Network() == addr.Network() && a.String() == addr.String() {
-			return true
+func update_living_IPs(IP_lifetimes map[string]time.Time, new_addr net.Addr) map[string]time.Time {
+
+	if new_addr == nil {
+		for addr_in_list := range IP_lifetimes {
+			IP_lifetimes[addr_in_list] = time.Now()
+		}
+	} else {
+		_, ok := IP_lifetimes[new_addr.String()]
+		if !ok {
+			fmt.Println("New node discovered: ", new_addr.String())
+		}
+		IP_lifetimes[new_addr.String()] = time.Now().Add(5 * time.Second)
+	}
+	return IP_lifetimes
+}
+
+func get_living_IPs(m map[string]time.Time) []string {
+	living_IPs := []string{}
+	for address, death := range m {
+		if death.After(time.Now()) {
+			living_IPs = append(living_IPs, address)
 		}
 	}
-	return false
+	return living_IPs
 }
