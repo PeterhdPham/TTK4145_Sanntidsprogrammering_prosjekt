@@ -9,40 +9,12 @@ import (
 
 func Broadcast_life() {
 
-	fmt.Println("1")
-
-	// Get the local network interface IP address
-	iface, err := net.InterfaceByName("Wi-Fi") // Replace "eth0" with your network interface name
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	fmt.Println("2")
-
-	addrs, err := iface.Addrs()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	fmt.Println("3")
-
-	// Assuming the first address is the one you want to use
-	localAddr, ok := addrs[0].(*net.IPNet)
-	if !ok {
-		fmt.Println("Error getting IP address")
-		os.Exit(1)
-	}
-
-	fmt.Println("4")
-
-	// Create a UDP address for broadcasting using the local network IP
-	broadcastAddr := fmt.Sprintf("[%s]:9999", localAddr.IP.String())
+	broadcastAddr := "255.255.255.255:9999"
 
 	fmt.Println(broadcastAddr)
 
-	conn, err := net.Dial("udp", broadcastAddr)
+	// Dial the UDP connection using the IPv4 broadcast address
+	conn, err := net.Dial("udp4", broadcastAddr) // "udp4" to explicitly use IPv4
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -51,21 +23,17 @@ func Broadcast_life() {
 
 	fmt.Println("5")
 
-	// Create a ticker that ticks every 5 seconds
+	// Create a ticker that ticks every 2 seconds
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// Construct the message with timestamp and sender's IP
-			message := fmt.Sprintf("Hello")
-			_, err := conn.Write([]byte(message))
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Printf("Broadcast message sent: %s\n", message)
+	for range ticker.C {
+		// Construct the message with timestamp and sender's IP
+		message := "Hello" // Simplified message for demonstration
+		_, err := conn.Write([]byte(message))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
 	}
 }
@@ -78,7 +46,7 @@ func Look_for_life(receiver chan<- []string) {
 	port := ":9999"
 
 	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp", port) // 'udp6' to listen on IPv6, use 'udp4' to force IPv4, or 'udp' for both
+	pc, err := net.ListenPacket("udp", port) // 'udp' listens for both udp4 and udp6 connections
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -112,7 +80,7 @@ func Look_for_life(receiver chan<- []string) {
 			}
 		} else {
 			// Handle the received message.
-			fmt.Println("Received message")
+			// fmt.Println("Received message")
 			IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
 			receiver <- get_living_IPs(IP_lifetimes)
 		}
