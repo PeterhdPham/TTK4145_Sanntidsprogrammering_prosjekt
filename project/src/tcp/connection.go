@@ -10,7 +10,7 @@ import (
 )
 
 func handleConnection(conn net.Conn) {
-	fmt.Println("Connected. Type messages to send, 'exit' to quit.")
+	fmt.Println("Connected...")
 	reader := bufio.NewReader(os.Stdin)
 
 	var lastSentMessage string
@@ -42,6 +42,37 @@ func handleConnection(conn net.Conn) {
 	}()
 
 	// Listen for messages from the connection
+	for {
+		netReader := bufio.NewReader(conn)
+		msg, err := netReader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Disconnected from peer.")
+			conn.Close()
+			return
+		}
+		msg = strings.TrimSpace(msg)
+		fmt.Println("\nReceived:", msg)
+
+		mutex.Lock()
+		if msg != lastSentMessage {
+			// Send a confirmation if the received message is different from the last sent message
+			confirmation := msg
+			_, err = conn.Write([]byte(confirmation + "\n"))
+			if err != nil {
+				fmt.Println("Error sending confirmation:", err)
+				mutex.Unlock() // Ensure mutex is unlocked before returning
+				return
+			}
+		}
+		mutex.Unlock() // Ensure mutex is unlocked after handling the message
+	}
+}
+
+func Listening(conn net.Conn, lastMsg string) {
+	lastSentMessage := lastMsg
+	var mutex sync.Mutex // Used to synchronize access to lastSentMessage
+
+	// Listen for messages from the connections
 	for {
 		netReader := bufio.NewReader(conn)
 		msg, err := netReader.ReadString('\n')
