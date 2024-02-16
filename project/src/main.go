@@ -17,3 +17,4 @@ func main() {
 		fmt.Printf("%d living_IPs: %s\n", len(a), a)
 	}
 }
+

@@ -111,4 +111,3 @@ func get_living_IPs(m map[string]time.Time) []string {
 		}
 	}
 	return living_IPs
-}
