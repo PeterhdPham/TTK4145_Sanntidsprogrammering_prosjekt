@@ -7,7 +7,7 @@ import (
 )
 
 func startClient(master_ip_addr string) (net.Conn, bool) {
-	serverAddr := master_ip_addr + ":9999" // Use the server's actual IP address and port
+	serverAddr := master_ip_addr // Use the server's actual IP address and port
 	const maxAttempts = 3
 	var conn net.Conn
 	var err error
@@ -20,7 +20,7 @@ func startClient(master_ip_addr string) (net.Conn, bool) {
 			return conn, false // Return the connection and false indicating success.
 		}
 		fmt.Printf("Attempt %d failed: %v\n", attempt, err)
-		time.Sleep(time.Second * 2) // Wait for 2 seconds before retrying.
+		time.Sleep(time.Second) // Wait for 2 seconds before retrying.
 	}
 
 	return nil, true // Return nil for the connection and true indicating failure to connect.

@@ -4,8 +4,12 @@ import (
 	"fmt"
 )
 
+var masterIPAddress string
+
 func TCP_Testing() {
-	masterIPAddress := "127.0.0.1"
+	if masterIPAddress == "" {
+		masterIPAddress = "127.0.0.1:9999"
+	}
 	conn, failed := startClient(masterIPAddress)
 	if failed {
 		fmt.Println("No active server found. Starting TCP Server...")

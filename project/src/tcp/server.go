@@ -21,7 +21,7 @@ var (
 )
 
 func startServer(port string) {
-	ln, err := net.Listen("tcp", ":"+port)
+	ln, err := net.Listen("tcp", port)
 	if err != nil {
 		panic(err)
 	}
@@ -41,12 +41,14 @@ func startServer(port string) {
 		connMutex.Unlock()
 
 		fmt.Println("Accepted connection from", conn.RemoteAddr())
+		ConnectionMessage(conn)
+		BroadcastMessage("IP-address&" + conn.RemoteAddr().String())
 
 		// Optionally, handle the connection in a separate goroutine
 		// go handleConnection(conn)
 
 		go SendToAll()
-		go ServerListening(conn)
+		// go ServerListening(conn)
 	}
 }
 
@@ -70,6 +72,12 @@ func BroadcastMessage(message string) {
 		}
 	}
 	fmt.Println("Broadcasted message to all connections")
+}
+
+func ConnectionMessage(conn net.Conn) {
+	for key := range connections {
+		BroadcastMessage("Port-connected&" + key)
+	}
 }
 
 func SendToAll() {
@@ -114,6 +122,6 @@ func ServerListening(conn net.Conn) {
 }
 
 func TCP_Server() {
-	port := "9999" // Example port
+	port := ":9999" // Example port
 	startServer(port)
 }
