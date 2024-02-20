@@ -184,8 +184,6 @@ func handleConnection(conn net.Conn) {
 		clientMutex.Unlock()
 	}()
 
-	var lastClientMessage string
-
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
@@ -203,13 +201,7 @@ func handleConnection(conn net.Conn) {
 		message := string(buffer[:n])
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
 
-		if lastClientMessage != message {
-			_, echoErr := conn.Write([]byte("Confirmation: " + message))
-			if echoErr != nil {
-				fmt.Printf("Failed to send confirmation back to client %s: %s\n", clientAddr, echoErr)
-			}
-			lastClientMessage = message
-		}
+		// Previously here was the logic to send a confirmation back to the client, which has been removed as per request.
 	}
 }
 
@@ -225,29 +217,6 @@ func connectToServer(serverIP string) {
 	defer conn.Close()
 	fmt.Println("Connected to server at", serverAddr)
 
-	lastSentMessage := ""
-
-	go func() {
-		buffer := make([]byte, 1024)
-		for {
-			n, err := conn.Read(buffer)
-			if err != nil {
-				if err == io.EOF {
-					fmt.Println("Server closed the connection.")
-				} else {
-					fmt.Printf("Failed to read from server: %s\n", err)
-				}
-				connected = false
-				return
-			}
-
-			receivedMsg := string(buffer[:n])
-			if lastSentMessage != receivedMsg {
-				fmt.Println("Received confirmation:", receivedMsg)
-			}
-		}
-	}()
-
 	fmt.Println("Enter messages to send to the server. Type 'exit' to disconnect:")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -256,13 +225,9 @@ func connectToServer(serverIP string) {
 			fmt.Println("Disconnecting from server...")
 			break
 		}
-		if lastSentMessage != msg {
-			_, err := conn.Write([]byte(msg))
-			if err != nil {
-				fmt.Printf("Failed to send message: %s\n", err)
-				break
-			}
-			lastSentMessage = msg
+		err := SendMessage(conn, msg) // Use the sendMessage function
+		if err != nil {
+			break // Exit if there was an error sending the message
 		}
 	}
 
