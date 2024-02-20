@@ -22,13 +22,14 @@ var (
 	activeIPs        []string
 	currentConnMutex sync.Mutex
 	lastMessage      string
+	connected        bool = false
 )
 
 func Config_Roles() {
 	go pack.Broadcast_life()
 	go pack.Look_for_life(livingIPsChan)
 
-	// Initialize a ticker that ticks every 10 seconds.
+	// Initialize a ticker that ticks every 1 seconds.
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -40,7 +41,7 @@ func Config_Roles() {
 			activeIPs = livingIPs
 			activeIPsMutex.Unlock()
 		case <-ticker.C:
-			// Every 10 seconds, check the role and update if necessary.
+			// Every 1 seconds, check the role and update if necessary.
 			updateRole()
 		}
 	}
@@ -74,7 +75,11 @@ func updateRole() {
 		go connectToServer(activeIPs[0]) // Transition to client
 	} else if !serverListening {
 		fmt.Println("This node is a client.")
-		go connectToServer(activeIPs[0])
+		if !connected {
+			go connectToServer(activeIPs[0])
+			connected = true
+		}
+
 	}
 }
 
