@@ -1,21 +1,19 @@
 package main
 
 import (
+	"Driver-go/elevio"
 	"fmt"
-	// "project/pack"
-	"project/udp"
+	// "time"
 )
 
 func main() {
 
-	living_IPs := make(chan []string)
+	num_floors := 4
 
-	go udp.Broadcast_life()
-	go udp.Look_for_life(living_IPs)
+	fmt.Println("Booting elevator")
 
-	for a := range living_IPs {
-		fmt.Printf("\033[2J\033[H")
-		fmt.Printf("%d living_IPs: %s\n", len(a), a)
-	}
+	elevio.Init("localhost:15657", num_floors)
+
+	elev_data.get_livedata()
+
 }
-

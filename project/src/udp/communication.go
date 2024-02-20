@@ -38,7 +38,7 @@ func Broadcast_life() {
 	}
 }
 
-func Look_for_life(receiver chan<- []string) {
+func Look_for_life(living_IPs_chan chan<- []string) {
 
 	IP_lifetimes := make(map[string]time.Time, 0)
 
@@ -72,7 +72,7 @@ func Look_for_life(receiver chan<- []string) {
 			if os.IsTimeout(err) {
 				fmt.Println("Read timeout: No messages received for 5 seconds\nAll other nodes assumed dead")
 				IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
-				receiver <- get_living_IPs(IP_lifetimes)
+				living_IPs_chan <- get_living_IPs(IP_lifetimes)
 				continue
 			} else {
 				fmt.Println("Read error:", err)
@@ -82,7 +82,7 @@ func Look_for_life(receiver chan<- []string) {
 			// Handle the received message.
 			// fmt.Println("Received message")
 			IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
-			receiver <- get_living_IPs(IP_lifetimes)
+			living_IPs_chan <- get_living_IPs(IP_lifetimes)
 		}
 	}
 }
