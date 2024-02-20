@@ -14,7 +14,7 @@ var (
 	// Map to store connections
 	connections = make(map[string]net.Conn)
 	// Mutex to protect access to the connections map
-	connMutex = &sync.Mutex{}
+	// connMutex = &sync.Mutex{}
 
 	lastMsg string
 	mutex   sync.Mutex // Used to synchronize access to lastMsg

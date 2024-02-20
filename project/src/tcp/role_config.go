@@ -23,6 +23,8 @@ var (
 	activeIPs        []string
 	currentConnMutex sync.Mutex
 	lastMessage      string
+	isConnected      bool       // Tracks the connection state
+	connMutex        sync.Mutex // Ensures thread-safe access to isConnected
 )
 
 func Config_Roles() {
@@ -75,7 +77,21 @@ func updateRole() {
 		go connectToServer(activeIPs[0]) // Transition to client
 	} else if !serverListening {
 		fmt.Println("This node is a client.")
-		go connectToServer(activeIPs[0])
+		for {
+			connMutex.Lock()
+			if !isConnected {
+				connMutex.Unlock()
+				if connectToServer(activeIPs[0]) {
+					fmt.Println("Connection successfully established.")
+				} else {
+					fmt.Println("Failed to connect. Will retry...")
+				}
+			} else {
+				connMutex.Unlock()
+			}
+			time.Sleep(5 * time.Second) // Wait before retrying to avoid flooding
+		}
+		// go connectToServer(activeIPs[0])
 	}
 }
 
@@ -191,16 +207,32 @@ func handleConnection(conn net.Conn) {
 }
 
 // Placeholder for client connection logic.// Connects to the TCP server.
-func connectToServer(serverIP string) {
-	serverAddr := fmt.Sprintf("%s", serverIP) // Ensure the server address format is correct, including port
-	conn, err := net.Dial("tcp", serverAddr)
+func connectToServer(addr string) bool {
+	var conn net.Conn
+	var err error
+	conn, err = net.Dial("tcp", addr)
 	if err != nil {
 		fmt.Printf("Failed to connect to server: %s\n", err)
-		return
+		return false
 	}
-	defer conn.Close()
-	fmt.Printf("Connected to server at %s\n", serverAddr)
 
+	connMutex.Lock()
+	isConnected = true
+	connMutex.Unlock()
+
+	defer func() {
+		conn.Close()
+		connMutex.Lock()
+		isConnected = false
+		connMutex.Unlock()
+	}()
+
+	fmt.Printf("Connected to server at %s\n", addr)
+	handleServerConnection(conn)
+	return true
+}
+
+func handleServerConnection(conn net.Conn) {
 	lastSentMessage := "" // Placeholder for the last message sent by the server
 	for {
 		buffer := make([]byte, 1024)
