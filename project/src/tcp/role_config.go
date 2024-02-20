@@ -25,6 +25,7 @@ var (
 	lastMessage      string
 	connected        bool = false
 	serverIP         string
+	lowestIP         string
 )
 
 func Config_Roles() {
@@ -77,7 +78,7 @@ func updateRole() {
 		connected = false
 	} else if myIP != lowestIP && serverListening {
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		serverCancel() // Stop the server
+		shutdownServer() // Stop the server
 		serverListening = false
 		go connectToServer(activeIPs[0]) // Transition to client
 	} else if !serverListening {
@@ -94,7 +95,6 @@ var (
 	// Global cancellation context to control the server lifecycle
 	serverCancel    context.CancelFunc = func() {} // No-op cancel function by default
 	serverListening bool               = false
-	currentConn     net.Conn
 	// Updated to track multiple client connections.
 	clientConnections map[net.Conn]bool
 	clientMutex       sync.Mutex // Protects access to clientConnections
@@ -208,7 +208,7 @@ func handleConnection(conn net.Conn) {
 
 // Placeholder for client connection logic.// Connects to the TCP server.
 func connectToServer(serverIP string) {
-	serverAddr := fmt.Sprintf("%s", serverIP) // Ensure the server address format is correct, including port
+	serverAddr := serverIP // Ensure the server address format is correct, including port
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		fmt.Printf("Failed to connect to server: %s\n", err)
@@ -248,4 +248,24 @@ func connectToServer(serverIP string) {
 		lastSentMessage = receivedMsg
 	}
 	updateRole()
+}
+
+func shutdownServer() {
+	// First, cancel the server context to stop accepting new connections
+	serverCancel()
+
+	// Next, close all active client connections
+	clientMutex.Lock()
+	for conn := range clientConnections {
+		err := conn.Close()
+		if err != nil {
+			fmt.Printf("Error closing connection: %s\n", err)
+		}
+		delete(clientConnections, conn)
+	}
+	clientMutex.Unlock()
+
+	// Finally, mark the server as not listening
+	serverListening = false
+	fmt.Println("Server has been shut down and all connections are closed.")
 }
