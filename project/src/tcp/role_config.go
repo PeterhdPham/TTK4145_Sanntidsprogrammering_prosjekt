@@ -17,12 +17,15 @@ var (
 	// Mutex to protect access to the activeIPs slice.
 	activeIPsMutex sync.Mutex
 	// Slice to store the active IPs.
-	activeIPs        []string
-	currentConnMutex sync.Mutex
-	lastMessage      string
-	connected        bool = false
-	serverIP         string
-	lowestIP         string
+	activeIPs []string
+	connected bool = false
+	serverIP  string
+	// Global cancellation context to control the server lifecycle
+	serverCancel    context.CancelFunc = func() {} // No-op cancel function by default
+	serverListening bool               = false
+	// Updated to track multiple client connections.
+	clientConnections map[net.Conn]bool
+	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
 func Config_Roles() {
@@ -86,15 +89,6 @@ func updateRole() {
 		}
 	}
 }
-
-var (
-	// Global cancellation context to control the server lifecycle
-	serverCancel    context.CancelFunc = func() {} // No-op cancel function by default
-	serverListening bool               = false
-	// Updated to track multiple client connections.
-	clientConnections map[net.Conn]bool
-	clientMutex       sync.Mutex // Protects access to clientConnections
-)
 
 func startServer(port string) {
 	clientConnections = make(map[net.Conn]bool) // Ensure this is at the right scope to track connections
