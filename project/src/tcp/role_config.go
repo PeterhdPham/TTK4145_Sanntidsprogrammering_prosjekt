@@ -67,6 +67,7 @@ func updateRole() {
 	lowestIP := strings.Split(activeIPs[0], ":")[0]
 	if serverIP != lowestIP {
 		connected = false
+		serverIP = lowestIP
 	}
 
 	if myIP == lowestIP && !serverListening {
