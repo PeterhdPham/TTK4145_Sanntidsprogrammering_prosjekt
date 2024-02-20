@@ -207,6 +207,7 @@ func connectToServer(serverIP string) {
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		fmt.Printf("Failed to connect to server: %s\n", err)
+		connected = false
 		return
 	}
 	defer conn.Close()
@@ -219,6 +220,7 @@ func connectToServer(serverIP string) {
 		if err != nil {
 			// If there's an error (including timeout), log it and break the loop
 			fmt.Printf("Failed to read from server: %s\n", err)
+			connected = false
 			break // Exit the loop and function if we cannot read (server closed connection, etc.)
 		}
 
@@ -240,4 +242,5 @@ func connectToServer(serverIP string) {
 		// Assuming the received message becomes the new "last sent message" for subsequent comparisons
 		lastSentMessage = receivedMsg
 	}
+	updateRole()
 }
