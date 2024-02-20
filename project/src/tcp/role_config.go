@@ -200,8 +200,17 @@ func handleConnection(conn net.Conn) {
 		message := string(buffer[:n])
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
 
-		// Broadcast the received message to all other clients
-		broadcastMessage(message, conn)
+		// Echo the received message back to the sending client
+		_, echoErr := conn.Write([]byte(message))
+		if echoErr != nil {
+			fmt.Printf("Failed to echo message back to client %s: %s\n", clientAddr, echoErr)
+			// Handle failed echo attempt here, if necessary
+		}
+
+		// Optionally broadcast the received message to all other clients (excluding the sender)
+		// This line is commented out because it's beyond the scope of the requirement,
+		// but you can uncomment and adjust as needed.
+		// broadcastMessage(message, conn)
 	}
 }
 
