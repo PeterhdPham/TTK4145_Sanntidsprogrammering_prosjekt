@@ -49,7 +49,6 @@ func Config_Roles() {
 	}
 }
 func updateRole() {
-	fmt.Println("Updating roles...")
 	activeIPsMutex.Lock()
 	defer activeIPsMutex.Unlock()
 
