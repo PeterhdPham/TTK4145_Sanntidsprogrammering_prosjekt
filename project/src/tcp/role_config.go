@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"project/pack"
@@ -144,30 +145,29 @@ func startServer(port string) {
 }
 
 // Handles individual client connections.
+// Modify the handleConnection function to better manage connection lifecycle
 func handleConnection(conn net.Conn) {
-	// Ensure only one active connection is handled at a time
-	currentConnMutex.Lock()
-	if currentConn != nil {
-		currentConn.Close() // Close the previous connection if any
-	}
-	currentConn = conn
-	currentConnMutex.Unlock()
-
 	defer func() {
 		conn.Close()
 		currentConnMutex.Lock()
-		currentConn = nil // Reset currentConn when connection closes
+		if currentConn == conn {
+			currentConn = nil // Reset only if it's the same connection
+		}
 		currentConnMutex.Unlock()
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
+	buffer := make([]byte, 1024)
 	for {
-		buffer := make([]byte, 1024)
-		n, readErr := conn.Read(buffer)
-		if readErr != nil {
-			fmt.Printf("Error reading from client %s: %s\n", clientAddr, readErr)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
+			} else {
+				fmt.Printf("Error reading from client %s: %s\n", clientAddr, err)
+			}
 			break
 		}
 		message := string(buffer[:n])
