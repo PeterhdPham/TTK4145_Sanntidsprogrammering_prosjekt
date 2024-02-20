@@ -21,10 +21,8 @@ func Broadcast_life() {
 	}
 	defer conn.Close()
 
-	fmt.Println("5")
-
 	// Create a ticker that ticks every 2 seconds
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -98,7 +96,7 @@ func update_living_IPs(IP_lifetimes map[string]time.Time, new_addr net.Addr) map
 		if !ok {
 			fmt.Println("New node discovered: ", new_addr.String())
 		}
-		IP_lifetimes[new_addr.String()] = time.Now().Add(5 * time.Second)
+		IP_lifetimes[new_addr.String()] = time.Now().Add(time.Second)
 	}
 	return IP_lifetimes
 }
@@ -111,3 +109,4 @@ func get_living_IPs(m map[string]time.Time) []string {
 		}
 	}
 	return living_IPs
+}
