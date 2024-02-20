@@ -87,7 +87,6 @@ func updateRole() {
 			go connectToServer(activeIPs[0])
 			connected = true
 		}
-
 	}
 }
 
@@ -216,38 +215,47 @@ func connectToServer(serverIP string) {
 		return
 	}
 	defer conn.Close()
-	fmt.Printf("Connected to server at %s\n", serverAddr)
+	fmt.Println("Connected to server at", serverAddr)
 
-	lastSentMessage := "" // Placeholder for the last message sent by the server
-	for {
+	// Start a separate goroutine for reading server messages
+	go func() {
 		buffer := make([]byte, 1024)
-		n, err := conn.Read(buffer)
-		if err != nil {
-			// If there's an error (including timeout), log it and break the loop
-			fmt.Printf("Failed to read from server: %s\n", err)
-			connected = false
-			break // Exit the loop and function if we cannot read (server closed connection, etc.)
-		}
-
-		receivedMsg := string(buffer[:n])
-		fmt.Printf("Received message: %s\n", receivedMsg)
-
-		// Echo the received message back as confirmation if it does NOT match the last message sent by the server
-		if receivedMsg != lastSentMessage {
-			fmt.Println("Message does not match the last known sent message. Sending confirmation...")
-			_, err = conn.Write([]byte(receivedMsg)) // Send confirmation back to the server
+		for {
+			n, err := conn.Read(buffer)
 			if err != nil {
-				fmt.Printf("Failed to send confirmation: %s\n", err)
-				break // Break the loop if writing fails
+				if err == io.EOF {
+					fmt.Println("Server closed the connection.")
+				} else {
+					fmt.Printf("Failed to read from server: %s\n", err)
+				}
+				connected = false
+				break // Exit the loop and goroutine if cannot read (server closed connection, etc.)
 			}
-		} else {
-			fmt.Println("Received message matches the last known sent message. No confirmation sent.")
-		}
 
-		// Assuming the received message becomes the new "last sent message" for subsequent comparisons
-		lastSentMessage = receivedMsg
+			receivedMsg := string(buffer[:n])
+			fmt.Println("Received message:", receivedMsg)
+		}
+	}()
+
+	// Main goroutine for sending messages to the server
+	fmt.Println("Enter messages to send to the server. Type 'exit' to disconnect:")
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		msg := scanner.Text()
+		if msg == "exit" { // Allow the client to disconnect gracefully
+			fmt.Println("Disconnecting from server...")
+			break
+		}
+		_, err := conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Printf("Failed to send message: %s\n", err)
+			break
+		}
 	}
-	updateRole()
+
+	connected = false
+	// Consider calling updateRole() here if it's still required
+	// updateRole() // Note: Be cautious about invoking role updates directly without ensuring it fits your design
 }
 
 func shutdownServer() {
