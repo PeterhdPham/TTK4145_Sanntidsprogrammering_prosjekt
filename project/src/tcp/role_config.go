@@ -106,6 +106,7 @@ func startServer(port string) {
 	defer listener.Close()
 	fmt.Printf("Server listening on %s\n", listenAddr)
 
+	
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
