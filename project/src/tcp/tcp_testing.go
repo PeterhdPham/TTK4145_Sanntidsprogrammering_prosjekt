@@ -1,6 +1,6 @@
 package tcp
 
-import (
+/* import (
 	"fmt"
 )
 
@@ -18,4 +18,4 @@ func TCP_Testing() {
 		fmt.Println("Connected to the server as a client.")
 		TCP_Client(conn)
 	}
-}
+} */
