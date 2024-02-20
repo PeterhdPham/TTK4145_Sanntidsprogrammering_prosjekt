@@ -129,6 +129,7 @@ func startServer(port string) {
 			fmt.Print("Enter message to broadcast: ")
 			msg, _ := reader.ReadString('\n')
 			msg = strings.TrimSpace(msg) // Remove newline character
+			lastMessage = msg
 			// Broadcast the message to all connected clients
 			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
 		}
@@ -200,11 +201,13 @@ func handleConnection(conn net.Conn) {
 		message := string(buffer[:n])
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
 
-		// Echo the received message back to the sending client
-		_, echoErr := conn.Write([]byte(message))
-		if echoErr != nil {
-			fmt.Printf("Failed to echo message back to client %s: %s\n", clientAddr, echoErr)
-			// Handle failed echo attempt here, if necessary
+		if lastMessage != message {
+			// Echo the received message back to the sending client
+			_, echoErr := conn.Write([]byte(message))
+			if echoErr != nil {
+				fmt.Printf("Failed to echo message back to client %s: %s\n", clientAddr, echoErr)
+				// Handle failed echo attempt here, if necessary
+			}
 		}
 
 		// Optionally broadcast the received message to all other clients (excluding the sender)
