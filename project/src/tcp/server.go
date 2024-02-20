@@ -20,38 +20,6 @@ var (
 	mutex   sync.Mutex // Used to synchronize access to lastMsg
 )
 
-func startServer(port string) {
-	ln, err := net.Listen("tcp", port)
-	if err != nil {
-		panic(err)
-	}
-	defer ln.Close()
-	fmt.Println("Server listening on port", port)
-
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection:", err)
-			continue
-		}
-
-		// Safely add the connection to the map
-		connMutex.Lock()
-		connections[conn.RemoteAddr().String()] = conn
-		connMutex.Unlock()
-
-		fmt.Println("Accepted connection from", conn.RemoteAddr())
-		ConnectionMessage(conn)
-		BroadcastMessage("IP-address&" + conn.RemoteAddr().String())
-
-		// Optionally, handle the connection in a separate goroutine
-		// go handleConnection(conn)
-
-		go SendToAll()
-		// go ServerListening(conn)
-	}
-}
-
 func SendMessage(conn net.Conn, message string) {
 	_, err := conn.Write([]byte(message + "\n"))
 	if err != nil {
@@ -108,16 +76,8 @@ func ServerListening(conn net.Conn) {
 		}
 		message = strings.TrimSpace(message)
 
-		// Update last message with mutex protection
-		mutex.Lock()
-		if message == lastMsg+"\n" {
-			fmt.Printf("Confirmation received for message: %s\n", message)
-		} else {
-			fmt.Printf("Received unexpected message: %s\n", message)
-			fmt.Println("Received message:", message, "Length:", len(message))
-			fmt.Println("Last message:", lastMsg, "Length:", len(lastMsg))
-		}
-		mutex.Unlock()
+		fmt.Printf("\033[2J\033[H")
+		fmt.Printf("Confirmation received for message: %s\n", message)
 	}
 }
 
