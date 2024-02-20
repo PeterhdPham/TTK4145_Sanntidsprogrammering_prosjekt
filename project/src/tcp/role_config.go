@@ -21,8 +21,11 @@ var (
 	activeIPsMutex sync.Mutex
 	// Slice to store the active IPs.
 	activeIPs        []string
+	currentConnMutex sync.Mutex
+	lastMessage      string
 	connected        bool = false
 	serverIP         string
+	lowestIP         string
 )
 
 func Config_Roles() {
