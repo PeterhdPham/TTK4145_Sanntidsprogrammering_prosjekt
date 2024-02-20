@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"project/pack"
@@ -22,6 +23,11 @@ var (
 	activeIPs        []string
 	currentConnMutex sync.Mutex
 	lastMessage      string
+	isConnected      bool       // Tracks the connection state
+	connMutex        sync.Mutex // Ensures thread-safe access to isConnected
+	// Updated to track multiple client connections.
+	clientConnections map[net.Conn]bool
+	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
 func Config_Roles() {
@@ -74,7 +80,21 @@ func updateRole() {
 		go connectToServer(activeIPs[0]) // Transition to client
 	} else if !serverListening {
 		fmt.Println("This node is a client.")
-		go connectToServer(activeIPs[0])
+		for {
+			connMutex.Lock()
+			if !isConnected {
+				connMutex.Unlock()
+				if connectToServer(activeIPs[0]) {
+					fmt.Println("Connection successfully established.")
+				} else {
+					fmt.Println("Failed to connect. Will retry...")
+				}
+			} else {
+				connMutex.Unlock()
+			}
+			time.Sleep(5 * time.Second) // Wait before retrying to avoid flooding
+		}
+		// go connectToServer(activeIPs[0])
 	}
 }
 
@@ -86,6 +106,8 @@ var (
 )
 
 func startServer(port string) {
+
+	clientConnections = make(map[net.Conn]bool)
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
 		serverCancel()              // Request server shutdown
@@ -145,30 +167,40 @@ func startServer(port string) {
 }
 
 // Handles individual client connections.
+// Modify the handleConnection function to better manage connection lifecycle
 func handleConnection(conn net.Conn) {
-	// Ensure only one active connection is handled at a time
-	currentConnMutex.Lock()
-	if currentConn != nil {
-		currentConn.Close() // Close the previous connection if any
-	}
-	currentConn = conn
-	currentConnMutex.Unlock()
+	clientMutex.Lock()
+	clientConnections[conn] = true
+	clientMutex.Unlock()
+
+	defer func() {
+		conn.Close()
+		clientMutex.Lock()
+		delete(clientConnections, conn) // Remove connection on disconnect
+		clientMutex.Unlock()
+	}()
 
 	defer func() {
 		conn.Close()
 		currentConnMutex.Lock()
-		currentConn = nil // Reset currentConn when connection closes
+		if currentConn == conn {
+			currentConn = nil // Reset only if it's the same connection
+		}
 		currentConnMutex.Unlock()
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
+	buffer := make([]byte, 1024)
 	for {
-		buffer := make([]byte, 1024)
-		n, readErr := conn.Read(buffer)
-		if readErr != nil {
-			fmt.Printf("Error reading from client %s: %s\n", clientAddr, readErr)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
+			} else {
+				fmt.Printf("Error reading from client %s: %s\n", clientAddr, err)
+			}
 			break
 		}
 		message := string(buffer[:n])
@@ -179,11 +211,7 @@ func handleConnection(conn net.Conn) {
 			// If not, update the last message and send a confirmation
 			lastMessage = message
 			confirmationMsg := message
-			_, writeErr := conn.Write([]byte(confirmationMsg))
-			if writeErr != nil {
-				fmt.Printf("Error sending confirmation to client %s: %s\n", clientAddr, writeErr)
-				break
-			}
+			broadcastMessage(confirmationMsg, conn)
 		} else {
 			// Optionally, handle the case where the message is a repeat
 			fmt.Println("Received duplicate message, no confirmation sent.")
@@ -192,16 +220,32 @@ func handleConnection(conn net.Conn) {
 }
 
 // Placeholder for client connection logic.// Connects to the TCP server.
-func connectToServer(serverIP string) {
-	serverAddr := fmt.Sprintf("%s", serverIP) // Ensure the server address format is correct, including port
-	conn, err := net.Dial("tcp", serverAddr)
+func connectToServer(addr string) bool {
+	var conn net.Conn
+	var err error
+	conn, err = net.Dial("tcp", addr)
 	if err != nil {
 		fmt.Printf("Failed to connect to server: %s\n", err)
-		return
+		return false
 	}
-	defer conn.Close()
-	fmt.Printf("Connected to server at %s\n", serverAddr)
 
+	connMutex.Lock()
+	isConnected = true
+	connMutex.Unlock()
+
+	defer func() {
+		conn.Close()
+		connMutex.Lock()
+		isConnected = false
+		connMutex.Unlock()
+	}()
+
+	fmt.Printf("Connected to server at %s\n", addr)
+	handleServerConnection(conn)
+	return true
+}
+
+func handleServerConnection(conn net.Conn) {
 	lastSentMessage := "" // Placeholder for the last message sent by the server
 	for {
 		buffer := make([]byte, 1024)
@@ -229,5 +273,20 @@ func connectToServer(serverIP string) {
 
 		// Assuming the received message becomes the new "last sent message" for subsequent comparisons
 		lastSentMessage = receivedMsg
+	}
+}
+
+func broadcastMessage(message string, origin net.Conn) {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	for conn := range clientConnections {
+		if conn != origin { // Skip the client who sent the message
+			_, err := conn.Write([]byte(message))
+			if err != nil {
+				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				// Consider handling failed connections
+			}
+		}
 	}
 }

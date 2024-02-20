@@ -1,9 +1,7 @@
 package tcp
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"sort"
 	"strconv"
@@ -169,33 +167,33 @@ func resetConnections() {
 	}
 }
 
-func handleServerConnection(conn net.Conn) {
+// func handleServerConnection(conn net.Conn) {
 
-	mutex1.Lock()
-	serverConnections = append(serverConnections, &conn)
-	mutex1.Unlock()
+// 	mutex1.Lock()
+// 	serverConnections = append(serverConnections, &conn)
+// 	mutex1.Unlock()
 
-	defer conn.Close()
-	reader := bufio.NewReader(conn)
-	for {
-		message, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("Client disconnected")
-			} else {
-				fmt.Printf("Error reading from client: %v\n", err)
-			}
-			return
-		}
-		fmt.Printf("Received from client: %s", message)
-		// Echo the message back to the client
-		_, err = conn.Write([]byte(message))
-		if err != nil {
-			fmt.Printf("Error sending to client: %v\n", err)
-			return
-		}
-	}
-}
+// 	defer conn.Close()
+// 	reader := bufio.NewReader(conn)
+// 	for {
+// 		message, err := reader.ReadString('\n')
+// 		if err != nil {
+// 			if err == io.EOF {
+// 				fmt.Println("Client disconnected")
+// 			} else {
+// 				fmt.Printf("Error reading from client: %v\n", err)
+// 			}
+// 			return
+// 		}
+// 		fmt.Printf("Received from client: %s", message)
+// 		Echo the message back to the client
+// 		_, err = conn.Write([]byte(message))
+// 		if err != nil {
+// 			fmt.Printf("Error sending to client: %v\n", err)
+// 			return
+// 		}
+// 	}
+// }
 
 func distributePeers(conn net.Conn) {
 	mutex1.Lock()
