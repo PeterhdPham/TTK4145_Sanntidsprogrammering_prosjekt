@@ -24,6 +24,7 @@ var (
 	currentConnMutex sync.Mutex
 	lastMessage      string
 	connected        bool = false
+	serverIP         string
 )
 
 func Config_Roles() {
@@ -65,12 +66,15 @@ func updateRole() {
 		return
 	}
 	lowestIP := strings.Split(activeIPs[0], ":")[0]
+	if serverIP != lowestIP {
+		connected = false
+	}
 
 	if myIP == lowestIP && !serverListening {
 		fmt.Println("This node is the server.")
 		port := strings.Split(activeIPs[0], ":")[1]
 		go startServer(port) // Ensure server starts in a non-blocking manner
-		connected = true
+		connected = false
 	} else if myIP != lowestIP && serverListening {
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		serverCancel() // Stop the server
