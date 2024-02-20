@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
-	"project/pack"
+	"project/udp"
 	"sort"
 	"strings"
 	"sync"
@@ -21,16 +21,13 @@ var (
 	activeIPsMutex sync.Mutex
 	// Slice to store the active IPs.
 	activeIPs        []string
-	currentConnMutex sync.Mutex
-	lastMessage      string
 	connected        bool = false
 	serverIP         string
-	lowestIP         string
 )
 
 func Config_Roles() {
-	go pack.Broadcast_life()
-	go pack.Look_for_life(livingIPsChan)
+	go udp.Broadcast_life()
+	go udp.Look_for_life(livingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
 	ticker := time.NewTicker(time.Second)
