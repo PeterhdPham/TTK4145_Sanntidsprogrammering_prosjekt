@@ -243,6 +243,15 @@ func connectToServer(serverIP string) {
 
 			receivedMsg := string(buffer[:n])
 			fmt.Println("Received message:", receivedMsg)
+
+			if lastMessage != receivedMsg {
+				// Echo the received message back to the sending client
+				_, echoErr := conn.Write([]byte(receivedMsg))
+				if echoErr != nil {
+					fmt.Printf("Failed to echo message back to server: %s\n", echoErr)
+					// Handle failed echo attempt here, if necessary
+				}
+			}
 		}
 	}()
 
