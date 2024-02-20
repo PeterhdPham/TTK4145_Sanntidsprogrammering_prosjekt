@@ -1,71 +1,20 @@
 package main
 
 import (
-	"Driver-go/elevio"
 	"fmt"
 	"project/pack"
 )
 
 func main() {
-	pack.Test()
-	numFloors := 4
 
-	elevio.Init("localhost:15657", numFloors)
+	living_IPs := make(chan []string)
 
-	var d elevio.MotorDirection = elevio.MD_Up
-	elevio.SetMotorDirection(d)
+	go pack.Broadcast_life()
+	go pack.Look_for_life(living_IPs)
 
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors := make(chan int)
-	drv_obstr := make(chan bool)
-	drv_stop := make(chan bool)
-
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
-	go elevio.PollObstructionSwitch(drv_obstr)
-	go elevio.PollStopButton(drv_stop)
-
-	pack.OpenDoor(d)
-
-	for {
-		select {
-		case a := <-drv_buttons:
-			fmt.Printf("%+v\n", a)
-			fmt.Println("Button received")
-			elevio.SetButtonLamp(a.Button, a.Floor, true)
-			pack.TurnOffLight(a.Floor, -1)
-
-		case a := <-drv_floors:
-			fmt.Printf("%+v\n", a)
-			if a == numFloors-1 {
-				d = elevio.MD_Down
-				elevio.SetMotorDirection(d)
-			} else if a == 0 {
-				d = elevio.MD_Up
-				elevio.SetMotorDirection(d)
-			}
-			elevio.SetFloorIndicator(a)
-			pack.OpenDoor(d)
-			pack.TurnOffLight(a, d)
-
-		case a := <-drv_obstr:
-			fmt.Printf("%+v\n", a)
-			fmt.Printf("Obstruction")
-			if a {
-				elevio.SetMotorDirection(elevio.MD_Stop)
-			} else {
-				elevio.SetMotorDirection(d)
-			}
-
-		case a := <-drv_stop:
-			fmt.Printf("%+v\n", a)
-			fmt.Printf("Stop")
-			for f := 0; f < numFloors; f++ {
-				for b := elevio.ButtonType(0); b < 3; b++ {
-					elevio.SetButtonLamp(b, f, false)
-				}
-			}
-		}
-
+	for a := range living_IPs {
+		fmt.Printf("\033[2J\033[H")
+		fmt.Printf("%d living_IPs: %s\n", len(a), a)
 	}
 }
+
