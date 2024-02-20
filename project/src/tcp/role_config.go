@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"project/pack"
@@ -89,9 +90,14 @@ var (
 	serverCancel    context.CancelFunc = func() {} // No-op cancel function by default
 	serverListening bool               = false
 	currentConn     net.Conn
+	// Updated to track multiple client connections.
+	clientConnections map[net.Conn]bool
+	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
 func startServer(port string) {
+	clientConnections = make(map[net.Conn]bool) // Ensure this is at the right scope to track connections
+
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
 		serverCancel()              // Request server shutdown
@@ -103,31 +109,24 @@ func startServer(port string) {
 	serverListening = true
 
 	listenAddr := "0.0.0.0:" + port
-	fmt.Println("Starting at: " + listenAddr)
+	fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
 		return
 	}
 	defer listener.Close()
-	fmt.Printf("Server listening on %s\n", listenAddr)
+	fmt.Println("Server listening on", listenAddr)
 
+	// This go routine is for server admin to broadcast messages to all clients.
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Print("Enter message to send: ")
+			fmt.Print("Enter message to broadcast: ")
 			msg, _ := reader.ReadString('\n')
 			msg = strings.TrimSpace(msg) // Remove newline character
-			if currentConn != nil {
-				_, err := currentConn.Write([]byte(msg))
-				if err != nil {
-					fmt.Printf("Failed to send message: %s\n", err)
-					continue
-				}
-				lastMessage = msg
-			} else {
-				fmt.Println("No active connection to send a message.")
-			}
+			// Broadcast the message to all connected clients
+			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
 		}
 	}()
 
@@ -149,50 +148,56 @@ func startServer(port string) {
 	}
 }
 
+// Implement or adjust broadcastMessage to be compatible with the above modifications
+func broadcastMessage(message string, origin net.Conn) {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	for conn := range clientConnections {
+		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
+		if origin != nil && conn == origin {
+			continue // Skip sending the message back to the origin client
+		}
+		_, err := conn.Write([]byte(message))
+		if err != nil {
+			fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+			// Handle failed send e.g., by removing the client connection if necessary
+		}
+	}
+}
+
 // Handles individual client connections.
 func handleConnection(conn net.Conn) {
-	// Ensure only one active connection is handled at a time
-	currentConnMutex.Lock()
-	if currentConn != nil {
-		currentConn.Close() // Close the previous connection if any
-	}
-	currentConn = conn
-	currentConnMutex.Unlock()
+	clientMutex.Lock()
+	clientConnections[conn] = true
+	clientMutex.Unlock()
 
 	defer func() {
 		conn.Close()
-		currentConnMutex.Lock()
-		currentConn = nil // Reset currentConn when connection closes
-		currentConnMutex.Unlock()
+		clientMutex.Lock()
+		delete(clientConnections, conn)
+		clientMutex.Unlock()
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
+	buffer := make([]byte, 1024)
 	for {
-		buffer := make([]byte, 1024)
-		n, readErr := conn.Read(buffer)
-		if readErr != nil {
-			fmt.Printf("Error reading from client %s: %s\n", clientAddr, readErr)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
+			} else {
+				fmt.Printf("Error reading from client %s: %s\n", clientAddr, err)
+			}
 			break
 		}
 		message := string(buffer[:n])
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
 
-		// Check if received message matches the last message
-		if message != lastMessage {
-			// If not, update the last message and send a confirmation
-			lastMessage = message
-			confirmationMsg := message
-			_, writeErr := conn.Write([]byte(confirmationMsg))
-			if writeErr != nil {
-				fmt.Printf("Error sending confirmation to client %s: %s\n", clientAddr, writeErr)
-				break
-			}
-		} else {
-			// Optionally, handle the case where the message is a repeat
-			fmt.Println("Received duplicate message, no confirmation sent.")
-		}
+		// Broadcast the received message to all other clients
+		broadcastMessage(message, conn)
 	}
 }
 
