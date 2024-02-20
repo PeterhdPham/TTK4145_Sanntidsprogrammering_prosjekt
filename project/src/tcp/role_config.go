@@ -184,6 +184,8 @@ func handleConnection(conn net.Conn) {
 		clientMutex.Unlock()
 	}()
 
+	var lastClientMessage string
+
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
@@ -201,25 +203,19 @@ func handleConnection(conn net.Conn) {
 		message := string(buffer[:n])
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
 
-		if lastMessage != message {
-			// Echo the received message back to the sending client
-			_, echoErr := conn.Write([]byte(message))
+		if lastClientMessage != message {
+			_, echoErr := conn.Write([]byte("Confirmation: " + message))
 			if echoErr != nil {
-				fmt.Printf("Failed to echo message back to client %s: %s\n", clientAddr, echoErr)
-				// Handle failed echo attempt here, if necessary
+				fmt.Printf("Failed to send confirmation back to client %s: %s\n", clientAddr, echoErr)
 			}
+			lastClientMessage = message
 		}
-
-		// Optionally broadcast the received message to all other clients (excluding the sender)
-		// This line is commented out because it's beyond the scope of the requirement,
-		// but you can uncomment and adjust as needed.
-		// broadcastMessage(message, conn)
 	}
 }
 
 // Placeholder for client connection logic.// Connects to the TCP server.
 func connectToServer(serverIP string) {
-	serverAddr := serverIP // Ensure the server address format is correct, including port
+	serverAddr := serverIP
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		fmt.Printf("Failed to connect to server: %s\n", err)
@@ -229,7 +225,8 @@ func connectToServer(serverIP string) {
 	defer conn.Close()
 	fmt.Println("Connected to server at", serverAddr)
 
-	// Start a separate goroutine for reading server messages
+	lastSentMessage := ""
+
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
@@ -241,42 +238,35 @@ func connectToServer(serverIP string) {
 					fmt.Printf("Failed to read from server: %s\n", err)
 				}
 				connected = false
-				break // Exit the loop and goroutine if cannot read (server closed connection, etc.)
+				return
 			}
 
 			receivedMsg := string(buffer[:n])
-			fmt.Println("Received message:", receivedMsg)
-
-			if lastMessage != receivedMsg {
-				// Echo the received message back to the sending client
-				_, echoErr := conn.Write([]byte(receivedMsg))
-				if echoErr != nil {
-					fmt.Printf("Failed to echo message back to server: %s\n", echoErr)
-					// Handle failed echo attempt here, if necessary
-				}
+			if lastSentMessage != receivedMsg {
+				fmt.Println("Received confirmation:", receivedMsg)
 			}
 		}
 	}()
 
-	// Main goroutine for sending messages to the server
 	fmt.Println("Enter messages to send to the server. Type 'exit' to disconnect:")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		msg := scanner.Text()
-		if msg == "exit" { // Allow the client to disconnect gracefully
+		if msg == "exit" {
 			fmt.Println("Disconnecting from server...")
 			break
 		}
-		_, err := conn.Write([]byte(msg))
-		if err != nil {
-			fmt.Printf("Failed to send message: %s\n", err)
-			break
+		if lastSentMessage != msg {
+			_, err := conn.Write([]byte(msg))
+			if err != nil {
+				fmt.Printf("Failed to send message: %s\n", err)
+				break
+			}
+			lastSentMessage = msg
 		}
 	}
 
 	connected = false
-	// Consider calling updateRole() here if it's still required
-	// updateRole() // Note: Be cautious about invoking role updates directly without ensuring it fits your design
 }
 
 func shutdownServer() {
