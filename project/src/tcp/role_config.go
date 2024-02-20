@@ -206,6 +206,7 @@ func handleConnection(conn net.Conn) {
 }
 
 // Placeholder for client connection logic.// Connects to the TCP server.
+// Connects to the TCP server.
 func connectToServer(serverIP string) {
 	serverAddr := serverIP
 	conn, err := net.Dial("tcp", serverAddr)
@@ -217,6 +218,28 @@ func connectToServer(serverIP string) {
 	defer conn.Close()
 	fmt.Println("Connected to server at", serverAddr)
 
+	// Start a goroutine to listen for messages from the server
+	go func() {
+		for {
+			buffer := make([]byte, 1024) // Create a buffer to store incoming data
+			n, err := conn.Read(buffer)  // Read data into buffer
+			if err != nil {
+				if err == io.EOF {
+					fmt.Println("Server closed the connection.")
+				} else {
+					fmt.Printf("Error reading from server: %s\n", err)
+				}
+				connected = false
+				return // Exit goroutine if connection is closed or an error occurs
+			}
+
+			// Convert the bytes read into a string and print it
+			message := string(buffer[:n])
+			fmt.Printf("Message from server: %s\n", message)
+		}
+	}()
+
+	// Read messages from stdin and send them to the server
 	fmt.Println("Enter messages to send to the server. Type 'exit' to disconnect:")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -225,8 +248,11 @@ func connectToServer(serverIP string) {
 			fmt.Println("Disconnecting from server...")
 			break
 		}
-		err := SendMessage(conn, msg) // Use the sendMessage function
+
+		// SendMessage is assumed to be a function that sends a message to the server.
+		err := SendMessage(conn, msg)
 		if err != nil {
+			fmt.Printf("Error sending message: %s\n", err)
 			break // Exit if there was an error sending the message
 		}
 	}
