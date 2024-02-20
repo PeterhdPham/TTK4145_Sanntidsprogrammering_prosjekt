@@ -75,8 +75,8 @@ func updateRole() {
 		serverListening = false
 		go connectToServer(activeIPs[0]) // Transition to client
 	} else if !serverListening {
-		fmt.Println("This node is a client.")
 		if !connected {
+			fmt.Println("This node is a client.")
 			go connectToServer(activeIPs[0])
 			connected = true
 		}
