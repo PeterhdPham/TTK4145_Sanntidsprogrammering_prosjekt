@@ -11,6 +11,10 @@ func main() {
 
 	num_floors := 4
 
+	test := make([]elev_data.Elev_light, num_floors)
+
+	fmt.Println(test)
+
 	fmt.Println("Booting elevator") // just to know we're running
 
 	elevio.Init("localhost:15657", num_floors) // connect to elevatorsimulator
@@ -36,7 +40,7 @@ func main() {
 	}()
 
 	for status_update := range my_status {
-		bytestream := elev_data.Prepare_bytestream(status_update)
+		bytestream := elev_data.Status_to_bytestream(status_update)
 		fmt.Println("New updated status: ", string(bytestream))
 	}
 

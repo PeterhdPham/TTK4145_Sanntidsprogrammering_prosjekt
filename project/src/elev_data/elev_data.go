@@ -14,6 +14,12 @@ type Elev_status struct {
 	Buttontype  int  `json:"buttontype"`
 }
 
+type Elev_light struct {
+	Up   bool `json:"up"`
+	Down bool `json:"down"`
+	Cab  bool `json:"cab"`
+}
+
 func Get_livedata(
 	elev_status_chan chan<- Elev_status,
 	direction chan elevio.MotorDirection,
@@ -72,7 +78,7 @@ func Get_livedata(
 	}
 }
 
-func Prepare_bytestream(status_to_send Elev_status) []byte {
+func Status_to_bytestream(status_to_send Elev_status) []byte {
 	byte_slice, err := json.Marshal(status_to_send)
 	if err != nil {
 		panic(err)
