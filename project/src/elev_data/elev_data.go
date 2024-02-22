@@ -1,14 +1,17 @@
 package elev_data
 
-import "Driver-go/elevio"
+import (
+	"Driver-go/elevio"
+	"encoding/json"
+)
 
 type Elev_status struct {
-	direction   int  `json:"direction"`
-	floor       int  `json:"floor"`
-	doors       bool `json:"doors"`
-	obstructed  bool `json:"obstructed"`
-	buttonfloor int  `json:"buttonfloor"`
-	buttontype  int  `json:"buttontype"`
+	Direction   int  `json:"direction"`
+	Floor       int  `json:"floor"`
+	Doors       bool `json:"doors"`
+	Obstructed  bool `json:"obstructed"`
+	Buttonfloor int  `json:"buttonfloor"`
+	Buttontype  int  `json:"buttontype"`
 }
 
 func Get_livedata(
@@ -31,40 +34,48 @@ func Get_livedata(
 	for {
 		select {
 		case a := <-drv_buttons:
-			my_status.buttonfloor = a.Floor
-			my_status.buttontype = int(a.Button)
+			my_status.Buttonfloor = a.Floor
+			my_status.Buttontype = int(a.Button)
 			elev_status_chan <- my_status
 
 		case a := <-drv_floors:
-			my_status.buttonfloor = -1
-			my_status.buttontype = -1
-			my_status.floor = a
+			my_status.Buttonfloor = -1
+			my_status.Buttontype = -1
+			my_status.Floor = a
 			elev_status_chan <- my_status
 
 		case a := <-drv_obstr:
-			my_status.buttonfloor = -1
-			my_status.buttontype = -1
+			my_status.Buttonfloor = -1
+			my_status.Buttontype = -1
 			if a {
-				my_status.obstructed = true
+				my_status.Obstructed = true
 			} else {
-				my_status.obstructed = false
+				my_status.Obstructed = false
 			}
 			elev_status_chan <- my_status
 
 		case a := <-direction:
-			my_status.buttonfloor = -1
-			my_status.buttontype = -1
-			my_status.direction = int(a)
+			my_status.Buttonfloor = -1
+			my_status.Buttontype = -1
+			my_status.Direction = int(a)
 
 		case a := <-door_open:
-			my_status.buttonfloor = -1
-			my_status.buttontype = -1
+			my_status.Buttonfloor = -1
+			my_status.Buttontype = -1
 			if a {
-				my_status.doors = true
+				my_status.Doors = true
 			} else {
-				my_status.doors = false
+				my_status.Doors = false
 			}
 			elev_status_chan <- my_status
 		}
 	}
+}
+
+func Prepare_bytestream(status_to_send Elev_status) []byte {
+	byte_slice, err := json.Marshal(status_to_send)
+	if err != nil {
+		panic(err)
+	}
+	return byte_slice
 }

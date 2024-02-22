@@ -36,7 +36,8 @@ func main() {
 	}()
 
 	for status_update := range my_status {
-		fmt.Println("New updated status: ", status_update)
+		bytestream := elev_data.Prepare_bytestream(status_update)
+		fmt.Println("New updated status: ", string(bytestream))
 	}
 
 }
