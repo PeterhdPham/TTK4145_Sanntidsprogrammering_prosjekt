@@ -7,24 +7,25 @@ import (
 	"time"
 )
 
-func Broadcast_life() {
+const BROADCAST_IP = "255.255.255.255"                     // IP to broadcast "I'm alive"-msg
+const BROADCAST_PORT = "9999"                              // Port to listen for "I'm alive"-msg
+const BROADCAST_ADDR = BROADCAST_IP + ":" + BROADCAST_PORT // Address to broadcast "I'm alive"-msg
+const BROADCAST_PERIOD = 100 * time.Millisecond            // Time to wait before broadcasting new msg
+const LISTEN_TIMEOUT = 5 * time.Second                     // Time to listen before giving up
+const NODE_LIFE = time.Second                              // Time added to node-lifetime when msg is received
 
-	broadcastAddr := "255.255.255.255:9999"
-
-	fmt.Println(broadcastAddr)
+func BroadcastLife() {
 
 	// Dial the UDP connection using the IPv4 broadcast address
-	conn, err := net.Dial("udp4", broadcastAddr) // "udp4" to explicitly use IPv4
+	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	fmt.Println("5")
-
 	// Create a ticker that ticks every 2 seconds
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(BROADCAST_PERIOD)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -38,15 +39,12 @@ func Broadcast_life() {
 	}
 }
 
-func Look_for_life(living_IPs_chan chan<- []string) {
+func LookForLife(livingIPsChan chan<- []string) {
 
-	IP_lifetimes := make(map[string]time.Time, 0)
-
-	// Define the UDP port on which to listen for messages.
-	port := ":9999"
+	IPLifetimes := make(map[string]time.Time)
 
 	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp", port) // 'udp' listens for both udp4 and udp6 connections
+	pc, err := net.ListenPacket("udp", BROADCAST_PORT) // 'udp' listens for both udp4 and udp6 connections
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -56,10 +54,10 @@ func Look_for_life(living_IPs_chan chan<- []string) {
 	// Create a buffer to store received messages.
 	buffer := make([]byte, 2048)
 
-	fmt.Printf("Listening for UDP packets on %s...\n", port)
+	fmt.Printf("Listening for UDP packets on %s...\n", BROADCAST_PORT)
 	for {
 
-		err := pc.SetReadDeadline(time.Now().Add(5 * time.Second))
+		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {
 			fmt.Println("Failed to set a deadline for the read operation:", err)
 			os.Exit(1)
@@ -71,8 +69,8 @@ func Look_for_life(living_IPs_chan chan<- []string) {
 		if err != nil {
 			if os.IsTimeout(err) {
 				fmt.Println("Read timeout: No messages received for 5 seconds\nAll other nodes assumed dead")
-				IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
-				living_IPs_chan <- get_living_IPs(IP_lifetimes)
+				IPLifetimes = updateLivingIPs(IPLifetimes, addr)
+				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue
 			} else {
 				fmt.Println("Read error:", err)
@@ -80,35 +78,34 @@ func Look_for_life(living_IPs_chan chan<- []string) {
 			}
 		} else {
 			// Handle the received message.
-			// fmt.Println("Received message")
-			IP_lifetimes = update_living_IPs(IP_lifetimes, addr)
-			living_IPs_chan <- get_living_IPs(IP_lifetimes)
+			IPLifetimes = updateLivingIPs(IPLifetimes, addr)
+			livingIPsChan <- getLivingIPs(IPLifetimes)
 		}
 	}
 }
 
-func update_living_IPs(IP_lifetimes map[string]time.Time, new_addr net.Addr) map[string]time.Time {
+func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[string]time.Time {
 
-	if new_addr == nil {
-		for addr_in_list := range IP_lifetimes {
-			IP_lifetimes[addr_in_list] = time.Now()
+	if newAddr == nil {
+		for addrInList := range IPLifetimes {
+			IPLifetimes[addrInList] = time.Now()
 		}
 	} else {
-		_, ok := IP_lifetimes[new_addr.String()]
+		_, ok := IPLifetimes[newAddr.String()]
 		if !ok {
-			fmt.Println("New node discovered: ", new_addr.String())
+			fmt.Println("New node discovered: ", newAddr.String())
 		}
-		IP_lifetimes[new_addr.String()] = time.Now().Add(5 * time.Second)
+		IPLifetimes[newAddr.String()] = time.Now().Add(NODE_LIFE)
 	}
-	return IP_lifetimes
+	return IPLifetimes
 }
 
-func get_living_IPs(m map[string]time.Time) []string {
-	living_IPs := []string{}
+func getLivingIPs(m map[string]time.Time) []string {
+	livingIPs := []string{}
 	for address, death := range m {
 		if death.After(time.Now()) {
-			living_IPs = append(living_IPs, address)
+			livingIPs = append(livingIPs, address)
 		}
 	}
-	return living_IPs
+	return livingIPs
 }
