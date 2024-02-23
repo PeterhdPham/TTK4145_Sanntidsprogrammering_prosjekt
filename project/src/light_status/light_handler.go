@@ -13,7 +13,7 @@ type LightStatus struct {
 	cab_light       []bool `json:"cab_light"`
 }
 
-func Init_Lights(number_of_floors int) LightStatus {
+func InitLights(number_of_floors int) LightStatus {
 	hallUp := make([]bool, number_of_floors)
 	hallDown := make([]bool, number_of_floors)
 	cab := make([]bool, number_of_floors)
@@ -25,7 +25,7 @@ func Init_Lights(number_of_floors int) LightStatus {
 	}
 }
 
-func Update_Lights(lightStatus LightStatus) { // Pass LightStatus as an argument
+func UpdateLights(lightStatus LightStatus) { // Pass LightStatus as an argument
 	// Iterating through hall_light_up and changing the lights based on the values
 	for i, val := range lightStatus.hall_light_up {
 		elevio.SetButtonLamp(0, i, val)
@@ -46,7 +46,7 @@ func RandomizeLights(number_of_floors int, updateChan chan<- LightStatus) {
 	rand.Seed(time.Now().UnixNano()) // Seed random number generator
 
 	for {
-		lightStatus := Init_Lights(number_of_floors) // Reinitialize or create a new LightStatus
+		lightStatus := InitLights(number_of_floors) // Reinitialize or create a new LightStatus
 
 		// Randomly update the light status
 		for i := range lightStatus.hall_light_up {
@@ -67,7 +67,7 @@ func RandomizeLights(number_of_floors int, updateChan chan<- LightStatus) {
 
 func ContinuousUpdate(updateChan <-chan LightStatus) {
 	for newLightStatus := range updateChan {
-		Update_Lights(newLightStatus)                    // Apply the update to the lights
+		UpdateLights(newLightStatus)                    // Apply the update to the lights
 		fmt.Println("New light status:", newLightStatus) // Optional: print the new status for verification
 	}
 }

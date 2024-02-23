@@ -18,7 +18,7 @@ func main() {
 	go light_status.ContinuousUpdate(updateLigthChan)
 
 	// Send the initial light status with all lights off through the channel
-	updateLigthChan <- light_status.Init_Lights(num_floors)
+	updateLigthChan <- light_status.InitLights(num_floors)
 	
 	select {}
 }
