@@ -42,12 +42,6 @@ func Update_Lights(lightStatus LightStatus) { // Pass LightStatus as an argument
 	}
 }
 
-func Light_Testing() {
-	fmt.Println("Light Testing:")
-	lightStatus := Init_Lights(4) // Store the returned LightStatus for use
-	Update_Lights(lightStatus)    // Pass the LightStatus to Update_Lights
-}
-
 func RandomizeLights(number_of_floors int, updateChan chan<- LightStatus) {
 	rand.Seed(time.Now().UnixNano()) // Seed random number generator
 
