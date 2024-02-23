@@ -19,6 +19,8 @@ func main() {
 
 	// Send the initial light status with all lights off through the channel
 	updateLigthChan <- light_status.InitLights(num_floors)
-	
+
+	go light_status.RandomizeLights(num_floors, updateLigthChan)
+
 	select {}
 }
