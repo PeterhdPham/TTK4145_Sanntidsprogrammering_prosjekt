@@ -3,7 +3,7 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"encoding/json"
-	"fmt"
+	// "fmt"
 )
 
 type ElevStatus struct {
@@ -24,7 +24,7 @@ type ElevLight struct {
 func GetLivedata(
 	elevStatusChan chan<- ElevStatus,
 	direction chan elevio.MotorDirection,
-	doorOpen chan bool,
+	doorOpen <-chan bool,
 ) {
 
 	var myStatus ElevStatus
@@ -76,7 +76,6 @@ func GetLivedata(
 			}
 			elevStatusChan <- myStatus
 		}
-		fmt.Println(string(StatusToBytestream(myStatus)))
 	}
 }
 

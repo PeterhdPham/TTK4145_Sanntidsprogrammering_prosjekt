@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"project/elevData"
 	"project/movement"
-	"time"
+	// "time"
 )
 
 func main() {
 
 	num_floors := 4
 
-	requests := []int{3, 0, 2, 1}
+	requests := make(chan []int)
+
+	var topRequest int
 
 	fmt.Println("Current requests: ", requests)
 
@@ -24,14 +26,24 @@ func main() {
 	my_dir := make(chan elevio.MotorDirection)
 	my_door := make(chan bool)
 
+	go func(){
+		for door := range my_door {
+			fmt.Println(door)
+		}
+	}()
+
+
 	go elevData.GetLivedata(my_status, my_dir, my_door) // testing this
 
-	for {
-		go movement.FulfillRequest(requests, my_status, my_dir, my_door)
-		time.Sleep(time.Second * 10)
-		requests = requests[1:]
-		fmt.Println("Current requests: ", requests)
-		time.Sleep(time.Second * 5)
-	}
+	go movement.FulfillRequests(requests, my_status, my_dir, my_door)
 
+	for {
+		fmt.Scan(&topRequest)
+		if topRequest == 0{
+			fmt.Println(<-my_status)
+		}else{
+			slice := []int{topRequest}
+			requests <- slice
+		}
+	}
 }
