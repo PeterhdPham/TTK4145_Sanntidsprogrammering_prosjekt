@@ -3,6 +3,7 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"encoding/json"
+	"fmt"
 )
 
 type ElevStatus struct {
@@ -75,6 +76,7 @@ func GetLivedata(
 			}
 			elevStatusChan <- myStatus
 		}
+		fmt.Println(string(StatusToBytestream(myStatus)))
 	}
 }
 

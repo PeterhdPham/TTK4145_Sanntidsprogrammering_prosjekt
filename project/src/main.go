@@ -4,6 +4,7 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
+	"project/movement"
 	"time"
 )
 
@@ -11,9 +12,9 @@ func main() {
 
 	num_floors := 4
 
-	test := make([]elevData.ElevLight, num_floors)
+	requests := []int{3, 0, 2, 1}
 
-	fmt.Println(test)
+	fmt.Println("Current requests: ", requests)
 
 	fmt.Println("Booting elevator") // just to know we're running
 
@@ -25,23 +26,12 @@ func main() {
 
 	go elevData.GetLivedata(my_status, my_dir, my_door) // testing this
 
-	go func() { // these need to be updated when changing motordirection or door open/close()
-		for { // changing manually just to observe the statuschange
-			time.Sleep(time.Second * 5)
-
-			my_dir <- elevio.MD_Up
-			my_door <- true
-
-			time.Sleep(time.Second * 5)
-
-			my_dir <- elevio.MD_Down
-			my_door <- false
-		}
-	}()
-
-	for status_update := range my_status {
-		bytestream := elevData.StatusToBytestream(status_update)
-		fmt.Println("New updated status: ", string(bytestream))
+	for {
+		go movement.FulfillRequest(requests, my_status, my_dir, my_door)
+		time.Sleep(time.Second * 10)
+		requests = requests[1:]
+		fmt.Println("Current requests: ", requests)
+		time.Sleep(time.Second * 5)
 	}
 
 }
