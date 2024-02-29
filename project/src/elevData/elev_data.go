@@ -6,6 +6,12 @@ import (
 	// "fmt"
 )
 
+type Elevator struct {
+	Status ElevStatus  `json:"status"`
+	Lights LightStatus `json:"lights"`
+	Orders []int       `json:"orders"`
+}
+
 type ElevStatus struct {
 	Direction   int  `json:"direction"`
 	Floor       int  `json:"floor"`
@@ -15,13 +21,13 @@ type ElevStatus struct {
 	Buttontype  int  `json:"buttontype"`
 }
 
-type ElevLight struct {
-	Up   bool `json:"up"`
-	Down bool `json:"down"`
-	Cab  bool `json:"cab"`
+type LightStatus struct {
+	Up   []bool `json:"up"`
+	Down []bool `json:"down"`
+	Cab  []bool `json:"cab"`
 }
 
-func GetLivedata(
+func UpdateStatus(
 	elevStatusChan chan<- ElevStatus,
 	direction chan elevio.MotorDirection,
 	doorOpen <-chan bool,

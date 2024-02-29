@@ -2,48 +2,36 @@ package main
 
 import (
 	"Driver-go/elevio"
+	"encoding/json"
 	"fmt"
 	"project/elevData"
-	"project/movement"
 	// "time"
 )
 
+const N_FLOORS int = 4
+
 func main() {
-
-	num_floors := 4
-
-	requests := make(chan []int)
-
-	var topRequest int
-
-	fmt.Println("Current requests: ", requests)
 
 	fmt.Println("Booting elevator") // just to know we're running
 
-	elevio.Init("localhost:15657", num_floors) // connect to elevatorsimulator
+	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	my_status := make(chan elevData.ElevStatus) // need these for testing
-	my_dir := make(chan elevio.MotorDirection)
-	my_door := make(chan bool)
+	var elevator elevData.Elevator
 
-	go func(){
-		for door := range my_door {
-			fmt.Println(door)
-		}
-	}()
+	byteStream, err := json.Marshal(elevator)
+	if err != nil {
+		panic(err)
+	}
 
+	fmt.Println(string(byteStream))
 
-	go elevData.GetLivedata(my_status, my_dir, my_door) // testing this
+	myStatus := make(chan elevData.ElevStatus) // need these for testing
+	myDirection := make(chan elevio.MotorDirection)
+	myDoor := make(chan bool)
 
-	go movement.FulfillRequests(requests, my_status, my_dir, my_door)
+	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
 
-	for {
-		fmt.Scan(&topRequest)
-		if topRequest == 0{
-			fmt.Println(<-my_status)
-		}else{
-			slice := []int{topRequest}
-			requests <- slice
-		}
+	for newStatus := range myStatus {
+		fmt.Println("New status: ", newStatus)
 	}
 }
