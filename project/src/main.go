@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"project/elevData"
-	// "time"
+	"project/tcp"
+	"time"
 )
 
 const N_FLOORS int = 4
@@ -14,9 +15,11 @@ func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
 
+	go tcp.Config_Roles()
+
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	var elevator elevData.Elevator
+	var elevator elevData.Elevator = elevData.InitElevator(N_FLOORS)
 
 	byteStream, err := json.Marshal(elevator)
 	if err != nil {
@@ -31,7 +34,14 @@ func main() {
 
 	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
 
-	for newStatus := range myStatus {
-		fmt.Println("New status: ", newStatus)
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case newStatus := <-myStatus:
+			fmt.Println("New status: ", newStatus)
+		case <-ticker.C:
+			fmt.Println(tcp.ActiveIPs)
+		}
 	}
 }

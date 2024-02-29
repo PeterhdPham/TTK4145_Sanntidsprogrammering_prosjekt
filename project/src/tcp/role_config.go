@@ -16,11 +16,11 @@ import (
 
 var (
 	// This channel is used to receive the living IPs from the Look_for_life function.
-	livingIPsChan = make(chan []string)
-	// Mutex to protect access to the activeIPs slice.
-	activeIPsMutex sync.Mutex
+	LivingIPsChan = make(chan []string)
+	// Mutex to protect access to the ActiveIPs slice.
+	ActiveIPsMutex sync.Mutex
 	// Slice to store the active IPs.
-	activeIPs        []string
+	ActiveIPs        []string
 	currentConnMutex sync.Mutex
 	lastMessage      string
 	connected        bool = false
@@ -30,7 +30,7 @@ var (
 
 func Config_Roles() {
 	go udp.BroadcastLife()
-	go udp.LookForLife(livingIPsChan)
+	go udp.LookForLife(LivingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
 	ticker := time.NewTicker(time.Second)
@@ -38,11 +38,11 @@ func Config_Roles() {
 
 	for {
 		select {
-		case livingIPs := <-livingIPsChan:
+		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			activeIPsMutex.Lock()
-			activeIPs = livingIPs
-			activeIPsMutex.Unlock()
+			ActiveIPsMutex.Lock()
+			ActiveIPs = livingIPs
+			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
 			// Every 1 seconds, check the role and update if necessary.
 			updateRole()
@@ -50,22 +50,22 @@ func Config_Roles() {
 	}
 }
 func updateRole() {
-	activeIPsMutex.Lock()
-	defer activeIPsMutex.Unlock()
+	ActiveIPsMutex.Lock()
+	defer ActiveIPsMutex.Unlock()
 
-	if len(activeIPs) == 0 {
+	if len(ActiveIPs) == 0 {
 		fmt.Println("No active IPs found. Waiting for discovery...")
 		return
 	}
 
-	sort.Strings(activeIPs)
+	sort.Strings(ActiveIPs)
 
 	myIP, err := getPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
 	}
-	lowestIP := strings.Split(activeIPs[0], ":")[0]
+	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
 	if serverIP != lowestIP {
 		connected = false
 		serverIP = lowestIP
@@ -73,18 +73,18 @@ func updateRole() {
 
 	if myIP == lowestIP && !serverListening {
 		fmt.Println("This node is the server.")
-		port := strings.Split(activeIPs[0], ":")[1]
+		port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(port) // Ensure server starts in a non-blocking manner
 		connected = false
 	} else if myIP != lowestIP && serverListening {
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer() // Stop the server
 		serverListening = false
-		go connectToServer(activeIPs[0]) // Transition to client
+		go connectToServer(ActiveIPs[0]) // Transition to client
 	} else if !serverListening {
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(activeIPs[0])
+			go connectToServer(ActiveIPs[0])
 			connected = true
 		}
 	}

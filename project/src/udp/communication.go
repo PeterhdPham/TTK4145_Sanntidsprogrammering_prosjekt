@@ -7,12 +7,13 @@ import (
 	"time"
 )
 
-const BROADCAST_IP = "255.255.255.255"                     // IP to broadcast "I'm alive"-msg
-const BROADCAST_PORT = "9999"                              // Port to listen for "I'm alive"-msg
-const BROADCAST_ADDR = BROADCAST_IP + ":" + BROADCAST_PORT // Address to broadcast "I'm alive"-msg
-const BROADCAST_PERIOD = 100 * time.Millisecond            // Time to wait before broadcasting new msg
-const LISTEN_TIMEOUT = 5 * time.Second                     // Time to listen before giving up
-const NODE_LIFE = time.Second                              // Time added to node-lifetime when msg is received
+const PORT = "9999" // Port used to broadcast and listen to "I'm alive"-messages
+
+const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm alive"-msg
+const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
+const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
+const LISTEN_TIMEOUT = 5 * time.Second           // Time to listen before giving up
+const NODE_LIFE = time.Second                    // Time added to node-lifetime when msg is received
 
 func BroadcastLife() {
 
@@ -44,7 +45,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	IPLifetimes := make(map[string]time.Time)
 
 	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp", BROADCAST_PORT) // 'udp' listens for both udp4 and udp6 connections
+	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -54,7 +55,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	// Create a buffer to store received messages.
 	buffer := make([]byte, 2048)
 
-	fmt.Printf("Listening for UDP packets on %s...\n", BROADCAST_PORT)
+	fmt.Printf("Listening for UDP packets on %s...\n", PORT)
 	for {
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))

@@ -3,13 +3,18 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"encoding/json"
+	"project/light_status"
 	// "fmt"
 )
 
+type MasterList struct {
+	Elevators []Elevator `json:"elevators"`
+}
+
 type Elevator struct {
-	Status ElevStatus  `json:"status"`
-	Lights LightStatus `json:"lights"`
-	Orders []int       `json:"orders"`
+	Status ElevStatus               `json:"status"`
+	Lights light_status.LightStatus `json:"lights"`
+	Orders []int                    `json:"orders"`
 }
 
 type ElevStatus struct {
@@ -21,10 +26,12 @@ type ElevStatus struct {
 	Buttontype  int  `json:"buttontype"`
 }
 
-type LightStatus struct {
-	Up   []bool `json:"up"`
-	Down []bool `json:"down"`
-	Cab  []bool `json:"cab"`
+func InitElevator(NumberOfFloors int) Elevator {
+	var elevator Elevator
+	elevator.Lights = light_status.InitLights(NumberOfFloors)
+	elevator.Status.Buttonfloor = -1
+	elevator.Status.Buttontype = -1
+	return elevator
 }
 
 func UpdateStatus(
@@ -32,7 +39,6 @@ func UpdateStatus(
 	direction chan elevio.MotorDirection,
 	doorOpen <-chan bool,
 ) {
-
 	var myStatus ElevStatus
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
