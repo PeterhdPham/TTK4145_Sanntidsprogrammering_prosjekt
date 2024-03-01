@@ -2,25 +2,46 @@ package main
 
 import (
 	"Driver-go/elevio"
+	"encoding/json"
 	"fmt"
-	"project/light_status"
+	"project/elevData"
+	"project/tcp"
+	"time"
 )
 
+const N_FLOORS int = 4
+
 func main() {
-	num_floors := 4
 
-	fmt.Println("Booting elevator")
-	elevio.Init("localhost:15657", num_floors)
+	fmt.Println("Booting elevator") // just to know we're running
 
-	updateLigthChan := make(chan light_status.LightStatus) // Create a channel for light status updates
+	go tcp.Config_Roles()
 
-	// Start continuously updating light status based on channel updates
-	go light_status.ContinuousUpdate(updateLigthChan)
+	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	// Send the initial light status with all lights off through the channel
-	updateLigthChan <- light_status.InitLights(num_floors)
+	var elevator elevData.Elevator = elevData.InitElevator(N_FLOORS)
 
-	go light_status.RandomizeLights(num_floors, updateLigthChan)
+	byteStream, err := json.Marshal(elevator)
+	if err != nil {
+		panic(err)
+	}
 
-	select {}
+	fmt.Println(string(byteStream))
+
+	myStatus := make(chan elevData.ElevStatus) // need these for testing
+	myDirection := make(chan elevio.MotorDirection)
+	myDoor := make(chan bool)
+
+	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
+
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case newStatus := <-myStatus:
+			fmt.Println("New status: ", newStatus)
+		case <-ticker.C:
+			fmt.Println(tcp.ActiveIPs)
+		}
+	}
 }
