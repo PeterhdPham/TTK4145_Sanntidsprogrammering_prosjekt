@@ -71,25 +71,28 @@ func updateRole() {
 		serverIP = lowestIP
 	}
 
-	if myIP == lowestIP && !serverListening {
-		fmt.Println("This node is the server.")
-		port := strings.Split(ActiveIPs[0], ":")[1]
-		go startServer(port) // Ensure server starts in a non-blocking manner
-		connected = false
-	} else if myIP != lowestIP && serverListening {
-		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer() // Stop the server
-		serverListening = false
-		go connectToServer(ActiveIPs[0]) // Transition to client
-		connected = true
-
-	} else if !serverListening {
-		if !connected {
-			fmt.Println("This node is a client.")
-			go connectToServer(ActiveIPs[0])
-			connected = true
-		}
-	}
+	if !connected {
+        if myIP == lowestIP && !serverListening {
+            shutdownServer()
+            fmt.Println("This node is the server.")
+            port := strings.Split(ActiveIPs[0], ":")[1]
+            go startServer(port) // Ensure server starts in a non-blocking manner
+        } else if myIP != lowestIP && serverListening {
+            fmt.Println("This node is no longer the server, transitioning to client...")
+            shutdownServer() // Stop the server
+            serverListening = false
+            go connectToServer(ActiveIPs[0]) // Transition to client
+            connected = true
+        } else if !serverListening {
+            if !connected {
+                fmt.Println("This node is a client.")
+                go connectToServer(ActiveIPs[0])
+                connected = true
+            }
+        }
+    } else {
+        fmt.Println("Currently connected as a client, delaying role switch.")
+    }
 }
 
 var (
@@ -134,7 +137,10 @@ func startServer(port string) {
 			lastMessage = msg
 			// Broadcast the message to all connected clients
 			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
+
+		
 		}
+
 	}()
 
 	for {
