@@ -90,9 +90,10 @@ func updateRole() {
 				connected = true
 			}
 		}
-	} else {
-		fmt.Println("Currently connected as a client, delaying role switch.")
 	}
+	// else {
+	// 	fmt.Println("Currently connected as a client, delaying role switch.")
+	// }
 }
 
 var (
@@ -245,6 +246,8 @@ func handleConnection(conn net.Conn) {
 
 // Placeholder for client connection logic.// Connects to the TCP server.
 // Connects to the TCP server.
+var error_buffer = 3
+
 func connectToServer(serverIP string) {
 	serverAddr := serverIP
 	conn, err := net.Dial("tcp", serverAddr)
@@ -293,7 +296,14 @@ func connectToServer(serverIP string) {
 		err := SendMessage(conn, msg)
 		if err != nil {
 			fmt.Printf("Error sending message: %s\n", err)
-			break // Exit if there was an error sending the message
+			if error_buffer == 0 {
+				error_buffer = 3
+				break
+			} else {
+				error_buffer--
+			}
+
+			// break // Exit if there was an error sending the message
 		}
 	}
 
