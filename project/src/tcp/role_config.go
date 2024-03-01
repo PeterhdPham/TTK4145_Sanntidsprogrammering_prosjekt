@@ -72,27 +72,27 @@ func updateRole() {
 	}
 
 	if !connected {
-        if myIP == lowestIP && !serverListening {
-            shutdownServer()
-            fmt.Println("This node is the server.")
-            port := strings.Split(ActiveIPs[0], ":")[1]
-            go startServer(port) // Ensure server starts in a non-blocking manner
-        } else if myIP != lowestIP && serverListening {
-            fmt.Println("This node is no longer the server, transitioning to client...")
-            shutdownServer() // Stop the server
-            serverListening = false
-            go connectToServer(ActiveIPs[0]) // Transition to client
-            connected = true
-        } else if !serverListening {
-            if !connected {
-                fmt.Println("This node is a client.")
-                go connectToServer(ActiveIPs[0])
-                connected = true
-            }
-        }
-    } else {
-        fmt.Println("Currently connected as a client, delaying role switch.")
-    }
+		if myIP == lowestIP && !serverListening {
+			shutdownServer()
+			fmt.Println("This node is the server.")
+			port := strings.Split(ActiveIPs[0], ":")[1]
+			go startServer(port) // Ensure server starts in a non-blocking manner
+		} else if myIP != lowestIP && serverListening {
+			fmt.Println("This node is no longer the server, transitioning to client...")
+			shutdownServer() // Stop the server
+			serverListening = false
+			go connectToServer(ActiveIPs[0]) // Transition to client
+			connected = true
+		} else if !serverListening {
+			if !connected {
+				fmt.Println("This node is a client.")
+				go connectToServer(ActiveIPs[0])
+				connected = true
+			}
+		}
+	} else {
+		fmt.Println("Currently connected as a client, delaying role switch.")
+	}
 }
 
 var (
@@ -105,14 +105,17 @@ var (
 )
 
 func startServer(port string) {
-	clientConnections = make(map[net.Conn]bool) // Ensure this is at the right scope to track connections
+	// Initialize the map to track client connections at the correct scope
+	clientConnections = make(map[net.Conn]bool)
 
+	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
 		serverCancel()              // Request server shutdown
-		time.Sleep(1 * time.Second) // Give it a moment to shut down
+		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
 
+	// Create a new context for this server instance
 	var ctx context.Context
 	ctx, serverCancel = context.WithCancel(context.Background())
 	serverListening = true
@@ -122,12 +125,16 @@ func startServer(port string) {
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
+		serverListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
-	defer listener.Close()
+	defer func() {
+		listener.Close()
+		fmt.Println("Server listener closed.")
+	}()
 	fmt.Println("Server listening on", listenAddr)
 
-	// This go routine is for server admin to broadcast messages to all clients.
+	// Goroutine for server admin to broadcast messages to all clients
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
@@ -137,27 +144,50 @@ func startServer(port string) {
 			lastMessage = msg
 			// Broadcast the message to all connected clients
 			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
-
-		
+			if connected {
+				break
+			}
 		}
 
 	}()
 
-	for {
-		// Accept new connections unless server shutdown is requested
-		conn, err := listener.Accept()
-		if err != nil {
-			select {
-			case <-ctx.Done(): // Check if shutdown was requested
-				fmt.Println("Server shutting down...")
-				serverListening = false
-				return
-			default:
-				fmt.Printf("Failed to accept connection: %s\n", err)
-				continue
+	// Accept new connections unless server shutdown is requested
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				select {
+				case <-ctx.Done(): // Shutdown was requested
+					fmt.Println("Server shutting down...")
+					closeAllClientConnections() // Ensure all client connections are gracefully closed
+					serverListening = false
+					return
+				default:
+					fmt.Printf("Failed to accept connection: %s\n", err)
+					continue
+				}
 			}
+			go handleConnection(conn)
 		}
-		go handleConnection(conn)
+	}()
+
+	// Wait for the shutdown signal to clean up and exit the function
+	<-ctx.Done()
+	// Additional cleanup can be performed here if necessary
+	fmt.Println("Server shutdown completed.")
+}
+
+// Ensure this function exists and is correctly implemented to close all client connections
+func closeAllClientConnections() {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	for conn := range clientConnections {
+		err := conn.Close()
+		if err != nil {
+			fmt.Printf("Error closing connection: %s\n", err)
+		}
+		delete(clientConnections, conn)
 	}
 }
 
@@ -239,6 +269,7 @@ func connectToServer(serverIP string) {
 					fmt.Printf("Error reading from server: %s\n", err)
 				}
 				connected = false
+				conn.Close()
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
