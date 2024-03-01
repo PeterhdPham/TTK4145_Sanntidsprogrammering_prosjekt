@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"project/elevData"
 	"project/udp"
 	"sort"
 	"strings"
@@ -28,7 +29,8 @@ var (
 	lowestIP         string
 )
 
-func Config_Roles() {
+func Config_Roles(pointerElevator *elevData.Elevator) {
+
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
@@ -45,16 +47,17 @@ func Config_Roles() {
 			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
 			// Every 1 seconds, check the role and update if necessary.
-			updateRole()
+			updateRole(pointerElevator)
 		}
 	}
 }
-func updateRole() {
+func updateRole(pointerElevator *elevData.Elevator) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
 	if len(ActiveIPs) == 0 {
 		fmt.Println("No active IPs found. Waiting for discovery...")
+		pointerElevator.Role = elevData.Master
 		return
 	}
 
@@ -70,6 +73,12 @@ func updateRole() {
 		connected = false
 		serverIP = lowestIP
 	}
+	if lowestIP == "127.0.0.1" {
+		fmt.Println("Running on localhost")
+		pointerElevator.Role = elevData.Master
+
+		return
+	}
 
 	if !connected {
 		if myIP == lowestIP && !serverListening {
@@ -77,22 +86,25 @@ func updateRole() {
 			fmt.Println("This node is the server.")
 			port := strings.Split(ActiveIPs[0], ":")[1]
 			go startServer(port) // Ensure server starts in a non-blocking manner
+			(pointerElevator).Role = elevData.Master
 		} else if myIP != lowestIP && serverListening {
 			fmt.Println("This node is no longer the server, transitioning to client...")
 			shutdownServer() // Stop the server
 			serverListening = false
 			go connectToServer(ActiveIPs[0]) // Transition to client
 			connected = true
+			(pointerElevator).Role = elevData.Slave
 		} else if !serverListening {
 			if !connected {
 				fmt.Println("This node is a client.")
 				go connectToServer(ActiveIPs[0])
 				connected = true
+				(pointerElevator).Role = elevData.Slave
 			}
 		}
 	}
 	// else {
-	// 	fmt.Println("Currently connected as a client, delaying role switch.")
+	//  fmt.Println("Currently connected as a client, delaying role switch.")
 	// }
 }
 

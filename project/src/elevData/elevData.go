@@ -30,7 +30,7 @@ type ElevStatus struct {
 type ElevatorRole int
 
 const (
-	Undefined ElevatorRole = -1	
+	Undefined ElevatorRole = -1
 	Master    ElevatorRole = 0
 	Slave     ElevatorRole = 1
 )
@@ -40,6 +40,7 @@ func InitElevator(NumberOfFloors int) Elevator {
 	elevator.Lights = light_status.InitLights(NumberOfFloors)
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
+	elevator.Role = -1
 	return elevator
 }
 

@@ -15,11 +15,11 @@ func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
 
-	go tcp.Config_Roles()
+	var elevator = elevData.InitElevator(N_FLOORS)
+
+	go tcp.Config_Roles(&elevator)
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
-
-	var elevator elevData.Elevator = elevData.InitElevator(N_FLOORS)
 
 	byteStream, err := json.Marshal(elevator)
 	if err != nil {
@@ -41,7 +41,13 @@ func main() {
 		case newStatus := <-myStatus:
 			fmt.Println("New status: ", newStatus)
 		case <-ticker.C:
-			fmt.Println(tcp.ActiveIPs)
+			// fmt.Println(tcp.ActiveIPs)
+			byteStream, err := json.Marshal(elevator.Role)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println(string(byteStream))
 		}
 	}
 }
