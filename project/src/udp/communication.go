@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -108,5 +109,6 @@ func getLivingIPs(m map[string]time.Time) []string {
 			livingIPs = append(livingIPs, address)
 		}
 	}
+	sort.Strings(livingIPs)
 	return livingIPs
 }
