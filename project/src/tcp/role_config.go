@@ -81,6 +81,8 @@ func updateRole() {
 		shutdownServer() // Stop the server
 		serverListening = false
 		go connectToServer(ActiveIPs[0]) // Transition to client
+		connected = true
+
 	} else if !serverListening {
 		if !connected {
 			fmt.Println("This node is a client.")
@@ -217,6 +219,7 @@ func connectToServer(serverIP string) {
 	}
 	defer conn.Close()
 	fmt.Println("Connected to server at", serverAddr)
+	connected = true
 
 	// Start a goroutine to listen for messages from the server
 	go func() {
