@@ -4,6 +4,7 @@ import (
 	"Driver-go/elevio"
 	"encoding/json"
 	"project/light_status"
+	"project/tcp"
 	// "fmt"
 )
 
@@ -12,7 +13,7 @@ type MasterList struct {
 }
 
 type Elevator struct {
-	Ip string `json:"ip"` 
+	Ip     string                   `json:"ip"`
 	Status ElevStatus               `json:"status"`
 	Lights light_status.LightStatus `json:"lights"`
 	Orders []int                    `json:"orders"`
@@ -29,9 +30,11 @@ type ElevStatus struct {
 
 func InitElevator(NumberOfFloors int) Elevator {
 	var elevator Elevator
+	ip, _ := tcp.GetPrimaryIP()
 	elevator.Lights = light_status.InitLights(NumberOfFloors)
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
+	elevator.Ip = ip
 	return elevator
 }
 
@@ -109,5 +112,10 @@ func BytestreamToStatus(byteSlice []byte) ElevStatus {
 	return status
 }
 
-func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string){
+func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
+	for i := 0; i < len(masterList.Elevators); i++ {
+        if masterList.Elevators[i].Ip == ip {
+            masterList.Elevators[i].Status = newStatus
+        }
+    }
 }

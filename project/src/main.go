@@ -11,7 +11,7 @@ const N_FLOORS int = 4
 
 func main() {
 
-	var livingIPs chan []string
+	livingIPs := make(chan []string)
 
 	go udp.BroadcastLife()
 	go udp.LookForLife(livingIPs)
@@ -28,10 +28,7 @@ func main() {
 	}
 	fmt.Println(string(bytes))
 
-	for{
-		select{
-		case a := <-livingIPs:
-			fmt.Println(a)
-		}
+	for a := range livingIPs {
+		fmt.Println("Living IPs: ", a)
 	}
 }

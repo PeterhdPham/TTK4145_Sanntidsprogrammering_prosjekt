@@ -60,7 +60,7 @@ func updateRole() {
 
 	sort.Strings(ActiveIPs)
 
-	myIP, err := getPrimaryIP()
+	myIP, err := GetPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
