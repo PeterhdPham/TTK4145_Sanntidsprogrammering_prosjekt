@@ -12,6 +12,7 @@ type MasterList struct {
 }
 
 type Elevator struct {
+	Ip string `json:"ip"` 
 	Status ElevStatus               `json:"status"`
 	Lights light_status.LightStatus `json:"lights"`
 	Orders []int                    `json:"orders"`
@@ -97,4 +98,16 @@ func StatusToBytestream(statusToSend ElevStatus) []byte {
 		panic(err)
 	}
 	return byteSlice
+}
+
+func BytestreamToStatus(byteSlice []byte) ElevStatus {
+	var status ElevStatus
+	err := json.Unmarshal(byteSlice, &status)
+	if err != nil {
+		panic(err)
+	}
+	return status
+}
+
+func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string){
 }
