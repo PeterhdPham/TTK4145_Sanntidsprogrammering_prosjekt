@@ -40,7 +40,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			message := string(byteStream)
+			message := []byte(string(byteStream)) // Convert message to byte slice
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
