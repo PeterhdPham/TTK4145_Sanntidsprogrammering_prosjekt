@@ -1,0 +1,10 @@
+Slave message to master:
+
+direction               (-1, 0, 1) 
+floor                   (0, 1, 2, 3)
+door_open               (0,1)
+door_sensor             (0,1)
+button pressed floor    (-1, 0, 1, 2, 3)
+buttontype              (-1, 0, 1, 2)
+
+master to slaves:
