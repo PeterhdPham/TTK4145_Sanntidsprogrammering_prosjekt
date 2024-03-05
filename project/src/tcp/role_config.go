@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"project/elevData"
 	"project/udp"
 	"sort"
 	"strings"
@@ -15,22 +16,19 @@ import (
 )
 
 var (
-	// This channel is used to receive the living IPs from the Look_for_life function.
-	livingIPsChan = make(chan []string)
-	// Mutex to protect access to the activeIPs slice.
-	activeIPsMutex sync.Mutex
-	// Slice to store the active IPs.
-	activeIPs        []string
-	currentConnMutex sync.Mutex
-	lastMessage      string
-	connected        bool = false
-	serverIP         string
-	lowestIP         string
+	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
+	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
+	ActiveIPs      []string                      //List of active IPs
+	connected      bool                  = false //Client connection state
+	ServerIP       string                        //Server IP
+	lowestIP       string                        //Lowest IP
+	MyIP           string                        //IP address for current computer
 )
 
-func Config_Roles() {
-	go udp.Broadcast_life()
-	go udp.Look_for_life(livingIPsChan)
+func Config_Roles(pointerElevator *elevData.Elevator) {
+	//Go routines for finding active IPs
+	go udp.BroadcastLife()
+	go udp.LookForLife(LivingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
 	ticker := time.NewTicker(time.Second)
@@ -38,54 +36,68 @@ func Config_Roles() {
 
 	for {
 		select {
-		case livingIPs := <-livingIPsChan:
+		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			activeIPsMutex.Lock()
-			activeIPs = livingIPs
-			activeIPsMutex.Unlock()
+			ActiveIPsMutex.Lock()
+			ActiveIPs = livingIPs
+			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
-			// Every 1 seconds, check the role and update if necessary.
-			updateRole()
+			// Every 1 seconds, check the roles and updates if necessary.
+			updateRole(pointerElevator)
 		}
 	}
 }
-func updateRole() {
-	activeIPsMutex.Lock()
-	defer activeIPsMutex.Unlock()
+func updateRole(pointerElevator *elevData.Elevator) {
+	ActiveIPsMutex.Lock()
+	defer ActiveIPsMutex.Unlock()
 
-	if len(activeIPs) == 0 {
+	//Sets the role to master if there is not active IPs (Internet turned off while running)
+	if len(ActiveIPs) == 0 {
 		fmt.Println("No active IPs found. Waiting for discovery...")
+		pointerElevator.Role = elevData.Master
 		return
 	}
 
-	sort.Strings(activeIPs)
+	sort.Strings(ActiveIPs)
 
-	myIP, err := getPrimaryIP()
+	//Find the IP for the current computer
+	MyIP, err := getPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
 	}
-	lowestIP := strings.Split(activeIPs[0], ":")[0]
-	if serverIP != lowestIP {
+	//Finds the lowestIP and sets the ServerIP equal to it
+	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
+	if ServerIP != lowestIP {
 		connected = false
-		serverIP = lowestIP
+		ServerIP = lowestIP
+	}
+	//Sets role to master if lowestIP is localhost
+	if lowestIP == "127.0.0.1" {
+		fmt.Println("Running on localhost")
+		pointerElevator.Role = elevData.Master
+		return
 	}
 
-	if myIP == lowestIP && !serverListening {
+	if MyIP == lowestIP && !serverListening {
+		//Set role to master and starts a new server on
+		shutdownServer()
 		fmt.Println("This node is the server.")
-		port := strings.Split(activeIPs[0], ":")[1]
-		go startServer(port) // Ensure server starts in a non-blocking manner
-		connected = false
-	} else if myIP != lowestIP && serverListening {
+		// port := strings.Split(ActiveIPs[0], ":")[1]
+		go startServer() // Ensure server starts in a non-blocking manner
+		pointerElevator.Role = elevData.Master
+	} else if MyIP != lowestIP && serverListening {
+		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer() // Stop the server
-		serverListening = false
-		go connectToServer(activeIPs[0]) // Transition to client
+		shutdownServer()                                       // Stop the server
+		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
+		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
+		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(activeIPs[0])
-			connected = true
+			go connectToServer(lowestIP+":55555", pointerElevator)
+			pointerElevator.Role = elevData.Slave
 		}
 	}
 }
@@ -99,62 +111,94 @@ var (
 	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
-func startServer(port string) {
-	clientConnections = make(map[net.Conn]bool) // Ensure this is at the right scope to track connections
+func startServer() {
+	// Initialize the map to track client connections at the correct scope
+	clientConnections = make(map[net.Conn]bool)
 
+	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
 		serverCancel()              // Request server shutdown
-		time.Sleep(1 * time.Second) // Give it a moment to shut down
+		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
 
+	// Create a new context for this server instance
 	var ctx context.Context
 	ctx, serverCancel = context.WithCancel(context.Background())
 	serverListening = true
 
-	listenAddr := "0.0.0.0:" + port
+	listenAddr := "0.0.0.0:55555"
 	fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
+		serverListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
-	defer listener.Close()
+	defer func() {
+		listener.Close()
+		fmt.Println("Server listener closed.")
+	}()
 	fmt.Println("Server listening on", listenAddr)
 
-	// This go routine is for server admin to broadcast messages to all clients.
+	// Goroutine for server admin to broadcast messages to all clients
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
 			fmt.Print("Enter message to broadcast: ")
 			msg, _ := reader.ReadString('\n')
 			msg = strings.TrimSpace(msg) // Remove newline character
-			lastMessage = msg
+
 			// Broadcast the message to all connected clients
-			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
+			BroadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
+			if connected {
+				break
+			}
+		}
+
+	}()
+
+	// Accept new connections unless server shutdown is requested
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				select {
+				case <-ctx.Done(): // Shutdown was requested
+					fmt.Println("Server shutting down...")
+					closeAllClientConnections() // Ensure all client connections are gracefully closed
+					serverListening = false
+					return
+				default:
+					fmt.Printf("Failed to accept connection: %s\n", err)
+					continue
+				}
+			}
+			go handleConnection(conn)
 		}
 	}()
 
-	for {
-		// Accept new connections unless server shutdown is requested
-		conn, err := listener.Accept()
+	// Wait for the shutdown signal to clean up and exit the function
+	<-ctx.Done()
+	fmt.Println("Server shutdown completed.")
+}
+
+// Ensure this function exists and is correctly implemented to close all client connections
+func closeAllClientConnections() {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	for conn := range clientConnections {
+		err := conn.Close()
 		if err != nil {
-			select {
-			case <-ctx.Done(): // Check if shutdown was requested
-				fmt.Println("Server shutting down...")
-				serverListening = false
-				return
-			default:
-				fmt.Printf("Failed to accept connection: %s\n", err)
-				continue
-			}
+			fmt.Printf("Error closing connection: %s\n", err)
 		}
-		go handleConnection(conn)
+		delete(clientConnections, conn)
 	}
 }
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func broadcastMessage(message string, origin net.Conn) {
+func BroadcastMessage(message string, origin net.Conn) {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
@@ -203,61 +247,6 @@ func handleConnection(conn net.Conn) {
 
 		// Previously here was the logic to send a confirmation back to the client, which has been removed as per request.
 	}
-}
-
-// Placeholder for client connection logic.// Connects to the TCP server.
-// Connects to the TCP server.
-func connectToServer(serverIP string) {
-	serverAddr := serverIP
-	conn, err := net.Dial("tcp", serverAddr)
-	if err != nil {
-		fmt.Printf("Failed to connect to server: %s\n", err)
-		connected = false
-		return
-	}
-	defer conn.Close()
-	fmt.Println("Connected to server at", serverAddr)
-
-	// Start a goroutine to listen for messages from the server
-	go func() {
-		for {
-			buffer := make([]byte, 1024) // Create a buffer to store incoming data
-			n, err := conn.Read(buffer)  // Read data into buffer
-			if err != nil {
-				if err == io.EOF {
-					fmt.Println("Server closed the connection.")
-				} else {
-					fmt.Printf("Error reading from server: %s\n", err)
-				}
-				connected = false
-				return // Exit goroutine if connection is closed or an error occurs
-			}
-
-			// Convert the bytes read into a string and print it
-			message := string(buffer[:n])
-			fmt.Printf("Message from server: %s\n", message)
-		}
-	}()
-
-	// Read messages from stdin and send them to the server
-	fmt.Println("Enter messages to send to the server. Type 'exit' to disconnect:")
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		msg := scanner.Text()
-		if msg == "exit" {
-			fmt.Println("Disconnecting from server...")
-			break
-		}
-
-		// SendMessage is assumed to be a function that sends a message to the server.
-		err := SendMessage(conn, msg)
-		if err != nil {
-			fmt.Printf("Error sending message: %s\n", err)
-			break // Exit if there was an error sending the message
-		}
-	}
-
-	connected = false
 }
 
 func shutdownServer() {

@@ -2,25 +2,65 @@ package main
 
 import (
 	"Driver-go/elevio"
+	"encoding/json"
 	"fmt"
-	"project/light_status"
+	"project/elevData"
+	"project/tcp"
+	"time"
 )
 
+const N_FLOORS int = 4
+
 func main() {
-	num_floors := 4
 
-	fmt.Println("Booting elevator")
-	elevio.Init("localhost:15657", num_floors)
+	fmt.Println("Booting elevator") // just to know we're running
 
-	updateLigthChan := make(chan light_status.LightStatus) // Create a channel for light status updates
+	var elevator = elevData.InitElevator(N_FLOORS)
 
-	// Start continuously updating light status based on channel updates
-	go light_status.ContinuousUpdate(updateLigthChan)
+	go tcp.Config_Roles(&elevator)
 
-	// Send the initial light status with all lights off through the channel
-	updateLigthChan <- light_status.InitLights(num_floors)
+	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	go light_status.RandomizeLights(num_floors, updateLigthChan)
+	myStatus := make(chan elevData.ElevStatus) // need these for testing
+	myDirection := make(chan elevio.MotorDirection)
+	myDoor := make(chan bool)
 
-	select {}
+	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
+
+	ticker := time.NewTicker(10 * time.Second)
+
+	for {
+		select {
+		case newStatus := <-myStatus:
+			fmt.Println("New status: ", newStatus)
+			elevator.Status = newStatus
+
+			//Turns data into string
+			byteStream, err := json.Marshal(elevator.Status)
+			if err != nil {
+				panic(err)
+			}
+			message := string(byteStream)
+
+			//Sends message to server
+			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
+				err = tcp.SendMessage(tcp.ServerConnection, message)
+				if err != nil {
+					fmt.Printf("Error sending elevator data: %s\n", err)
+				}
+			} else if elevator.Role == elevData.Master {
+				// TODO: logic for master status update
+				continue
+			}
+
+		case <-ticker.C:
+			fmt.Println("Active ips: ",tcp.ActiveIPs)
+			// 	byteStream, err := json.Marshal(elevator)
+			// 	if err != nil {
+			// 		panic(err)
+			// 	}
+
+			// 	fmt.Println(string(byteStream))
+		}
+	}
 }
