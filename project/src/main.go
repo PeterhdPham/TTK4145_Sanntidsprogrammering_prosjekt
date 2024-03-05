@@ -27,7 +27,7 @@ func main() {
 
 	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	for {
 		select {
