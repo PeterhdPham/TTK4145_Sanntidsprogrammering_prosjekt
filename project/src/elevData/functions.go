@@ -26,6 +26,15 @@ func InitOrders(NumberOfFloors int) [][]bool {
 	return orders
 }
 
+func InitOrdersChan(orders chan [][]bool, numOfFloors int) {
+	o := make([][]bool, numOfFloors)
+	for i := 0; i < numOfFloors; i++ {
+		o[i] = make([]bool, 3) // Assuming 3 buttons per floor.
+	}
+	// Send the initialized slice of slices through the channel.
+	orders <- o
+}
+
 func UpdateStatus(
 	elevStatusChan chan<- ElevStatus,
 	direction chan elevio.MotorDirection,

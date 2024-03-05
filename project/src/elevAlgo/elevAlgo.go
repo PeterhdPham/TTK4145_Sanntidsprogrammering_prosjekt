@@ -6,9 +6,9 @@ import (
 	"project/elevData"
 )
 
-func ElevAlgo(masterList []elevData.Elevator, elevStatus chan elevData.ElevStatus, orders chan [][]bool, role elevData.ElevatorRole) {
+func ElevAlgo(masterList []elevData.Elevator, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole) {
 	var myStatus elevData.ElevStatus
-	var myOrders [][]bool
+	myOrders := init_order
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -22,11 +22,11 @@ func ElevAlgo(masterList []elevData.Elevator, elevStatus chan elevData.ElevStatu
 
 	// Moves the elevator down if in between floors
 	fmt.Printf("Current floor %d\n", elevio.GetFloor())
-	// if elevio.GetFloor() == -1 {
-	// 	FSM_InitBetweenFloors(elevStatus)
-	// } else {
-	// 	FSM.CurrentState = Idle
-	// }
+	if elevio.GetFloor() == -1 {
+		myStatus = FSM_InitBetweenFloors(myStatus)
+	} else {
+		FSM_State = Idle
+	}
 
 	for {
 		select {

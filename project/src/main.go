@@ -24,7 +24,7 @@ func main() {
 
 	myStatus := make(chan elevData.ElevStatus)
 	myOrders := make(chan [][]bool)
-	// myOrders <- elevator.Orders
+	go elevData.InitOrdersChan(myOrders, N_FLOORS)
 
 	go tcp.Config_Roles(&elevator)
 
@@ -34,7 +34,7 @@ func main() {
 
 	time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(masterElevator, myStatus, myOrders, elevator.Role)
+	go elevalgo.ElevAlgo(masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -57,7 +57,7 @@ func main() {
 				}
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
-				fmt.Println("IM MASTER:" ,elevator.Status)
+				fmt.Println("IM MASTER:", elevator.Status)
 				continue
 			}
 		case newOrders := <-myOrders:
