@@ -34,7 +34,7 @@ func main() {
 
 	time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(masterElevator, myStatus)
+	go elevalgo.ElevAlgo(masterElevator, myStatus, myOrders, elevator.Role)
 
 	for {
 		select {
@@ -57,7 +57,7 @@ func main() {
 				}
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
-				fmt.Println(elevator.Status)
+				fmt.Println("IM MASTER:" ,elevator.Status)
 				continue
 			}
 		case newOrders := <-myOrders:
