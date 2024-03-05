@@ -13,6 +13,7 @@ type Elevator struct {
 	Status ElevStatus               `json:"status"`
 	Lights light_status.LightStatus `json:"lights"`
 	Orders [][]bool                 `json:"orders"`
+	Role   ElevatorRole             `json:"role"`
 }
 
 type ElevStatus struct {
@@ -23,3 +24,11 @@ type ElevStatus struct {
 	Buttonfloor int  `json:"buttonfloor"`
 	Buttontype  int  `json:"buttontype"`
 }
+
+type ElevatorRole int
+
+const (
+	Undefined ElevatorRole = -1
+	Master    ElevatorRole = 0
+	Slave     ElevatorRole = 1
+)

@@ -4,12 +4,12 @@ import (
 	"Driver-go/elevio"
 	"encoding/json"
 	"project/light_status"
-	"project/tcp"
+	"project/udp"
 )
 
 func InitElevator(NumberOfFloors int) Elevator {
 	var elevator Elevator
-	ip, _ := tcp.GetPrimaryIP()
+	ip, _ := udp.GetPrimaryIP()
 	elevator.Lights = light_status.InitLights(NumberOfFloors)
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
