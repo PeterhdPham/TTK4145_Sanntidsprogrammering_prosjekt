@@ -34,7 +34,7 @@ func main() {
 
 	time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role, N_FLOORS)
 
 	for {
 		select {
@@ -66,6 +66,7 @@ func main() {
 		case newOrders := <-myOrders:
 			fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
+			// elevator.Lights = newOrders
 		case <-ticker.C:
 			fmt.Println("Active ips: ", tcp.ActiveIPs)
 			masterByte, err := json.Marshal(masterElevator.Elevators[0])

@@ -4,11 +4,16 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
+	"time"
 )
 
-func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole) {
+var N_FLOORS int
+var doorOpenDuration time.Duration = 3 * time.Second
+
+func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
 	var myStatus elevData.ElevStatus
 	myOrders := init_order
+	N_FLOORS = N_Floors
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -24,6 +29,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	fmt.Printf("Current floor %d\n", elevio.GetFloor())
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
+		fmt.Println("In between")
 	} else {
 		FSM_State = Idle
 	}
@@ -43,7 +49,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			myStatus.Buttontype = a.Floor
 		case a := <-drvFloors:
 			fmt.Println(a)
-			myStatus = FMS_ArrivalAtFloor(myStatus, myOrders, a)
+			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
 			fmt.Printf("%+v\n", a)
 			if a {
@@ -60,6 +66,11 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvStop:
 			fmt.Printf("%+v\n", a)
 			// TODO: Clear all orders and lights from elevator
+
+		case <-timerChannel:
+			fmt.Println("Timer timed out")
+			timerStop()
+			myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 		}
 		elevStatus <- myStatus
 		orders <- myOrders
