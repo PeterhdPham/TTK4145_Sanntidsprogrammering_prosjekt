@@ -27,7 +27,7 @@ func main() {
 
 	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	for {
 		select {
@@ -54,7 +54,7 @@ func main() {
 			}
 
 		case <-ticker.C:
-			fmt.Println(tcp.ActiveIPs)
+			fmt.Println("Active ips: ",tcp.ActiveIPs)
 			// 	byteStream, err := json.Marshal(elevator)
 			// 	if err != nil {
 			// 		panic(err)

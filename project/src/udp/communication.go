@@ -105,7 +105,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[str
 func getLivingIPs(m map[string]time.Time) []string {
 	livingIPs := []string{}
 	for address, death := range m {
-		address = strings.Split(address, ":")[0] + (":55555")
+		address = strings.Split(address, ":")[0]
 		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
