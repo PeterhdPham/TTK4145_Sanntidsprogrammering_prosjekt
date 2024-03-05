@@ -58,8 +58,13 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 			message := string(buffer[:n])
 			fmt.Printf("Message from server: %s\n", message)
 
-			// TODO: Handle the message and update stored data on the elevator
+			var masterList elevData.MasterList
 
+			err = json.Unmarshal(buffer, &masterList)
+			if err != nil {
+				fmt.Printf("Error occurred during unmarshaling: %v", err)
+			}
+			
 		}
 	}()
 

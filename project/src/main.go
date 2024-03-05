@@ -52,7 +52,7 @@ func main() {
 				// TODO: logic for master status update
 				continue
 			}
-
+		
 		case <-ticker.C:
 			fmt.Println("Active ips: ",tcp.ActiveIPs)
 			// 	byteStream, err := json.Marshal(elevator)
@@ -62,5 +62,6 @@ func main() {
 
 			// 	fmt.Println(string(byteStream))
 		}
+
 	}
 }
