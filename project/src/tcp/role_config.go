@@ -90,13 +90,13 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                              // Stop the server
-		go connectToServer(lowestIP, pointerElevator) // Transition to client
+		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(lowestIP, pointerElevator)
+			go connectToServer(lowestIP+":55555", pointerElevator)
 			pointerElevator.Role = elevData.Slave
 		}
 	}
@@ -127,7 +127,7 @@ func startServer() {
 	ctx, serverCancel = context.WithCancel(context.Background())
 	serverListening = true
 
-	listenAddr := "0.0.0.0"
+	listenAddr := "0.0.0.0:55555"
 	fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
