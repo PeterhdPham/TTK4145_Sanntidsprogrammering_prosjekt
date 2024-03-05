@@ -16,7 +16,7 @@ type Elevator struct {
 	Ip     string                   `json:"ip"`
 	Status ElevStatus               `json:"status"`
 	Lights light_status.LightStatus `json:"lights"`
-	Orders [][]int                  `json:"orders"`
+	Orders [][]bool                  `json:"orders"`
 }
 
 type ElevStatus struct {
@@ -38,10 +38,10 @@ func InitElevator(NumberOfFloors int) Elevator {
 	return elevator
 }
 
-func InitOrders(NumberOfFloors int) [][]int {
-	orders := make([][]int, NumberOfFloors)
+func InitOrders(NumberOfFloors int) [][]bool {
+	orders := make([][]bool, NumberOfFloors)
 	for i := range orders {
-		orders[i] = make([]int, 3)
+		orders[i] = make([]bool, 3)
 	}
 	return orders
 }
