@@ -80,23 +80,23 @@ func updateRole(pointerElevator *elevData.Elevator) {
 	}
 
 	if MyIP == lowestIP && !serverListening {
-		//Set role to master and starts a new server on 
+		//Set role to master and starts a new server on
 		shutdownServer()
 		fmt.Println("This node is the server.")
-		port := strings.Split(ActiveIPs[0], ":")[1]
-		go startServer(port) // Ensure server starts in a non-blocking manner
+		// port := strings.Split(ActiveIPs[0], ":")[1]
+		go startServer() // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = elevData.Master
 	} else if MyIP != lowestIP && serverListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer()                                  // Stop the server
-		go connectToServer(ActiveIPs[0], pointerElevator) // Transition to client
+		shutdownServer()                              // Stop the server
+		go connectToServer(lowestIP, pointerElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(ActiveIPs[0], pointerElevator)
+			go connectToServer(lowestIP, pointerElevator)
 			pointerElevator.Role = elevData.Slave
 		}
 	}
@@ -111,7 +111,7 @@ var (
 	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
-func startServer(port string) {
+func startServer() {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
 
@@ -127,7 +127,7 @@ func startServer(port string) {
 	ctx, serverCancel = context.WithCancel(context.Background())
 	serverListening = true
 
-	listenAddr := "0.0.0.0:" + port
+	listenAddr := "0.0.0.0"
 	fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
