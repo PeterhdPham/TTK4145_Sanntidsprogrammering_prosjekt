@@ -2,12 +2,13 @@ package tcp
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"project/elevData"
-	"strings"
 	"time"
 )
 
@@ -17,6 +18,7 @@ var ShouldReconnect bool
 var error_buffer = 3
 
 func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
+
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
@@ -29,6 +31,13 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 	connected = true
 	ShouldReconnect = false
 
+	jsonData, err := json.Marshal(pointerElevator)
+	if err != nil {
+		fmt.Printf("Error occurred during marshaling: %v", err)
+	}
+
+	// Send jsonData using SendMessage
+	SendMessage(ServerConnection, []byte(jsonData))
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
@@ -50,6 +59,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 			fmt.Printf("Message from server: %s\n", message)
 
 			// TODO: Handle the message and update stored data on the elevator
+
 		}
 	}()
 
@@ -77,14 +87,14 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 	connected = false
 }
 
-func SendMessage(conn net.Conn, message string) error {
-	fmt.Println("Sending message: ", message)
+func SendMessage(conn net.Conn, message []byte) error {
+	fmt.Println("Sending message: ", string(message))
 	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
-	if !strings.HasSuffix(message, "\n") {
-		message += "\n"
+	if !bytes.HasSuffix(message, []byte("\n")) {
+		message = append(message, '\n')
 	}
 	for {
-		_, err := conn.Write([]byte(message))
+		_, err := conn.Write(message)
 		if err != nil {
 			fmt.Printf("Error sending message: %s\n", err)
 			if error_buffer == 0 {
