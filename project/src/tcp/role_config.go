@@ -61,7 +61,7 @@ func updateRole(pointerElevator *elevData.Elevator) {
 	sort.Strings(ActiveIPs)
 
 	//Find the IP for the current computer
-	MyIP, err := getPrimaryIP()
+	MyIP, err := udp.GetPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
