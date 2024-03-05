@@ -16,7 +16,7 @@ type Elevator struct {
 	Ip     string                   `json:"ip"`
 	Status ElevStatus               `json:"status"`
 	Lights light_status.LightStatus `json:"lights"`
-	Orders []int                    `json:"orders"`
+	Orders [][]int                  `json:"orders"`
 }
 
 type ElevStatus struct {
@@ -36,6 +36,14 @@ func InitElevator(NumberOfFloors int) Elevator {
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	return elevator
+}
+
+func InitOrders(NumberOfFloors int) [][]int {
+	orders := make([][]int, NumberOfFloors)
+	for i := range orders {
+		orders[i] = make([]int, 3)
+	}
+	return orders
 }
 
 func UpdateStatus(
@@ -114,8 +122,8 @@ func BytestreamToStatus(byteSlice []byte) ElevStatus {
 
 func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
-        if masterList.Elevators[i].Ip == ip {
-            masterList.Elevators[i].Status = newStatus
-        }
-    }
+		if masterList.Elevators[i].Ip == ip {
+			masterList.Elevators[i].Status = newStatus
+		}
+	}
 }
