@@ -14,6 +14,7 @@ func InitElevator(NumberOfFloors int) Elevator {
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
+	elevator.Orders = InitOrders(NumberOfFloors)
 	return elevator
 }
 
