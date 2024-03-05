@@ -37,3 +37,30 @@ func requestShouldStop(status elevData.ElevStatus, orders [][]bool, floor int) b
 
 	return false
 }
+
+func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {
+	fmt.Println("Request Clear")
+
+	switch myStatus.Direction {
+	case 1:
+		// if !requestsAbove(e) && !myOrders[floor][0] {
+		// 	myOrders[floor][1] = false
+		// }
+		myOrders[floor][0] = false
+
+	case -1:
+		// if !requestsBelow(e) && !myOrders[floor][1] {
+		// 	myOrders[floor][0] = false
+		// }
+		myOrders[floor][1] = false
+
+	case 0:
+		fallthrough
+	default:
+		myOrders[floor][0] = false
+		myOrders[floor][1] = false
+	}
+
+	return myStatus, myOrders
+
+}

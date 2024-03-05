@@ -13,14 +13,14 @@ import (
 const N_FLOORS int = 4
 
 var elevator elevData.Elevator
-var masterElevator []elevData.Elevator
+var masterElevator elevData.MasterList
 
 func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
 
 	elevator = elevData.InitElevator(N_FLOORS)
-	masterElevator = append(masterElevator, elevator)
+	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
 	myStatus := make(chan elevData.ElevStatus)
 	myOrders := make(chan [][]bool)
@@ -34,7 +34,7 @@ func main() {
 
 	time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -55,16 +55,24 @@ func main() {
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
 				}
-			} else if elevator.Role == elevData.Master {
-				// TODO: logic for master status update
-				fmt.Println("IM MASTER:", elevator.Status)
-				continue
 			}
+			// else if elevator.Role == elevData.Master {
+			// 	// TODO: logic for master status update
+			// 	masterElevator.Elevators[0] = elevator //Temp: ONE ELEVATOR
+			// 	// UpdateMasterList(&masterElevator, elevator.Status, tcp.MyIP)
+			// 	fmt.Println("Master status update")
+			// 	continue
+			// }
 		case newOrders := <-myOrders:
 			fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
 		case <-ticker.C:
 			fmt.Println("Active ips: ", tcp.ActiveIPs)
+			masterByte, err := json.Marshal(masterElevator.Elevators[0])
+			if err != nil {
+				panic(err)
+			}
+			tcp.BroadcastMessage(string(masterByte), nil)
 			// 	byteStream, err := json.Marshal(elevator)
 			// 	if err != nil {
 			// 		panic(err)

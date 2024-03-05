@@ -6,7 +6,7 @@ import (
 	"project/elevData"
 )
 
-func ElevAlgo(masterList []elevData.Elevator, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole) {
+func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole) {
 	var myStatus elevData.ElevStatus
 	myOrders := init_order
 
@@ -37,10 +37,10 @@ func ElevAlgo(masterList []elevData.Elevator, elevStatus chan elevData.ElevStatu
 		case a := <-drvButtons:
 			fmt.Println(a)
 			if role == elevData.Master {
-				// masterList = FSM_RequestFloor(masterList, a.Floor, int(a.Button))
-			} else {
-				// tcp.SendMessage(tcp.ServerConnection, a)
+				FSM_RequestFloor(masterList, a.Floor, int(a.Button))
 			}
+			myStatus.Buttonfloor = int(a.Button)
+			myStatus.Buttontype = a.Floor
 		case a := <-drvFloors:
 			fmt.Println(a)
 			myStatus = FMS_ArrivalAtFloor(myStatus, myOrders, a)
