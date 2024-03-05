@@ -54,7 +54,7 @@ func main() {
 			}
 
 		case <-ticker.C:
-			fmt.Println(tcp.ActiveIPs)
+			fmt.Println("Active ips: ",tcp.ActiveIPs)
 			// 	byteStream, err := json.Marshal(elevator)
 			// 	if err != nil {
 			// 		panic(err)
