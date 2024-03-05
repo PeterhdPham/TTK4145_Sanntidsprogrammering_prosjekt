@@ -1,34 +1,66 @@
 package main
 
 import (
+	"Driver-go/elevio"
 	"encoding/json"
 	"fmt"
 	"project/elevData"
-	"project/udp"
+	"project/tcp"
+	"time"
 )
 
 const N_FLOORS int = 4
 
 func main() {
 
-	livingIPs := make(chan []string)
+	fmt.Println("Booting elevator") // just to know we're running
 
-	go udp.BroadcastLife()
-	go udp.LookForLife(livingIPs)
+	var elevator = elevData.InitElevator(N_FLOORS)
 
-	var masterList elevData.MasterList
+	go tcp.Config_Roles(&elevator)
 
-	elevator := elevData.InitElevator(N_FLOORS)
+	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	masterList.Elevators = append(masterList.Elevators, elevator)
+	myStatus := make(chan elevData.ElevStatus) // need these for testing
+	myDirection := make(chan elevio.MotorDirection)
+	myDoor := make(chan bool)
 
-	bytes, err := json.Marshal(masterList)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(bytes))
+	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
 
-	for a := range livingIPs {
-		fmt.Println("Living IPs: ", a)
+	ticker := time.NewTicker(10 * time.Second)
+
+	for {
+		select {
+		case newStatus := <-myStatus:
+			fmt.Println("New status: ", newStatus)
+			elevator.Status = newStatus
+
+			//Turns data into string
+			byteStream, err := json.Marshal(elevator.Status)
+			if err != nil {
+				panic(err)
+			}
+			message := string(byteStream)
+
+			//Sends message to server
+			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
+				err = tcp.SendMessage(tcp.ServerConnection, message)
+				if err != nil {
+					fmt.Printf("Error sending elevator data: %s\n", err)
+				}
+			} else if elevator.Role == elevData.Master {
+				// TODO: logic for master status update
+				continue
+			}
+
+		case <-ticker.C:
+			fmt.Println("Active ips: ",tcp.ActiveIPs)
+			// 	byteStream, err := json.Marshal(elevator)
+			// 	if err != nil {
+			// 		panic(err)
+			// 	}
+
+			// 	fmt.Println(string(byteStream))
+		}
 	}
 }
