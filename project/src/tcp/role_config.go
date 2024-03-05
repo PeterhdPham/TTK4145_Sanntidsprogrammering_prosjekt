@@ -89,7 +89,7 @@ func updateRole(pointerElevator *elevData.Elevator) {
 	} else if MyIP != lowestIP && serverListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer()                              // Stop the server
+		shutdownServer()                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
@@ -150,7 +150,7 @@ func startServer() {
 			msg = strings.TrimSpace(msg) // Remove newline character
 
 			// Broadcast the message to all connected clients
-			broadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
+			BroadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
 			if connected {
 				break
 			}
@@ -198,7 +198,7 @@ func closeAllClientConnections() {
 }
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func broadcastMessage(message string, origin net.Conn) {
+func BroadcastMessage(message string, origin net.Conn) {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
