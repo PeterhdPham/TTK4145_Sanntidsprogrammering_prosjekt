@@ -101,7 +101,7 @@ func requestsHere(status elevData.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func setAllLights(orders [][]bool) {
+func SetAllLights(orders [][]bool) {
 	for floor := 0; floor < N_FLOORS; floor++ {
 		for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
 			elevio.SetButtonLamp(btn, floor, orders[floor][btn])

@@ -45,7 +45,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 
 			timerStart(doorOpenDuration)
 
-			setAllLights(orders)
+			SetAllLights(orders)
 			FSM_State = DoorOpen
 		}
 	default:
@@ -59,7 +59,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	if button == elevio.BT_Cab {
 		for elevator := range master.Elevators {
 			if master.Elevators[elevator].Ip == fromIP {
-				master.Elevators[elevator].Orders[floor][elevio.BT_Cab] = true
+				master.Elevators[elevator].Orders[floor][int(elevio.BT_Cab)] = true
 			}
 		}
 	} else {
@@ -71,7 +71,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	}
 	jsonToSend, err := json.Marshal(master)
 	if err != nil {
-		print("Error marshalling master: ",err)
+		print("Error marshalling master: ", err)
 	}
 	tcp.BroadcastMessage(string(jsonToSend), nil)
 }
@@ -111,7 +111,7 @@ func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (
 		case DoorOpen:
 			timerStart(doorOpenDuration)
 			status, orders = requestClearAtFloor(status, orders, floor)
-			setAllLights(orders)
+			SetAllLights(orders)
 		case Moving, Idle:
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))

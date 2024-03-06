@@ -60,17 +60,24 @@ func main() {
 				}
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
+
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
-				fmt.Println(masterElevator)
+				jsonToPrint, err := json.Marshal(masterElevator)
+				if err != nil {
+					print("Error marshalling master: ", err)
+				}
+				fmt.Println(string(jsonToPrint))
 				fmt.Println("Master status update")
 				continue
 			}
 		case newOrders := <-myOrders:
-			fmt.Println("New orders: ", newOrders)
+			// fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
+			elevalgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
-			fmt.Println("Active ips: ", tcp.ActiveIPs)
+			// fmt.Println("Active ips: ", tcp.ActiveIPs)
+			continue
 		}
 	}
 }
