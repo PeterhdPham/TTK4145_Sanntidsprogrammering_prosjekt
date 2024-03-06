@@ -14,6 +14,7 @@ const N_FLOORS int = 4
 
 var elevator elevData.Elevator
 var masterElevator elevData.MasterList
+var MyIP string
 
 func main() {
 
@@ -27,6 +28,8 @@ func main() {
 	go elevData.InitOrdersChan(myOrders, N_FLOORS)
 
 	go tcp.Config_Roles(&elevator)
+
+	MyIP, _ = tcp.GetPrimaryIP()
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
@@ -55,14 +58,13 @@ func main() {
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
 				}
+			} else if elevator.Role == elevData.Master {
+				// TODO: logic for master status update
+				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
+				fmt.Println(masterElevator)
+				fmt.Println("Master status update")
+				continue
 			}
-			// else if elevator.Role == elevData.Master {
-			// 	// TODO: logic for master status update
-			// 	masterElevator.Elevators[0] = elevator //Temp: ONE ELEVATOR
-			// 	// UpdateMasterList(&masterElevator, elevator.Status, tcp.MyIP)
-			// 	fmt.Println("Master status update")
-			// 	continue
-			// }
 		case newOrders := <-myOrders:
 			fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
