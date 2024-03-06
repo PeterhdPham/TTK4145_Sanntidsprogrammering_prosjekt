@@ -71,17 +71,6 @@ func main() {
 			// elevator.Lights = newOrders
 		case <-ticker.C:
 			fmt.Println("Active ips: ", tcp.ActiveIPs)
-			masterByte, err := json.Marshal(masterElevator.Elevators[0])
-			if err != nil {
-				panic(err)
-			}
-			tcp.BroadcastMessage(string(masterByte), nil)
-			// 	byteStream, err := json.Marshal(elevator)
-			// 	if err != nil {
-			// 		panic(err)
-			// 	}
-
-			// 	fmt.Println(string(byteStream))
 		}
 	}
 }

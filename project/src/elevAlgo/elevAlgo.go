@@ -46,8 +46,8 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			if role == elevData.Master {
 				FSM_RequestFloor(masterList, a.Floor, int(a.Button), tcp.MyIP)
 			}
-			myStatus.Buttonfloor = int(a.Button)
-			myStatus.Buttontype = a.Floor
+			myStatus.Buttonfloor = a.Floor
+			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
 			fmt.Println(a)
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
