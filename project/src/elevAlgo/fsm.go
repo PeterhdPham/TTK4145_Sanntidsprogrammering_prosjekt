@@ -54,9 +54,9 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 	return status
 }
 
-func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string) {
-	bestElevIP := findBestElevIP(master)
-	if button == elevio.BT_Cab {
+func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string) (elevData.ElevStatus, [][]bool) {
+	bestElevIP := findBestElevIP(master, floor, button)
+	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {
 			if master.Elevators[elevator].Ip == fromIP {
 				master.Elevators[elevator].Orders[floor][int(elevio.BT_Cab)] = true
@@ -74,9 +74,30 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		print("Error marshalling master: ", err)
 	}
 	tcp.BroadcastMessage(string(jsonToSend), nil)
+
+	//Check orders and starts moving
+
+	var status elevData.ElevStatus
+	var orders [][]bool
+	for _, e := range master.Elevators {
+		if e.Ip == fromIP {
+			status = e.Status
+			orders = e.Orders
+		}
+	}
+	if FSM_State == Idle {
+		FSM_State = Moving
+		pair := requestsChooseDirection(status, orders)
+		status.Direction = int(pair.Dirn)
+		elevio.SetMotorDirection(pair.Dirn)
+		FSM_State = pair.Behaviour
+		fmt.Println("Direction and behaviors: ", pair)
+	}
+
+	return status, orders
 }
 
-func findBestElevIP(master *elevData.MasterList) string {
+func findBestElevIP(master *elevData.MasterList, floor int, button int) string {
 	numRequests := make(map[string]int, len(master.Elevators))
 	for _, elevator := range master.Elevators {
 		for _, floor := range elevator.Orders {
@@ -106,6 +127,8 @@ func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		FSM_State = pair.Behaviour
+
+		fmt.Println("Direction and behaviors FSM Door Open: ", pair)
 
 		switch FSM_State {
 		case DoorOpen:

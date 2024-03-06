@@ -61,6 +61,7 @@ func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor 
 		myOrders[floor][1] = false
 
 	case 0:
+		print("Looping...")
 		fallthrough
 	default:
 		myOrders[floor][0] = false
@@ -95,6 +96,7 @@ func requestsBelow(status elevData.ElevStatus, orders [][]bool, floor int) bool 
 func requestsHere(status elevData.ElevStatus, orders [][]bool) bool {
 	for btn := 0; btn < N_BUTTONS; btn++ {
 		if orders[status.Floor][btn] {
+			fmt.Println("Request btn: ", btn)
 			return true
 		}
 	}
