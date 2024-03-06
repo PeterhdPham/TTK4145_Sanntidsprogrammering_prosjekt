@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -110,7 +111,27 @@ func getLivingIPs(m map[string]time.Time) []string {
 		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
-		sort.Strings(livingIPs)
 	}
+	livingIPs = ipSorter(livingIPs)
 	return livingIPs
+}
+
+func ipSorter(ipStrings []string) []string {
+	ipMap := make(map[string]int)
+	var ipStringsNew []string
+	var ipIntsNew []int
+	for _, ipStr := range ipStrings {
+		ipInt, _ := strconv.Atoi(strings.Replace(ipStr, ".", "", -1))
+		ipMap[ipStr] = ipInt
+		ipIntsNew = append(ipIntsNew, ipInt)
+	}
+	sort.Ints(ipIntsNew)
+	for _, ipInt := range ipIntsNew {
+		for ipStr, ipInt2 := range ipMap {
+			if ipInt == ipInt2 {
+				ipStringsNew = append(ipStringsNew, ipStr)
+			}
+		}
+	}
+	return ipStringsNew
 }
