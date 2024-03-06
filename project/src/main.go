@@ -76,7 +76,7 @@ func main() {
 			elevalgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
-			// fmt.Println("Active ips: ", tcp.ActiveIPs)
+			fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
 	}

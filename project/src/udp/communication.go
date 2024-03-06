@@ -117,7 +117,6 @@ func getLivingIPs(m map[string]time.Time) []string {
 }
 
 func ipSorter(ipStrings []string) []string {
-	fmt.Print("Printing")
 	ipMap := make(map[string]int)
 	var ipStringsNew []string
 	var ipIntsNew []int
