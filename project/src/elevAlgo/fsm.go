@@ -45,7 +45,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 
 			timerStart(doorOpenDuration)
 
-			setAllLights(orders)
+			SetAllLights(orders)
 			FSM_State = DoorOpen
 		}
 	default:
@@ -111,7 +111,7 @@ func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (
 		case DoorOpen:
 			timerStart(doorOpenDuration)
 			status, orders = requestClearAtFloor(status, orders, floor)
-			setAllLights(orders)
+			SetAllLights(orders)
 		case Moving, Idle:
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))

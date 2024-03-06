@@ -62,7 +62,6 @@ func main() {
 				// TODO: logic for master status update
 
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
-				elevalgo.UpdateLights(masterElevator, MyIP)
 				jsonToPrint, err := json.Marshal(masterElevator)
 				if err != nil {
 					print("Error marshalling master: ", err)
@@ -74,6 +73,7 @@ func main() {
 		case newOrders := <-myOrders:
 			// fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
+			elevalgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)

@@ -101,15 +101,7 @@ func requestsHere(status elevData.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func UpdateLights(master elevData.MasterList, ip string) {
-	for _, e := range master.Elevators {
-		if e.Ip == ip {
-			setAllLights(e.Orders)
-		}
-	}
-}
-
-func setAllLights(orders [][]bool) {
+func SetAllLights(orders [][]bool) {
 	for floor := 0; floor < N_FLOORS; floor++ {
 		for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
 			elevio.SetButtonLamp(btn, floor, orders[floor][btn])
