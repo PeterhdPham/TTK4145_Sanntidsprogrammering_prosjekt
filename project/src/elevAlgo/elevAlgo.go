@@ -10,11 +10,13 @@ import (
 
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
+var MyIP string
 
 func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
 	var myStatus elevData.ElevStatus
 	myOrders := init_order
 	N_FLOORS = N_Floors
+	MyIP, _ = tcp.GetPrimaryIP()
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -44,7 +46,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvButtons:
 			fmt.Println(a)
 			if role == elevData.Master {
-				FSM_RequestFloor(masterList, a.Floor, int(a.Button), tcp.MyIP)
+				FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
