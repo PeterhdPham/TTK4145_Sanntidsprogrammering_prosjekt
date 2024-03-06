@@ -2,8 +2,10 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
+	"encoding/json"
 	"fmt"
 	"project/elevData"
+	"project/tcp"
 )
 
 var FSM_State string
@@ -52,8 +54,48 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 	return status
 }
 
-func FSM_RequestFloor(master *elevData.MasterList, floor int, button int) {
+func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string) {
+	bestElevIP := findBestElevIP(master, floor, button)
+	if button == elevio.BT_Cab {
+		for elevator := range master.Elevators {
+			if master.Elevators[elevator].Ip == fromIP {
+				master.Elevators[elevator].Orders[floor][elevio.BT_Cab] = true
+			}
+		}
+	} else {
+		for elevator := range master.Elevators {
+			if master.Elevators[elevator].Ip == bestElevIP {
+				master.Elevators[elevator].Orders[floor][button] = true
+			}
+		}
+	}
+	jsonToSend, err := json.Marshal(master)
+	if err != nil {
+		print("Error marshalling master: ",err)
+	}
+	tcp.BroadcastMessage(string(jsonToSend), nil)
+}
 
+func findBestElevIP(master *elevData.MasterList, floor int, button int) string {
+	numRequests := make(map[string]int, len(master.Elevators))
+	for _, elevator := range master.Elevators {
+		for _, floor := range elevator.Orders {
+			for _, requested := range floor {
+				if requested {
+					numRequests[elevator.Ip]++
+				}
+			}
+		}
+	}
+	var bestElevIP string = master.Elevators[0].Ip
+	var bestElevVal int = 1e10
+	for ip, value := range numRequests {
+		if value > bestElevVal {
+			bestElevVal = value
+			bestElevIP = ip
+		}
+	}
+	return bestElevIP
 }
 
 func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {

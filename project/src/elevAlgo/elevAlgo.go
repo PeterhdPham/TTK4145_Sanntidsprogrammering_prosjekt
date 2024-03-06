@@ -4,6 +4,7 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
+	"project/tcp"
 	"time"
 )
 
@@ -43,7 +44,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvButtons:
 			fmt.Println(a)
 			if role == elevData.Master {
-				FSM_RequestFloor(masterList, a.Floor, int(a.Button))
+				FSM_RequestFloor(masterList, a.Floor, int(a.Button), tcp.MyIP)
 			}
 			myStatus.Buttonfloor = int(a.Button)
 			myStatus.Buttontype = a.Floor
