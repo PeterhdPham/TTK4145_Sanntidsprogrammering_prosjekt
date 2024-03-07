@@ -17,7 +17,7 @@ var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
 
-func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
+func connectToServer(serverIP string, pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
@@ -58,15 +58,17 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 			message := string(buffer[:n])
 			fmt.Printf("Message from server: %s\n", message)
 
-			var masterList elevData.MasterList
-
-			err = json.Unmarshal(buffer, &masterList)
+			// Overwrite masterElevator with the data from buffer
+			fmt.Println("Old masterElevator:", masterElevator)
+			err = json.Unmarshal(buffer[:n], &masterElevator)
 			if err != nil {
 				fmt.Printf("Error occurred during unmarshaling: %v", err)
 			}
+			fmt.Println("New masterElevator:", masterElevator)
 			
 		}
 	}()
+	
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()

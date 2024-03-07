@@ -24,7 +24,7 @@ var (
 	MyIP           string                        //IP address for current computer
 )
 
-func Config_Roles(pointerElevator *elevData.Elevator) {
+func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	//Go routines for finding active IPs
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
@@ -42,11 +42,11 @@ func Config_Roles(pointerElevator *elevData.Elevator) {
 			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
-			updateRole(pointerElevator)
+			updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
-func updateRole(pointerElevator *elevData.Elevator) {
+func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
@@ -89,13 +89,13 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                       // Stop the server
-		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
+		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(lowestIP+":55555", pointerElevator)
+			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = elevData.Slave
 		}
 	}

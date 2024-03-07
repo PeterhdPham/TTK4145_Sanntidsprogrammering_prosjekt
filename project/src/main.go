@@ -11,14 +11,18 @@ import (
 
 const N_FLOORS int = 4
 
+var elevator elevData.Elevator
+var masterElevator elevData.MasterList
+var MyIP string
 
 func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
 
-	var elevator = elevData.InitElevator(N_FLOORS)
+	elevator = elevData.InitElevator(N_FLOORS)
+	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
-	go tcp.Config_Roles(&elevator)
+	go tcp.Config_Roles(&elevator, &masterElevator) // start the role config (master/slave)
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
@@ -53,9 +57,9 @@ func main() {
 				// TODO: logic for master status update
 				continue
 			}
-		
+
 		case <-ticker.C:
-			fmt.Println("Active ips: ",tcp.ActiveIPs)
+			fmt.Println("Active ips: ", tcp.ActiveIPs)
 			// 	byteStream, err := json.Marshal(elevator)
 			// 	if err != nil {
 			// 		panic(err)
