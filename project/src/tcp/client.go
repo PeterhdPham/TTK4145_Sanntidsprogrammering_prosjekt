@@ -17,6 +17,7 @@ var ServerConnection net.Conn
 var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
+var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 
@@ -75,6 +76,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			if err != nil {
 				fmt.Printf("Error occurred during unmarshaling: %v", err)
 			}
+
 			fmt.Println("New masterElevator:", masterElevator)
 			// Serialize masterElevator to JSON
 			jsonData, err := json.Marshal(masterElevator)
@@ -89,6 +91,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				fmt.Printf("Error sending updated masterElevator: %v", err)
 			}
 
+			UpdateLocal = true
 		}
 	}()
 

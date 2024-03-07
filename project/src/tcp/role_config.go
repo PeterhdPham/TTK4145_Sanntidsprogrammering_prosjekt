@@ -208,7 +208,7 @@ func closeAllClientConnections() {
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, message []byte) error {
-	fmt.Println("Server sending message: ", string(message))
+	// fmt.Println("Server sending message: ", string(message))
 	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
 	if !bytes.HasSuffix(message, []byte("\n")) {
 		message = append(message, '\n')
@@ -281,10 +281,21 @@ func CompareMasterLists(list1, list2 []byte) bool {
 
 } // Handles individual client connections.
 func handleConnection(conn net.Conn) {
-	clientMutex.Lock()
-	clientConnections[conn] = true
-	clientMutex.Unlock()
-
+	addNew := true
+	for c, _ := range clientConnections {
+		if strings.Split(conn.RemoteAddr().String(), ":")[0] == strings.Split(c.RemoteAddr().String(), ":")[0] {
+			addNew = false
+			clientMutex.Lock()
+			delete(clientConnections, c)
+			clientMutex.Unlock()
+			break
+		}
+	}
+	if addNew {
+		clientMutex.Lock()
+		clientConnections[conn] = true
+		clientMutex.Unlock()
+	}
 	defer func() {
 		conn.Close()
 		clientMutex.Lock()

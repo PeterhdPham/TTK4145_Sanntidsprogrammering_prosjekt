@@ -79,6 +79,5 @@ func main() {
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
-
 	}
 }

@@ -67,6 +67,11 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 
 		}
+		if tcp.UpdateLocal {
+			tcp.UpdateLocal = false
+			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
+		}
+
 		elevStatus <- myStatus
 		orders <- myOrders
 	}
