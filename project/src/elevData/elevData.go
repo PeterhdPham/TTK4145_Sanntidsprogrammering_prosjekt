@@ -9,11 +9,12 @@ type MasterList struct {
 }
 
 type Elevator struct {
-	Ip     string                   `json:"ip"`
-	Status ElevStatus               `json:"status"`
-	Lights light_status.LightStatus `json:"lights"`
-	Orders [][]bool                 `json:"orders"`
-	Role   ElevatorRole             `json:"role"`
+	Ip       string                   `json:"ip"`
+	IsOnline bool                     `json:"online"`
+	Status   ElevStatus               `json:"status"`
+	Lights   light_status.LightStatus `json:"lights"`
+	Orders   [][]bool                 `json:"orders"`
+	Role     ElevatorRole             `json:"role"`
 }
 
 type ElevStatus struct {

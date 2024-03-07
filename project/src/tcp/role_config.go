@@ -21,7 +21,6 @@ var (
 	ActiveIPs      []string                      //List of active IPs
 	connected      bool                  = false //Client connection state
 	ServerIP       string                        //Server IP
-	lowestIP       string                        //Lowest IP
 	MyIP           string                        //IP address for current computer
 )
 
