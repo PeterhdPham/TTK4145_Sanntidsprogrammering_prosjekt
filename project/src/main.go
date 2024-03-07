@@ -11,6 +11,7 @@ import (
 
 const N_FLOORS int = 4
 
+
 func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
