@@ -39,10 +39,6 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 
 	for {
 		select {
-		// case NewElevator := <-:
-		// 	elevStatus = NewElevator
-		// case NewOrders := <-o:
-		// 	orders = NewOrders
 		case a := <-drvButtons:
 			fmt.Println(a)
 			if role == elevData.Master {
@@ -54,7 +50,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			fmt.Println(a)
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
-			fmt.Printf("%+v\n", a)
+			fmt.Printf("Obstruction: %+v\n", a)
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 			}
@@ -67,13 +63,20 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 
 		case a := <-drvStop:
-			fmt.Printf("%+v\n", a)
+			fmt.Printf("Stop: %+v\n", a)
 			// TODO: Clear all orders and lights from elevator
 
 		case <-timerChannel:
 			fmt.Println("Timer timed out")
 			timerStop()
-			myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
+			if myStatus.Obstructed {
+				fmt.Println("obstructed door")
+				timerStart(doorOpenDuration)
+				// FSM_State = DoorOpen
+			} else {
+				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
+			}
+
 		}
 		elevStatus <- myStatus
 		orders <- myOrders
