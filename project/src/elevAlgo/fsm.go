@@ -55,7 +55,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 }
 
 func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string) (elevData.ElevStatus, [][]bool) {
-	bestElevIP := findBestElevIP(master, floor, button)
+	bestElevIP := findBestElevIP(master)
 	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {
 			if master.Elevators[elevator].Ip == fromIP {
@@ -97,7 +97,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	return status, orders
 }
 
-func findBestElevIP(master *elevData.MasterList, floor int, button int) string {
+func findBestElevIP(master *elevData.MasterList) string {
 	numRequests := make(map[string]int, len(master.Elevators))
 	for _, elevator := range master.Elevators {
 		for _, floor := range elevator.Orders {
