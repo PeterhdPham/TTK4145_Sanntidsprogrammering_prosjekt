@@ -3,7 +3,6 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"encoding/json"
-	"project/light_status"
 	// "fmt"
 )
 
@@ -12,10 +11,9 @@ type MasterList struct {
 }
 
 type Elevator struct {
-	Status ElevStatus               `json:"status"`
-	Lights light_status.LightStatus `json:"lights"`
-	Orders []int                    `json:"orders"`
-	Role   ElevatorRole             `json:"role"`
+	Status ElevStatus   `json:"status"`
+	Orders []int        `json:"orders"`
+	Role   ElevatorRole `json:"role"`
 }
 
 type ElevStatus struct {
@@ -30,14 +28,13 @@ type ElevStatus struct {
 type ElevatorRole int
 
 const (
-	Undefined ElevatorRole = -1	
+	Undefined ElevatorRole = -1
 	Master    ElevatorRole = 0
 	Slave     ElevatorRole = 1
 )
 
 func InitElevator(NumberOfFloors int) Elevator {
 	var elevator Elevator
-	elevator.Lights = light_status.InitLights(NumberOfFloors)
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	return elevator
