@@ -30,13 +30,14 @@ func requestShouldStop(status elevData.ElevStatus, orders [][]bool, floor int) b
 		fmt.Println("No orders found")
 		return true
 	}
+	fmt.Println(status.Direction)
 	switch status.Direction {
-	case -1:
-		if orders[floor][1] || orders[floor][2] {
+	case elevio.MD_Down:
+		if orders[floor][1] || orders[floor][2] || !requestsBelow(status, orders, floor) {
 			return true
 		}
-	case 1:
-		if orders[floor][0] || orders[floor][2] {
+	case int(elevio.MD_Up):
+		if orders[floor][0] || orders[floor][2] || !requestsAbove(status, orders, floor) {
 			return true
 		}
 	}
@@ -45,8 +46,6 @@ func requestShouldStop(status elevData.ElevStatus, orders [][]bool, floor int) b
 }
 
 func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {
-	fmt.Println("Request Clear")
-
 	switch myStatus.Direction {
 	case 1:
 		if !requestsAbove(myStatus, myOrders, floor) && !myOrders[floor][0] {
@@ -59,10 +58,6 @@ func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor 
 			myOrders[floor][0] = false
 		}
 		myOrders[floor][1] = false
-
-	case 0:
-		print("Looping...")
-		fallthrough
 	default:
 		myOrders[floor][0] = false
 		myOrders[floor][1] = false
