@@ -35,8 +35,3 @@ func timerStop() {
 	default:
 	}
 }
-
-// timerTimedOut checks if the timer has timed out.
-func timerTimedOut() bool {
-	return timerActive && time.Now().After(timerEndTime)
-}
