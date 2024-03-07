@@ -71,16 +71,15 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				fmt.Printf("Error occurred during marshaling: %v", err)
 				return
 			}
-		
+
 			// Send jsonData back to the primary
 			err = SendMessage(ServerConnection, jsonData)
 			if err != nil {
 				fmt.Printf("Error sending updated masterElevator: %v", err)
 			}
-			
+
 		}
 	}()
-	
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -107,7 +106,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 }
 
 func SendMessage(conn net.Conn, message []byte) error {
-	fmt.Println("Sending message: ", string(message))
+	fmt.Println("Client sending message: ", string(message))
 	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
 	if !bytes.HasSuffix(message, []byte("\n")) {
 		message = append(message, '\n')
