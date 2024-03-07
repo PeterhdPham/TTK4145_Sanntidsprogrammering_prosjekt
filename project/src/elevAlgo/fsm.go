@@ -38,15 +38,14 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 			//Opens elevator door and updates status accordingly
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
+			timerStart(doorOpenDuration)
+			FSM_State = DoorOpen
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
 
-			timerStart(doorOpenDuration)
-
+			//Sets the lights according to the current orders
 			SetAllLights(orders)
-			FSM_State = DoorOpen
-			fmt.Println("State: Open")
 		}
 	default:
 		break
@@ -85,6 +84,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 			orders = e.Orders
 		}
 	}
+	fmt.Println("State:", FSM_State)
 	if FSM_State == Idle {
 		FSM_State = Moving
 		pair := requestsChooseDirection(status, orders)
@@ -92,7 +92,12 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		elevio.SetMotorDirection(pair.Dirn)
 		FSM_State = pair.Behaviour
 		fmt.Println("Direction and behaviors: ", pair)
-		requestClearAtFloor(status, orders, floor)
+		if(pair.Behaviour == DoorOpen){
+			elevio.SetDoorOpenLamp(true)
+			status.Doors = true
+			timerStart(doorOpenDuration)
+			FSM_State = DoorOpen
+		}
 	}
 
 	return status, orders
