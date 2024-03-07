@@ -92,6 +92,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		elevio.SetMotorDirection(pair.Dirn)
 		FSM_State = pair.Behaviour
 		fmt.Println("Direction and behaviors: ", pair)
+		requestClearAtFloor(status, orders, floor)
 	}
 
 	return status, orders
