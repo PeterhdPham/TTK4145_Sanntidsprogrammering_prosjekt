@@ -34,11 +34,10 @@ func BroadcastLife() {
 
 	for range ticker.C {
 		// Construct the message with timestamp and sender's IP
-		message := "Hello" // Simplified message for demonstration
+		message := "Please give us an A on the project:)" // Simplified message for demonstration
 		_, err := conn.Write([]byte(message))
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println("Error sending udp-message: ", err)
 		}
 	}
 }
@@ -58,13 +57,11 @@ func LookForLife(livingIPsChan chan<- []string) {
 	// Create a buffer to store received messages.
 	buffer := make([]byte, 2048)
 
-	fmt.Printf("Listening for UDP packets on %s...\n", PORT)
 	for {
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {
 			fmt.Println("Failed to set a deadline for the read operation:", err)
-			os.Exit(1)
 		}
 
 		// Read from the UDP socket.
@@ -72,7 +69,6 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 		if err != nil {
 			if os.IsTimeout(err) {
-				fmt.Println("Read timeout: No messages received for 5 seconds\nAll other nodes assumed dead")
 				IPLifetimes = updateLivingIPs(IPLifetimes, addr)
 				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue

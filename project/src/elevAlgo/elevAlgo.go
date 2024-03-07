@@ -21,18 +21,15 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
 	drvObstr := make(chan bool)
-	drvStop := make(chan bool)
 
 	go elevio.PollButtons(drvButtons)
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollObstructionSwitch(drvObstr)
-	go elevio.PollStopButton(drvStop)
 
 	// Moves the elevator down if in between floors
-	fmt.Printf("Current floor %d\n", elevio.GetFloor())
+
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
-		fmt.Println("In between")
 	} else {
 		FSM_State = Idle
 	}
@@ -42,7 +39,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvButtons:
 			fmt.Println(a)
 			if role == elevData.Master {
-				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP)
+				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
@@ -50,7 +47,6 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			fmt.Println(a)
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
-			fmt.Printf("Obstruction: %+v\n", a)
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 			}
@@ -62,17 +58,10 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 				myStatus.Obstructed = false
 			}
 
-		case a := <-drvStop:
-			fmt.Printf("Stop: %+v\n", a)
-			// TODO: Clear all orders and lights from elevator
-
 		case <-timerChannel:
-			fmt.Println("Timer timed out")
 			timerStop()
 			if myStatus.Obstructed {
-				fmt.Println("obstructed door")
 				timerStart(doorOpenDuration)
-				// FSM_State = DoorOpen
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}

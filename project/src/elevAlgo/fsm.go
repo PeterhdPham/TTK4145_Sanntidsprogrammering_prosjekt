@@ -2,10 +2,7 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"encoding/json"
-	"fmt"
 	"project/elevData"
-	"project/tcp"
 )
 
 var FSM_State string
@@ -53,46 +50,31 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 	return status
 }
 
-func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string) (elevData.ElevStatus, [][]bool) {
-	bestElevIP := findBestElevIP(master)
-	if button == int(elevio.BT_Cab) {
-		for elevator := range master.Elevators {
-			if master.Elevators[elevator].Ip == fromIP {
-				master.Elevators[elevator].Orders[floor][int(elevio.BT_Cab)] = true
-			}
-		}
-	} else {
-		for elevator := range master.Elevators {
-			if master.Elevators[elevator].Ip == bestElevIP {
-				master.Elevators[elevator].Orders[floor][button] = true
-			}
-		}
+func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP string, myRole elevData.ElevatorRole) (elevData.ElevStatus, [][]bool) {
+
+	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
+	if myRole == elevData.Master {
+		findAndAssign(master, floor, button, fromIP)
 	}
-	jsonToSend, err := json.Marshal(master)
-	if err != nil {
-		print("Error marshalling master: ", err)
-	}
-	tcp.BroadcastMessage(string(jsonToSend), nil)
 
 	//Check orders and starts moving
 
 	var status elevData.ElevStatus
 	var orders [][]bool
 	for _, e := range master.Elevators {
-		if e.Ip == fromIP {
+		if e.Ip == MyIP {
 			status = e.Status
 			orders = e.Orders
 		}
 	}
-	fmt.Println("State:", FSM_State)
+
 	if FSM_State == Idle {
 		FSM_State = Moving
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
 		FSM_State = pair.Behaviour
-		fmt.Println("Direction and behaviors: ", pair)
-		if(pair.Behaviour == DoorOpen){
+		if pair.Behaviour == DoorOpen {
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
@@ -103,38 +85,13 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	return status, orders
 }
 
-func findBestElevIP(master *elevData.MasterList) string {
-	numRequests := make(map[string]int, len(master.Elevators))
-	for _, elevator := range master.Elevators {
-		for _, floor := range elevator.Orders {
-			for _, requested := range floor {
-				if requested {
-					numRequests[elevator.Ip]++
-				}
-			}
-		}
-	}
-	var bestElevIP string = master.Elevators[0].Ip
-	var bestElevVal int = 1e10
-	for ip, value := range numRequests {
-		if value > bestElevVal {
-			bestElevVal = value
-			bestElevIP = ip
-		}
-	}
-	return bestElevIP
-}
-
 func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {
-	fmt.Printf("\n\n%s()\n", "FSM_OnDoorTimeout")
 
 	switch FSM_State {
 	case DoorOpen:
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		FSM_State = pair.Behaviour
-
-		fmt.Println("Direction and behaviors FSM Door Open: ", pair)
 
 		switch FSM_State {
 		case DoorOpen:
