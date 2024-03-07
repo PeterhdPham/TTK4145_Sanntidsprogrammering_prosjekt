@@ -65,6 +65,18 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				fmt.Printf("Error occurred during unmarshaling: %v", err)
 			}
 			fmt.Println("New masterElevator:", masterElevator)
+			// Serialize masterElevator to JSON
+			jsonData, err := json.Marshal(masterElevator)
+			if err != nil {
+				fmt.Printf("Error occurred during marshaling: %v", err)
+				return
+			}
+		
+			// Send jsonData back to the primary
+			err = SendMessage(ServerConnection, jsonData)
+			if err != nil {
+				fmt.Printf("Error sending updated masterElevator: %v", err)
+			}
 			
 		}
 	}()

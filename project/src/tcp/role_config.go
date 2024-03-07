@@ -1,12 +1,13 @@
 package tcp
 
 import (
-	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"project/elevData"
 	"project/udp"
 	"sort"
@@ -16,12 +17,13 @@ import (
 )
 
 var (
-	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs      []string                      //List of active IPs
-	connected      bool                  = false //Client connection state
-	ServerIP       string                        //Server IP
-	MyIP           string                        //IP address for current computer
+	LivingIPsChan         = make(chan []string)         //Stores living IPs from the Look_for_life function
+	ActiveIPsMutex        sync.Mutex                    //Mutex for protecting active IPs
+	ActiveIPs             []string                      //List of active IPs
+	connected             bool                  = false //Client connection state
+	ServerIP              string                        //Server IP
+	MyIP                  string                        //IP address for current computer
+	ShouldServerReconnect bool                          //Flag to indicate if the server should reconnect
 )
 
 func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
@@ -83,12 +85,12 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 		shutdownServer()
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
-		go startServer() // Ensure server starts in a non-blocking manner
+		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = elevData.Master
 	} else if MyIP != lowestIP && serverListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer()                                       // Stop the server
+		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
@@ -110,7 +112,7 @@ var (
 	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
-func startServer() {
+func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
 
@@ -142,14 +144,14 @@ func startServer() {
 
 	// Goroutine for server admin to broadcast messages to all clients
 	go func() {
-		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Print("Enter message to broadcast: ")
-			msg, _ := reader.ReadString('\n')
-			msg = strings.TrimSpace(msg) // Remove newline character
-
+			jsonData, err := json.Marshal(masterElevator)
+			if err != nil {
+				fmt.Printf("Error occurred during marshaling: %v", err)
+				return
+			}
 			// Broadcast the message to all connected clients
-			BroadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
+			BroadcastMessage(ServerConnection, []byte(jsonData)) // Passing nil as the origin since this message is from the server
 			if connected {
 				break
 			}
@@ -197,7 +199,13 @@ func closeAllClientConnections() {
 }
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(message string, origin net.Conn) {
+func BroadcastMessage(origin net.Conn, message []byte) error {
+	fmt.Println("Sending message: ", string(message))
+	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
+	if !bytes.HasSuffix(message, []byte("\n")) {
+		message = append(message, '\n')
+	}
+
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
@@ -206,15 +214,64 @@ func BroadcastMessage(message string, origin net.Conn) {
 		if origin != nil && conn == origin {
 			continue // Skip sending the message back to the origin client
 		}
-		_, err := conn.Write([]byte(message))
+
+		for {
+			_, err := conn.Write(message)
+			if err != nil {
+				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				if error_buffer == 0 {
+					fmt.Println("Too many consecutive errors, stopping...")
+					ShouldServerReconnect = true
+					return err // Stop if there are too many consecutive errors
+				} else {
+					error_buffer--
+				}
+			} else {
+				error_buffer = 3 // Reset the error buffer on successful send
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		// Read the response from the client
+		buffer := make([]byte, 1024)
+		_, err := conn.Read(buffer)
 		if err != nil {
-			fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-			// Handle failed send e.g., by removing the client connection if necessary
+			fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
+			return err
+		}
+
+		// Unmarshal the response into a MasterList
+		var responsemessage elevData.MasterList
+		err = json.Unmarshal(buffer, &responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
+			return err
+		}
+
+		// Convert responsemessage to []byte
+		responseBytes, err := json.Marshal(responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to marshal responsemessage: %s\n", err)
+			return err
+		}
+
+		// Compare the responseBytes with the message that was sent
+		if !CompareMasterLists(message, responseBytes) {
+			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
+			return errors.New("client did not receive the correct masterList")
 		}
 	}
+
+	ShouldServerReconnect = false
+	return nil
 }
 
-// Handles individual client connections.
+// Implement or adjust compareMasterLists to be compatible with the above modifications
+func CompareMasterLists(list1, list2 []byte) bool {
+	return bytes.Equal(list1, list2)
+
+} // Handles individual client connections.
 func handleConnection(conn net.Conn) {
 	clientMutex.Lock()
 	clientConnections[conn] = true
