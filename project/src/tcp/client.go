@@ -106,28 +106,33 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 }
 
 func SendMessage(conn net.Conn, message []byte) error {
-	fmt.Println("Client sending message: ", string(message))
-	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
-	if !bytes.HasSuffix(message, []byte("\n")) {
-		message = append(message, '\n')
-	}
-	for {
-		_, err := conn.Write(message)
-		if err != nil {
-			fmt.Printf("Error sending message: %s\n", err)
-			if error_buffer == 0 {
-				fmt.Println("Too many consecutive errors, stopping...")
-				ShouldReconnect = true
-				return err // Stop if there are too many consecutive errors
-			} else {
-				error_buffer--
-			}
-		} else {
-			error_buffer = 3 // Reset the error buffer on successful send
-			break
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		fmt.Println("Client sending message: ", string(message))
+		// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
+		if !bytes.HasSuffix(message, []byte("\n")) {
+			message = append(message, '\n')
 		}
-		time.Sleep(100 * time.Millisecond)
+		for {
+			_, err := conn.Write(message)
+			if err != nil {
+				fmt.Printf("Error sending message: %s\n", err)
+				if error_buffer == 0 {
+					fmt.Println("Too many consecutive errors, stopping...")
+					ShouldReconnect = true
+					return err // Stop if there are too many consecutive errors
+				} else {
+					error_buffer--
+				}
+			} else {
+				error_buffer = 3 // Reset the error buffer on successful send
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		ShouldReconnect = false
 	}
-	ShouldReconnect = false
 	return nil
 }
