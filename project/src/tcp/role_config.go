@@ -115,7 +115,11 @@ var (
 func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
-
+	MyIP, err := udp.GetPrimaryIP()
+	if err != nil {
+		fmt.Println("Error obtaining the primary IP:", err)
+		return
+	}
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
@@ -144,7 +148,15 @@ func startServer(masterElevator *elevData.MasterList) {
 
 	// Goroutine for server admin to broadcast messages to all clients
 	go func() {
-		for {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			// Check if the only active IP is the server itself
+			if len(ActiveIPs) == 1 && ActiveIPs[0] == MyIP {
+				continue // Skip broadcasting
+			}
+
 			jsonData, err := json.Marshal(masterElevator)
 			if err != nil {
 				fmt.Printf("Error occurred during marshaling: %v", err)
@@ -156,7 +168,6 @@ func startServer(masterElevator *elevData.MasterList) {
 				break
 			}
 		}
-
 	}()
 
 	// Accept new connections unless server shutdown is requested
@@ -200,76 +211,70 @@ func closeAllClientConnections() {
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, message []byte) error {
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		<-ticker.C
-		fmt.Println("Server sending message: ", string(message))
-		// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
-		if !bytes.HasSuffix(message, []byte("\n")) {
-			message = append(message, '\n')
-		}
-
-		clientMutex.Lock()
-		defer clientMutex.Unlock()
-
-		for conn := range clientConnections {
-			// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
-			if origin != nil && conn == origin {
-				continue // Skip sending the message back to the origin client
-			}
-
-			for {
-				_, err := conn.Write(message)
-				if err != nil {
-					fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-					if error_buffer == 0 {
-						fmt.Println("Too many consecutive errors, stopping...")
-						ShouldServerReconnect = true
-						return err // Stop if there are too many consecutive errors
-					} else {
-						error_buffer--
-					}
-				} else {
-					error_buffer = 3 // Reset the error buffer on successful send
-					break
-				}
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			// Read the response from the client
-			buffer := make([]byte, 1024)
-			_, err := conn.Read(buffer)
-			if err != nil {
-				fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
-				return err
-			}
-
-			// Unmarshal the response into a MasterList
-			var responsemessage elevData.MasterList
-			err = json.Unmarshal(buffer, &responsemessage)
-			if err != nil {
-				fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
-				return err
-			}
-
-			// Convert responsemessage to []byte
-			responseBytes, err := json.Marshal(responsemessage)
-			if err != nil {
-				fmt.Printf("Failed to marshal responsemessage: %s\n", err)
-				return err
-			}
-
-			// Compare the responseBytes with the message that was sent
-			if !CompareMasterLists(message, responseBytes) {
-				fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
-				return errors.New("client did not receive the correct masterList")
-			}
-		}
-
-		ShouldServerReconnect = false
+	fmt.Println("Server sending message: ", string(message))
+	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
+	if !bytes.HasSuffix(message, []byte("\n")) {
+		message = append(message, '\n')
 	}
+
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	for conn := range clientConnections {
+		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
+		if origin != nil && conn == origin {
+			continue // Skip sending the message back to the origin client
+		}
+
+		for {
+			_, err := conn.Write(message)
+			if err != nil {
+				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				if error_buffer == 0 {
+					fmt.Println("Too many consecutive errors, stopping...")
+					ShouldServerReconnect = true
+					return err // Stop if there are too many consecutive errors
+				} else {
+					error_buffer--
+				}
+			} else {
+				error_buffer = 3 // Reset the error buffer on successful send
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		// Read the response from the client
+		buffer := make([]byte, 1024)
+		_, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
+			return err
+		}
+
+		// Unmarshal the response into a MasterList
+		var responsemessage elevData.MasterList
+		err = json.Unmarshal(buffer, &responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
+			return err
+		}
+
+		// Convert responsemessage to []byte
+		responseBytes, err := json.Marshal(responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to marshal responsemessage: %s\n", err)
+			return err
+		}
+
+		// Compare the responseBytes with the message that was sent
+		if !CompareMasterLists(message, responseBytes) {
+			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
+			return errors.New("client did not receive the correct masterList")
+		}
+	}
+
+	ShouldServerReconnect = false
 	return nil
 }
 
