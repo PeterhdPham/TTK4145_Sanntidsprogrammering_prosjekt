@@ -33,18 +33,22 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 	ShouldReconnect = false
 
 	ticker := time.NewTicker(3 * time.Second)
-    defer ticker.Stop()
+	defer ticker.Stop()
 
-    for range ticker.C {
-        jsonData, err := json.Marshal(pointerElevator)
-        if err != nil {
-            fmt.Printf("Error occurred during marshaling: %v", err)
-            continue
-        }
+	for range ticker.C {
+		if !connected {
+			fmt.Println("Became server, stopping sending myself to server...")
+			break
+		}
+		jsonData, err := json.Marshal(pointerElevator)
+		if err != nil {
+			fmt.Printf("Error occurred during marshaling: %v", err)
+			continue
+		}
 
-        // Send jsonData using SendMessage
-        SendMessage(ServerConnection, []byte(jsonData))
-    }
+		// Send jsonData using SendMessage
+		SendMessage(ServerConnection, []byte(jsonData))
+	}
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
@@ -113,7 +117,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 }
 
 func SendMessage(conn net.Conn, message []byte) error {
-	fmt.Println("Client sending message: ", string(message))
+	// fmt.Println("Client sending message: ", string(message))
 	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
 	if !bytes.HasSuffix(message, []byte("\n")) {
 		message = append(message, '\n')
