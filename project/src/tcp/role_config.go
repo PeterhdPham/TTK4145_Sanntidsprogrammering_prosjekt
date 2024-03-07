@@ -10,7 +10,6 @@ import (
 	"net"
 	"project/elevData"
 	"project/udp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -58,8 +57,6 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 		pointerElevator.Role = elevData.Master
 		return
 	}
-
-	sort.Strings(ActiveIPs)
 
 	//Find the IP for the current computer
 	MyIP, err := udp.GetPrimaryIP()

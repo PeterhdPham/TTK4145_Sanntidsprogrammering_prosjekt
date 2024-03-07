@@ -1,9 +1,5 @@
 package elevData
 
-import (
-	"project/light_status"
-)
-
 type MasterList struct {
 	Elevators []Elevator `json:"elevators"`
 }
@@ -12,7 +8,6 @@ type Elevator struct {
 	Ip       string                   `json:"ip"`
 	IsOnline bool                     `json:"online"`
 	Status   ElevStatus               `json:"status"`
-	Lights   light_status.LightStatus `json:"lights"`
 	Orders   [][]bool                 `json:"orders"`
 	Role     ElevatorRole             `json:"role"`
 }

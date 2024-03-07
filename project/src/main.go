@@ -4,6 +4,7 @@ import (
 	"Driver-go/elevio"
 	"encoding/json"
 	"fmt"
+	elevalgo "project/elevAlgo"
 	"project/elevData"
 	"project/tcp"
 	"time"
@@ -22,22 +23,26 @@ func main() {
 	elevator = elevData.InitElevator(N_FLOORS)
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
-	go tcp.Config_Roles(&elevator, &masterElevator) // start the role config (master/slave)
+	myStatus := make(chan elevData.ElevStatus)
+	myOrders := make(chan [][]bool)
+	go elevData.InitOrdersChan(myOrders, N_FLOORS)
+
+	go tcp.Config_Roles(&elevator, &masterElevator)
+
+	MyIP, _ = tcp.GetPrimaryIP()
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	myStatus := make(chan elevData.ElevStatus) // need these for testing
-	myDirection := make(chan elevio.MotorDirection)
-	myDoor := make(chan bool)
-
-	go elevData.UpdateStatus(myStatus, myDirection, myDoor) // testing this
-
 	ticker := time.NewTicker(10 * time.Second)
+
+	time.Sleep(5 * time.Second)
+
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role, N_FLOORS)
 
 	for {
 		select {
 		case newStatus := <-myStatus:
-			fmt.Println("New status: ", newStatus)
+			// fmt.Println("New status: ", newStatus)
 			elevator.Status = newStatus
 
 			//Turns data into string
@@ -55,17 +60,24 @@ func main() {
 				}
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
+
+				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
+				// jsonToPrint, err := json.Marshal(masterElevator)
+				// if err != nil {
+				// 	print("Error marshalling master: ", err)
+				// }
+				// fmt.Println(string(jsonToPrint))
+				// fmt.Println("Master status update")
 				continue
 			}
-
+		case newOrders := <-myOrders:
+			// fmt.Println("New orders: ", newOrders)
+			elevator.Orders = newOrders
+			elevalgo.SetAllLights(elevator.Orders)
+			// elevator.Lights = newOrders
 		case <-ticker.C:
-			fmt.Println("Active ips: ", tcp.ActiveIPs)
-			// 	byteStream, err := json.Marshal(elevator)
-			// 	if err != nil {
-			// 		panic(err)
-			// 	}
-
-			// 	fmt.Println(string(byteStream))
+			// fmt.Println("Active ips: ", tcp.ActiveIPs)
+			continue
 		}
 
 	}
