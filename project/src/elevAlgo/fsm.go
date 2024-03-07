@@ -34,7 +34,6 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 		if requestShouldStop(status, orders, floor) {
 			//Stops elevator and updates status accordingly
 			elevio.SetMotorDirection(elevio.MD_Stop)
-			status.Direction = 0
 
 			//Opens elevator door and updates status accordingly
 			elevio.SetDoorOpenLamp(true)
@@ -47,6 +46,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 
 			SetAllLights(orders)
 			FSM_State = DoorOpen
+			fmt.Println("State: Open")
 		}
 	default:
 		break

@@ -42,7 +42,7 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
-			fmt.Println("New status: ", newStatus)
+			// fmt.Println("New status: ", newStatus)
 			elevator.Status = newStatus
 
 			//Turns data into string
@@ -62,12 +62,12 @@ func main() {
 				// TODO: logic for master status update
 
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
-				jsonToPrint, err := json.Marshal(masterElevator)
-				if err != nil {
-					print("Error marshalling master: ", err)
-				}
-				fmt.Println(string(jsonToPrint))
-				fmt.Println("Master status update")
+				// jsonToPrint, err := json.Marshal(masterElevator)
+				// if err != nil {
+				// 	print("Error marshalling master: ", err)
+				// }
+				// fmt.Println(string(jsonToPrint))
+				// fmt.Println("Master status update")
 				continue
 			}
 		case newOrders := <-myOrders:
@@ -76,7 +76,7 @@ func main() {
 			elevalgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
-			fmt.Println("Active ips: ", tcp.ActiveIPs)
+			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
 	}

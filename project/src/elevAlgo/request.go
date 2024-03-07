@@ -63,6 +63,8 @@ func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor 
 		myOrders[floor][1] = false
 	}
 
+	myOrders[floor][2] = false
+
 	return myStatus, myOrders
 }
 
