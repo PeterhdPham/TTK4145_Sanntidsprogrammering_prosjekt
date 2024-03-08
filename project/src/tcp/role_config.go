@@ -31,7 +31,7 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 	go udp.LookForLife(LivingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -39,11 +39,16 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
 			ActiveIPsMutex.Lock()
+			if slicesAreEqual(ActiveIPs, livingIPs) {
+				fmt.Println("Updating active IPs and roles")
+				ActiveIPs = livingIPs
+				updateRole(pointerElevator, masterElevator)
+			}
 			ActiveIPs = livingIPs
 			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
-			updateRole(pointerElevator, masterElevator)
+			// updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
@@ -239,6 +244,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
+			fmt.Printf("Sent message to client %s\n", conn.RemoteAddr())
 		}
 
 		// Read the response from the client
@@ -281,21 +287,21 @@ func CompareMasterLists(list1, list2 []byte) bool {
 
 } // Handles individual client connections.
 func handleConnection(conn net.Conn) {
-	addNew := true
-	for c, _ := range clientConnections {
-		if strings.Split(conn.RemoteAddr().String(), ":")[0] == strings.Split(c.RemoteAddr().String(), ":")[0] {
-			addNew = false
-			clientMutex.Lock()
-			delete(clientConnections, c)
-			clientMutex.Unlock()
-			break
-		}
-	}
-	if addNew {
-		clientMutex.Lock()
-		clientConnections[conn] = true
-		clientMutex.Unlock()
-	}
+	// addNew := true
+	// for c, _ := range clientConnections {
+	// 	if strings.Split(conn.RemoteAddr().String(), ":")[0] == strings.Split(c.RemoteAddr().String(), ":")[0] {
+	// 		addNew = false
+	// 		clientMutex.Lock()
+	// 		delete(clientConnections, c)
+	// 		clientMutex.Unlock()
+	// 		break
+	// 	}
+	// }
+	// if addNew {
+	clientMutex.Lock()
+	clientConnections[conn] = true
+	clientMutex.Unlock()
+	// }
 	defer func() {
 		conn.Close()
 		clientMutex.Lock()
@@ -342,4 +348,16 @@ func shutdownServer() {
 	// Finally, mark the server as not listening
 	serverListening = false
 	fmt.Println("Server has been shut down and all connections are closed.")
+}
+
+func slicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
