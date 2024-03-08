@@ -62,12 +62,12 @@ func main() {
 				// TODO: logic for master status update
 
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
-				// jsonToPrint, err := json.Marshal(masterElevator)
-				// if err != nil {
-				// 	print("Error marshalling master: ", err)
-				// }
-				// fmt.Println(string(jsonToPrint))
-				// fmt.Println("Master status update")
+				jsonToSend, err := json.Marshal(masterElevator)
+				if err != nil {
+					print("Error marshalling master: ", err)
+				}
+				tcp.BroadcastMessage(nil, jsonToSend)
+				fmt.Println("Master status update")
 				continue
 			}
 		case newOrders := <-myOrders:

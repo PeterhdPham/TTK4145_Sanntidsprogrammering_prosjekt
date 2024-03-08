@@ -25,7 +25,6 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollObstructionSwitch(drvObstr)
 
-
 	// Moves the elevator down if in between floors
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)

@@ -3,6 +3,8 @@ package tcp
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -221,6 +223,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
+			fmt.Println("Skipping connection")
 			continue // Skip sending the message back to the origin client
 		}
 
@@ -244,33 +247,35 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		}
 
 		// Read the response from the client
-		// buffer := make([]byte, 1024)
-		// _, err := conn.Read(buffer)
-		// if err != nil {
-		// 	fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
-		// 	return err
-		// }
+		buffer := make([]byte, 1024)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
+			return err
+		}
 
-		// // Unmarshal the response into a MasterList
-		// var responsemessage elevData.MasterList
-		// err = json.Unmarshal(buffer, &responsemessage)
-		// if err != nil {
-		// 	fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
-		// 	return err
-		// }
+		// Unmarshal the response into a MasterList
+		var responsemessage elevData.MasterList
+		err = json.Unmarshal(buffer[:n], &responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
+			return err
+		}
 
-		// // Convert responsemessage to []byte
-		// responseBytes, err := json.Marshal(responsemessage)
-		// if err != nil {
-		// 	fmt.Printf("Failed to marshal responsemessage: %s\n", err)
-		// 	return err
-		// }
+		// Convert responsemessage to []byte
+		responseBytes, err := json.Marshal(responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to marshal responsemessage: %s\n", err)
+			return err
+		}
 
-		// // Compare the responseBytes with the message that was sent
-		// if !CompareMasterLists(message, responseBytes) {
-		// 	fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
-		// 	return errors.New("client did not receive the correct masterList")
-		// }
+		// Compare the responseBytes with the message that was sent
+		if !CompareMasterLists(message, responseBytes) {
+			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
+			return errors.New("client did not receive the correct masterList")
+		}else{
+			fmt.Printf("Client %s received the correct masterList\n", conn.RemoteAddr())
+		}
 	}
 
 	ShouldServerReconnect = false
