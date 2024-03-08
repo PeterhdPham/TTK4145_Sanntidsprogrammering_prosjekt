@@ -2,11 +2,11 @@ package main
 
 import (
 	"Driver-go/elevio"
-	"encoding/json"
 	"fmt"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
 	"project/tcp"
+	"project/utility"
 	"time"
 )
 
@@ -46,15 +46,14 @@ func main() {
 			elevator.Status = newStatus
 
 			//Turns data into string
-			byteStream, err := json.Marshal(elevator.Status)
-			if err != nil {
-				panic(err)
-			}
+			byteStream := utility.MarshalJson(elevator.Status)
+
 			message := []byte(string(byteStream)) // Convert message to byte slice
 
 			//Sends message to server
+
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
-				err = tcp.SendMessage(tcp.ServerConnection, message)
+				err := tcp.SendMessage(tcp.ServerConnection, message) // Assign the error value to "err"
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
 				}
@@ -62,10 +61,7 @@ func main() {
 				// TODO: logic for master status update
 
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
-				jsonToSend, err := json.Marshal(masterElevator)
-				if err != nil {
-					print("Error marshalling master: ", err)
-				}
+				jsonToSend := utility.MarshalJson(masterElevator)
 				tcp.BroadcastMessage(nil, jsonToSend)
 				fmt.Println("Master status update")
 				continue

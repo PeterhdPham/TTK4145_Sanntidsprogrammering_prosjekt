@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"project/elevData"
+	"project/utility"
 	"time"
 )
 
@@ -36,20 +37,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		if !connected {
-			fmt.Println("Became server, stopping sending myself to server...")
-			break
-		}
-		jsonData, err := json.Marshal(pointerElevator)
-		if err != nil {
-			fmt.Printf("Error occurred during marshaling: %v", err)
-			continue
-		}
-
-		// Send jsonData using SendMessage
-		SendMessage(ServerConnection, []byte(jsonData))
-	}
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
@@ -79,7 +66,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 			fmt.Println("New masterElevator:", masterElevator)
 			// Serialize masterElevator to JSON
-			jsonData, err := json.Marshal(masterElevator)
+			jsonData := utility.MarshalJson(masterElevator)
 			if err != nil {
 				fmt.Printf("Error occurred during marshaling: %v", err)
 				return

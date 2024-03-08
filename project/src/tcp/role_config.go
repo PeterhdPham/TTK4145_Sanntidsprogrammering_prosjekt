@@ -10,6 +10,7 @@ import (
 	"net"
 	"project/elevData"
 	"project/udp"
+	"project/utility"
 	"strings"
 	"sync"
 	"time"
@@ -157,7 +158,7 @@ func startServer(masterElevator *elevData.MasterList) {
 	// 			continue // Skip broadcasting
 	// 		}
 
-	// 		jsonData, err := json.Marshal(masterElevator)
+	// 		jsonData := utility.MarshalJson(masterElevator)
 	// 		if err != nil {
 	// 			fmt.Printf("Error occurred during marshaling: %v", err)
 	// 			return
@@ -263,7 +264,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		}
 
 		// Convert responsemessage to []byte
-		responseBytes, err := json.Marshal(responsemessage)
+		responseBytes := utility.MarshalJson(responsemessage)
 		if err != nil {
 			fmt.Printf("Failed to marshal responsemessage: %s\n", err)
 			return err
@@ -273,7 +274,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		if !CompareMasterLists(message, responseBytes) {
 			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
 			return errors.New("client did not receive the correct masterList")
-		}else{
+		} else {
 			fmt.Printf("Client %s received the correct masterList\n", conn.RemoteAddr())
 		}
 	}

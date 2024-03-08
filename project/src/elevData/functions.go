@@ -2,7 +2,6 @@ package elevData
 
 import (
 	"Driver-go/elevio"
-	"encoding/json"
 	"project/udp"
 )
 
@@ -90,22 +89,6 @@ func UpdateStatus(
 	}
 }
 
-func StatusToBytestream(statusToSend ElevStatus) []byte {
-	byteSlice, err := json.Marshal(statusToSend)
-	if err != nil {
-		panic(err)
-	}
-	return byteSlice
-}
-
-func BytestreamToStatus(byteSlice []byte) ElevStatus {
-	var status ElevStatus
-	err := json.Unmarshal(byteSlice, &status)
-	if err != nil {
-		panic(err)
-	}
-	return status
-}
 
 func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
