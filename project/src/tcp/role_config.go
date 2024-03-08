@@ -3,7 +3,6 @@ package tcp
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -257,11 +256,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 
 		// Unmarshal the response into a MasterList
 		var responsemessage elevData.MasterList
-		err = json.Unmarshal(buffer[:n], &responsemessage)
-		if err != nil {
-			fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
-			return err
-		}
+		utility.UnmarshalJson(buffer[:n], &responsemessage)
 
 		// Convert responsemessage to []byte
 		responseBytes := utility.MarshalJson(responsemessage)

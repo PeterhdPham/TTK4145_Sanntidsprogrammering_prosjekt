@@ -59,10 +59,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 			// Overwrite masterElevator with the data from buffer
 			fmt.Println("Old masterElevator:", masterElevator)
-			err = json.Unmarshal(buffer[:n], &masterElevator)
-			if err != nil {
-				fmt.Printf("Error occurred during unmarshaling: %v", err)
-			}
+			utility.UnmarshalJson(buffer[:n], &masterElevator)
 
 			fmt.Println("New masterElevator:", masterElevator)
 			// Serialize masterElevator to JSON
