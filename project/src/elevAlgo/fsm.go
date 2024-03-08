@@ -5,8 +5,6 @@ import (
 	"project/elevData"
 )
 
-var FSM_State string
-
 const (
 	Idle     = "EB_Idle"
 	Moving   = "EB_Moving"
@@ -15,7 +13,7 @@ const (
 
 func FSM_InitBetweenFloors(status elevData.ElevStatus) elevData.ElevStatus {
 	elevio.SetMotorDirection(-1)
-	FSM_State = Moving
+	status.FSM_State = Moving
 	status.Direction = -1
 
 	return status
@@ -26,7 +24,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 	status.Floor = floor
 	status.Buttonfloor = -1
 	status.Buttontype = -1
-	switch FSM_State {
+	switch status.FSM_State {
 	case Moving:
 		if requestShouldStop(status, orders, floor) {
 			//Stops elevator and updates status accordingly
@@ -36,7 +34,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
-			FSM_State = DoorOpen
+			status.FSM_State = DoorOpen
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
@@ -68,17 +66,17 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		}
 	}
 
-	if FSM_State == Idle {
-		FSM_State = Moving
+	if status.FSM_State == Idle {
+		status.FSM_State = Moving
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
-		FSM_State = pair.Behaviour
+		status.FSM_State = pair.Behaviour
 		if pair.Behaviour == DoorOpen {
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
-			FSM_State = DoorOpen
+			status.FSM_State = DoorOpen
 		}
 	}
 
@@ -87,13 +85,13 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 
 func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {
 
-	switch FSM_State {
+	switch status.FSM_State {
 	case DoorOpen:
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
-		FSM_State = pair.Behaviour
+		status.FSM_State = pair.Behaviour
 
-		switch FSM_State {
+		switch status.FSM_State {
 		case DoorOpen:
 			timerStart(doorOpenDuration)
 			status, orders = requestClearAtFloor(status, orders, floor)

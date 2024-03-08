@@ -26,25 +26,25 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollObstructionSwitch(drvObstr)
 
-	// Moves the elevator down if in between floors
 
+	// Moves the elevator down if in between floors
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
 	} else {
-		FSM_State = Idle
+		myStatus.FSM_State = Idle
 	}
 
 	for {
 		select {
 		case a := <-drvButtons:
-			fmt.Println(a)
+			fmt.Println("Button pressed:", a)
 			if role == elevData.Master {
 				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
-			fmt.Println(a)
+			fmt.Println("Current Floor: ", a)
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
 			if a {
