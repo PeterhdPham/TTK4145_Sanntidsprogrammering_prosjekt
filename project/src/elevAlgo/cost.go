@@ -2,7 +2,10 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
+	"encoding/json"
+	"fmt"
 	"project/elevData"
+	"project/tcp"
 )
 
 func findAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
@@ -20,11 +23,12 @@ func findAndAssign(master *elevData.MasterList, floor int, button int, fromIP st
 			}
 		}
 	}
-	// jsonToSend, err := json.Marshal(master)
-	// if err != nil {
-	// 	print("Error marshalling master: ", err)
-	// }
-	// tcp.BroadcastMessage(string(jsonToSend), nil)
+	jsonToSend, err := json.Marshal(master)
+	if err != nil {
+		print("Error marshalling master: ", err)
+	}
+	fmt.Println("Broadcasting master")
+	tcp.BroadcastMessage(nil, jsonToSend)
 }
 
 func findBestElevIP(master *elevData.MasterList) string {

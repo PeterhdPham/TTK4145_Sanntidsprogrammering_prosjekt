@@ -2,6 +2,7 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
+	"fmt"
 	"project/elevData"
 )
 
@@ -52,11 +53,11 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == elevData.Master {
+		fmt.Println("IM MASTER")
 		findAndAssign(master, floor, button, fromIP)
 	}
 
 	//Check orders and starts moving
-
 	var status elevData.ElevStatus
 	var orders [][]bool
 	for _, e := range master.Elevators {
@@ -67,6 +68,14 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	}
 
 	switch status.FSM_State {
+	case DoorOpen:
+		if requestShouldClearImmediately(status, orders, floor, button) {
+			orders[floor][button] = false
+			timerStop()
+			timerStart(doorOpenDuration)
+			status.FSM_State = DoorOpen
+			status.Doors = true
+		}
 	case Idle:
 		status.FSM_State = Moving
 		pair := requestsChooseDirection(status, orders)
@@ -80,12 +89,6 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 			status.FSM_State = DoorOpen
 		}
 
-	case DoorOpen:
-		if requestShouldClearImmediately(status, orders, floor, button) {
-			timerStop()
-			timerStart(doorOpenDuration)
-			orders[floor][button] = false
-		}
 	}
 
 	return status, orders
