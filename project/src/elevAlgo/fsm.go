@@ -36,16 +36,20 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 			status.Doors = true
 			timerStart(doorOpenDuration)
 			status.FSM_State = DoorOpen
+			failureTimerStart(failureTimeoutDuration, int(DoorStuck))
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
 
 			//Sets the lights according to the current orders
 			SetAllLights(orders)
+		} else {
+			failureTimerStart(failureTimeoutDuration, int(MotorFail))
 		}
 	default:
 		break
 	}
+	status.Operative = true
 	return status
 }
 
@@ -75,9 +79,13 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 			timerStart(doorOpenDuration)
 			status.FSM_State = DoorOpen
 			status.Doors = true
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, int(DoorStuck))
 		}
 	case Idle:
 		status.FSM_State = Moving
+		failureTimerStop()
+		failureTimerStart(failureTimeoutDuration, int(MotorFail))
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)

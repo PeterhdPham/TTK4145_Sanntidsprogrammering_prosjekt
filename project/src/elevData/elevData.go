@@ -6,7 +6,6 @@ type MasterList struct {
 
 type Elevator struct {
 	Ip       string       `json:"ip"`
-	IsOnline bool         `json:"online"`
 	Status   ElevStatus   `json:"status"`
 	Orders   [][]bool     `json:"orders"`
 	Role     ElevatorRole `json:"role"`
@@ -20,6 +19,7 @@ type ElevStatus struct {
 	Buttonfloor int    `json:"buttonfloor"`
 	Buttontype  int    `json:"buttontype"`
 	FSM_State   string `json:"fsm_state"`
+	Operative bool `json:"operative"`
 }
 
 type ElevatorRole int

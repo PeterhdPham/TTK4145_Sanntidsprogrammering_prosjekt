@@ -2,6 +2,7 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
+	"fmt"
 	"project/elevData"
 	"project/tcp"
 	"time"
@@ -10,6 +11,14 @@ import (
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
 var MyIP string
+var failureTimeoutDuration time.Duration = 7 * time.Second
+
+type FailureMode int
+
+const (
+	DoorStuck FailureMode = 0
+	MotorFail FailureMode = 1
+)
 
 func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
 	var myStatus elevData.ElevStatus
@@ -43,15 +52,17 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
-			if a {
-				elevio.SetMotorDirection(elevio.MD_Stop)
-			}
 			myStatus.Buttonfloor = -1
 			myStatus.Buttontype = -1
 			if a {
 				myStatus.Obstructed = true
+				if !(myStatus.FSM_State == Moving) {
+					elevio.SetMotorDirection(elevio.MD_Stop)
+				}
 			} else {
 				myStatus.Obstructed = false
+				myStatus.Operative = true
+				failureTimerStop()
 			}
 
 		case <-timerChannel:
@@ -60,8 +71,19 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 				timerStart(doorOpenDuration)
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
+				failureTimerStop()
 			}
-
+		case mode := <-failureTimerChannel:
+			failureTimerStop()
+			switch mode {
+			case 0:
+				fmt.Println("DOORS ARE STUCK")
+			case 1:
+				fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
+				elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
+			}
+			myStatus.Operative = false
+			failureTimerStart(failureTimeoutDuration, mode)
 		}
 		if tcp.UpdateLocal {
 			tcp.UpdateLocal = false
