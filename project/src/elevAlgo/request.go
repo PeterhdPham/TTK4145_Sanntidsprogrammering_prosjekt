@@ -2,7 +2,6 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/elevData"
 )
 
@@ -25,12 +24,11 @@ func areAllOrdersFalse(orders [][]bool) bool {
 	// If we get here, it means all values were false.
 	return true
 }
+
 func requestShouldStop(status elevData.ElevStatus, orders [][]bool, floor int) bool {
 	if areAllOrdersFalse(orders) {
-		fmt.Println("No orders found")
 		return true
 	}
-	fmt.Println(status.Direction)
 	switch status.Direction {
 	case elevio.MD_Down:
 		if orders[floor][1] || orders[floor][2] || !requestsBelow(status, orders) {
@@ -68,6 +66,13 @@ func requestClearAtFloor(myStatus elevData.ElevStatus, myOrders [][]bool, floor 
 	return myStatus, myOrders
 }
 
+func requestShouldClearImmediately(myStatus elevData.ElevStatus, myOrders [][]bool, floor int, btn int) bool {
+	return myStatus.Floor == floor && (
+		(myStatus.Direction == int(elevio.MD_Up) && btn == int(elevio.BT_HallUp)) || 
+		(myStatus.Direction == int(elevio.MD_Down) && btn == int(elevio.BT_HallDown)) ||
+		(myStatus.Direction == int(elevio.MD_Stop) && btn == int(elevio.BT_Cab)))
+}
+
 func requestsAbove(status elevData.ElevStatus, orders [][]bool) bool {
 	for f := status.Floor + 1; f < N_FLOORS; f++ {
 		for btn := 0; btn < N_BUTTONS; btn++ {
@@ -93,7 +98,6 @@ func requestsBelow(status elevData.ElevStatus, orders [][]bool) bool {
 func requestsHere(status elevData.ElevStatus, orders [][]bool) bool {
 	for btn := 0; btn < N_BUTTONS; btn++ {
 		if orders[status.Floor][btn] {
-			fmt.Println("Request btn: ", btn)
 			return true
 		}
 	}
@@ -111,7 +115,6 @@ func SetAllLights(orders [][]bool) {
 func requestsChooseDirection(status elevData.ElevStatus, orders [][]bool) DirnBehaviourPair {
 	switch status.Direction {
 	case int(elevio.MD_Up):
-		fmt.Println("Direction: Up")
 		if requestsAbove(status, orders) {
 			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: Moving}
 		} else if requestsHere(status, orders) {
@@ -122,7 +125,6 @@ func requestsChooseDirection(status elevData.ElevStatus, orders [][]bool) DirnBe
 			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
 		}
 	case int(elevio.MD_Down):
-		fmt.Println("Direction: Down")
 		if requestsBelow(status, orders) {
 			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: Moving}
 		} else if requestsHere(status, orders) {
@@ -133,7 +135,6 @@ func requestsChooseDirection(status elevData.ElevStatus, orders [][]bool) DirnBe
 			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
 		}
 	case int(elevio.MD_Stop):
-		fmt.Println("Direction: Stop")
 		if requestsHere(status, orders) {
 			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: DoorOpen}
 		} else if requestsAbove(status, orders) {
