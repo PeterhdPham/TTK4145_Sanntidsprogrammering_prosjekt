@@ -282,7 +282,7 @@ func CompareMasterLists(list1, list2 []byte) bool {
 } // Handles individual client connections.
 func handleConnection(conn net.Conn) {
 	addNew := true
-	for c, _ := range clientConnections {
+	for c := range clientConnections {
 		if strings.Split(conn.RemoteAddr().String(), ":")[0] == strings.Split(c.RemoteAddr().String(), ":")[0] {
 			addNew = false
 			clientMutex.Lock()
