@@ -38,14 +38,12 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			ActiveIPsMutex.Lock()
-			if slicesAreEqual(ActiveIPs, livingIPs) {
-				fmt.Println("Updating active IPs and roles")
+			if !slicesAreEqual(ActiveIPs, livingIPs) {
+				ActiveIPsMutex.Lock()
 				ActiveIPs = livingIPs
+				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
-			ActiveIPs = livingIPs
-			ActiveIPsMutex.Unlock()
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
 			// updateRole(pointerElevator, masterElevator)
@@ -117,7 +115,7 @@ var (
 func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
-	MyIP, err := udp.GetPrimaryIP()
+	_, err := udp.GetPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
@@ -149,28 +147,28 @@ func startServer(masterElevator *elevData.MasterList) {
 	fmt.Println("Server listening on", listenAddr)
 
 	// Goroutine for server admin to broadcast messages to all clients
-	go func() {
-		ticker := time.NewTicker(3 * time.Second)
-		defer ticker.Stop()
+	// go func() {
+	// 	ticker := time.NewTicker(3 * time.Second)
+	// 	defer ticker.Stop()
 
-		for range ticker.C {
-			// Check if the only active IP is the server itself
-			if len(ActiveIPs) == 1 && ActiveIPs[0] == MyIP {
-				continue // Skip broadcasting
-			}
+	// 	for range ticker.C {
+	// 		// Check if the only active IP is the server itself
+	// 		if len(ActiveIPs) == 1 && ActiveIPs[0] == MyIP {
+	// 			continue // Skip broadcasting
+	// 		}
 
-			jsonData, err := json.Marshal(masterElevator)
-			if err != nil {
-				fmt.Printf("Error occurred during marshaling: %v", err)
-				return
-			}
-			// Broadcast the message to all connected clients
-			BroadcastMessage(ServerConnection, []byte(jsonData)) // Passing nil as the origin since this message is from the server
-			if connected {
-				break
-			}
-		}
-	}()
+	// 		jsonData, err := json.Marshal(masterElevator)
+	// 		if err != nil {
+	// 			fmt.Printf("Error occurred during marshaling: %v", err)
+	// 			return
+	// 		}
+	// 		// Broadcast the message to all connected clients
+	// 		BroadcastMessage(ServerConnection, []byte(jsonData)) // Passing nil as the origin since this message is from the server
+	// 		if connected {
+	// 			break
+	// 		}
+	// 	}
+	// }()
 
 	// Accept new connections unless server shutdown is requested
 	go func() {
@@ -225,11 +223,13 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
+			fmt.Println("Skipping connection")
 			continue // Skip sending the message back to the origin client
 		}
 
 		for {
 			_, err := conn.Write(message)
+			fmt.Println("Error: ", err)
 			if err != nil {
 				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
 				if error_buffer == 0 {
@@ -244,12 +244,11 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
-			fmt.Printf("Sent message to client %s\n", conn.RemoteAddr())
 		}
 
 		// Read the response from the client
 		buffer := make([]byte, 1024)
-		_, err := conn.Read(buffer)
+		n, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
 			return err
@@ -257,7 +256,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 
 		// Unmarshal the response into a MasterList
 		var responsemessage elevData.MasterList
-		err = json.Unmarshal(buffer, &responsemessage)
+		err = json.Unmarshal(buffer[:n], &responsemessage)
 		if err != nil {
 			fmt.Printf("Failed to unmarshal responsemessage: %s\n", err)
 			return err
@@ -274,6 +273,8 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		if !CompareMasterLists(message, responseBytes) {
 			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
 			return errors.New("client did not receive the correct masterList")
+		}else{
+			fmt.Printf("Client %s received the correct masterList\n", conn.RemoteAddr())
 		}
 	}
 
