@@ -68,17 +68,25 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		}
 	}
 
-	if FSM_State == Idle {
-		FSM_State = Moving
+	switch status.FSM_State {
+	case Idle:
+		status.FSM_State = Moving
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
-		FSM_State = pair.Behaviour
+		status.FSM_State = pair.Behaviour
 		if pair.Behaviour == DoorOpen {
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
-			FSM_State = DoorOpen
+			status.FSM_State = DoorOpen
+		}
+
+	case DoorOpen:
+		if requestShouldClearImmediately(status, orders, floor, button) {
+			timerStop()
+			timerStart(doorOpenDuration)
+			orders[floor][button] = false
 		}
 	}
 
