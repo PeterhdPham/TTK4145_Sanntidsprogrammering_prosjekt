@@ -2,7 +2,6 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/cost"
 	"project/elevData"
 	"project/tcp"
@@ -17,6 +16,7 @@ const (
 
 func FSM_InitBetweenFloors(status elevData.ElevStatus) elevData.ElevStatus {
 	elevio.SetMotorDirection(-1)
+	failureTimerStart(failureTimeoutDuration, int(MotorFail))
 	status.FSM_State = Moving
 	status.Direction = -1
 
@@ -63,7 +63,6 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		// fmt.Println("IM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
 		jsonToSend := utility.MarshalJson(master)
-		fmt.Println("Broadcasting master")
 		tcp.BroadcastMessage(nil, jsonToSend)
 	}
 
@@ -123,7 +122,10 @@ func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (
 			SetAllLights(orders)
 		case Moving, Idle:
 			elevio.SetDoorOpenLamp(false)
+			status.Doors = false
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, int(MotorFail))
 		}
 
 	default:

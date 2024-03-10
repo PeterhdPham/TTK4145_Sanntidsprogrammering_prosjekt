@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"project/elevData"
 	"project/tcp"
+	"project/utility"
 	"time"
 )
 
@@ -70,20 +71,33 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			if myStatus.Obstructed {
 				timerStart(doorOpenDuration)
 			} else {
-				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 				failureTimerStop()
+				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
 		case mode := <-failureTimerChannel:
+			MyIP, _ = tcp.GetPrimaryIP()
 			failureTimerStop()
+
+			if (role == elevData.Master) && (myStatus.Operative) {
+				tcp.ReassignOrders2(masterList)
+				jsonToSend := utility.MarshalJson(masterList)
+				tcp.BroadcastMessage(nil, jsonToSend)
+			}
+
 			switch mode {
 			case 0:
 				fmt.Println("DOORS ARE STUCK")
+				myStatus.Operative = false
 			case 1:
-				fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
-				elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
+				if myStatus.FSM_State != Idle {
+					fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
+					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
+					myStatus.Operative = false
+				}
 			}
-			myStatus.Operative = false
-			failureTimerStart(failureTimeoutDuration, mode)
+			if myStatus.Doors || myStatus.FSM_State != Idle {
+				failureTimerStart(failureTimeoutDuration, mode)
+			}
 		}
 		if tcp.UpdateLocal {
 			tcp.UpdateLocal = false

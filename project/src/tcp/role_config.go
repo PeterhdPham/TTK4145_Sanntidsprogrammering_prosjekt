@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"project/cost"
 	"project/elevData"
 	"project/udp"
 	"project/utility"
 	"strings"
 	"sync"
 	"time"
-	"project/cost"
 )
 
 var (
@@ -44,8 +44,9 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 				ActiveIPsMutex.Lock()
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
-					fmt.Println("Reassigning orders")
-					reassignOrders(masterElevator, ActiveIPs, livingIPs)
+					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
+					jsonToSend := utility.MarshalJson(masterElevator)
+					BroadcastMessage(nil, jsonToSend)
 				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
@@ -58,22 +59,42 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 	}
 }
 
-func reassignOrders(masterElevator *elevData.MasterList, oldList []string, newList []string) {
+// Used when the ActiveIPs list is changed
+func ReassignOrders(masterElevator *elevData.MasterList, oldList []string, newList []string) {
+	fmt.Println("Reassigning orders")
 	for _, elevator := range oldList {
 		if !contains(newList, elevator) {
 			for _, e := range masterElevator.Elevators {
 				if e.Ip == elevator {
 					for floorIndex, floorOrders := range e.Orders {
 						if floorOrders[elevio.BT_HallUp] {
+							floorOrders[elevio.BT_HallUp] = false
 							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
 						}
 						if floorOrders[elevio.BT_HallDown] {
+							floorOrders[elevio.BT_HallDown] = false
 							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+// Used when elevators still are online, but one or more elevators are inoperative
+func ReassignOrders2(masterList *elevData.MasterList) {
+	operativeElevators := make([]string, 0)
+	livingElevators := make([]string, 0)
+
+	for _, e := range masterList.Elevators {
+		livingElevators = append(livingElevators, e.Ip)
+		if e.Status.Operative && (e.Ip != MyIP) {
+			operativeElevators = append(operativeElevators, e.Ip)
+		}
+	}
+	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
+		ReassignOrders(masterList, livingElevators, operativeElevators)
 	}
 }
 
