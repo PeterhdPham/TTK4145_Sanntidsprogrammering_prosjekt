@@ -252,6 +252,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				} else {
 					elevData.RemoteStatus = v
 					variable.UpdateStatusFromMessage = true
+					// IP IMportant
 				}
 
 			case elevData.Elevator:
