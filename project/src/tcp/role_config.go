@@ -188,6 +188,7 @@ func closeAllClientConnections() {
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, message []byte) error {
+	fmt.Println("BroadcastMessage running")
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
@@ -219,6 +220,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	}
 	WaitingForConfirmation = true
 	ShouldServerReconnect = false
+	fmt.Println("Broadcasting done...")
 	return nil
 }
 
