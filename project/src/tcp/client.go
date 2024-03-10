@@ -3,7 +3,6 @@ package tcp
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"project/elevData"
@@ -42,50 +41,42 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
 
 			if err != nil {
-				if err == io.EOF {
-					fmt.Println("Server closed the connection.")
-				} else {
-					fmt.Printf("Error reading from server: %s\n", err)
-				}
-				connected = false
-				ServerConnection.Close()
+				// Handle error or EOF
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
-			// Process each newline-separated message
-			messages := strings.Split(string(buffer[:n]), "\n")
+			messages := strings.Split(string(buffer[:n]), "\n") // Process each newline-separated message
 			for _, message := range messages {
 				if message == "" {
 					continue // Skip empty messages
 				}
 
-				// Attempt to unmarshal the message into a generic interface
-				var genericMessage interface{}
-				responseType, err := utility.UnmarshalJson([]byte(message), &genericMessage)
+				// Determine the struct type and unmarshal based on JSON content
+				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
-					fmt.Printf("Error unmarshaling message: %v\n", err)
-					continue // Skip to the next message
+					fmt.Printf("Error determining struct type or unmarshaling message: %v\n", err)
+					continue
 				}
 
-				// Use type switch to handle different possible struct types
-				switch responseType.String() {
-				case "elevData.MasterList":
+				// Now, handle the unmarshaled data based on its type
+				switch msg := genericMessage.(type) {
+				case elevData.MasterList:
 					fmt.Println("Received MasterList message")
 					// Process MasterList message
-					// // *masterElevator = msg
-					// jsonData := utility.MarshalJson(msg)
-					// SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
-				case "elevData.Elevator":
+					*masterElevator = msg
+					jsonData := utility.MarshalJson(msg)
+					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
+				case elevData.Elevator:
 					fmt.Println("Received Elevator message")
 					// Process Elevator message
-				case "elevData.ElevStatus":
+				case elevData.ElevStatus:
 					fmt.Println("Received ElevStatus message")
 					// Process ElevStatus message
 				default:
-					fmt.Printf("Received an unknown type of message: %v\n", responseType.String())
+					fmt.Println("Received an unknown type of message")
 				}
 
-				UpdateLocal = true
+				UpdateLocal = true // Assuming this triggers some update logic
 			}
 		}
 	}()
