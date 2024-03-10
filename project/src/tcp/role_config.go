@@ -42,13 +42,14 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
 			if !utility.SlicesAreEqual(ActiveIPs, livingIPs) {
-				fmt.Print("Active IPs: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
 				ActiveIPsMutex.Lock()
 				ActiveIPs = livingIPs
 				fmt.Println("Active IPs updated")
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
+			fmt.Print("Active IP: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
+
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
 			// updateRole(pointerElevator, masterElevator)
