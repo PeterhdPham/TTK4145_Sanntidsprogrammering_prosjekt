@@ -48,7 +48,7 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
-			fmt.Print("Active IPs: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
+			// fmt.Print("Active IPs: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
 
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
