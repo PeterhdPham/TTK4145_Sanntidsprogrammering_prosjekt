@@ -52,7 +52,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
-			splitData := strings.Split(string(buffer[:n]), ":")
+			splitData := strings.Split(string(buffer[:n]), "\n")
 			// Initially assume the last item is what we want to unmarshal
 			itemToUnmarshal := splitData[len(splitData)-1]
 
@@ -114,7 +114,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {
 
-	message = append(message, ':')
+	message = append(message, '\n')
 	for {
 		_, err := conn.Write(message)
 		if err != nil {

@@ -197,7 +197,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
-	message = append(message, ':')
+	message = append(message, '\n')
 
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
@@ -266,7 +266,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 			break
 		}
 
-		splitData := strings.Split(string(buffer[:n]), ":")
+		splitData := strings.Split(string(buffer[:n]), "\n")
 		itemIndex := len(splitData) - 1 // Start with the last item
 		var responseMessage elevData.MasterList
 		var unmarshalErr error
