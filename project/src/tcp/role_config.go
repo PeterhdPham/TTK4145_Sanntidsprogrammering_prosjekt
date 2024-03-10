@@ -197,6 +197,8 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
+	message = append(message, ':')
+
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
@@ -263,11 +265,14 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 			}
 			break
 		}
-		message := []byte(string(buffer[:n]))
-		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
+
+		splitData := strings.Split(string(buffer[:n]), ":")
+		lastItem := splitData[len(splitData)-1]
+
+		fmt.Printf("Received from client %s: %s\n", clientAddr, lastItem)
 		fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
 		var responseMessage elevData.MasterList
-		utility.UnmarshalJson(message, &responseMessage)
+		utility.UnmarshalJson([]byte(lastItem), &responseMessage)
 		if reflect.DeepEqual(responseMessage, *masterElevator) {
 			fmt.Println("Server received the correct masterList")
 			WaitingForConfirmation = false

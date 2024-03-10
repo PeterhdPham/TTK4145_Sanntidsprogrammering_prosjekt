@@ -9,6 +9,7 @@ import (
 	"project/elevData"
 	"project/utility"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -51,8 +52,11 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
+			splitData := strings.Split(string(buffer[:n]), ":")
+			lastItem := splitData[len(splitData)-1]
+
 			var incomingMasterElevator elevData.MasterList
-			responseType := utility.UnmarshalJson(buffer[:n], &incomingMasterElevator)
+			responseType := utility.UnmarshalJson([]byte(lastItem), &incomingMasterElevator)
 
 			// Serialize masterElevator to JSON
 			jsonData := utility.MarshalJson(&incomingMasterElevator)
@@ -95,6 +99,8 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 }
 
 func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {
+
+	message = append(message, ':')
 	for {
 		_, err := conn.Write(message)
 		if err != nil {
