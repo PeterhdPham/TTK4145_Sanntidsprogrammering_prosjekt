@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"project/elevAlgo"
 	"project/elevData"
 	"project/udp"
 	"project/utility"
+	"project/variable"
 	"reflect"
 	"strings"
 	"sync"
@@ -16,16 +18,12 @@ import (
 )
 
 var (
-	LivingIPsChan          = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex         sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs              []string                      //List of active IPs
-	connected              bool                  = false //Client connection state
-	ServerIP               string                        //Server IP
-	MyIP                   string                        //IP address for current computer
-	ShouldServerReconnect  bool                          //Flag to indicate if the server should reconnect
-	WaitingForConfirmation bool                          //
-	timesent               time.Time
-	timeRecived            time.Time
+	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
+	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
+	ActiveIPs      []string                      //List of active IPs
+	connected      bool                  = false //Client connection state
+
+	WaitingForConfirmation bool //
 )
 
 func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
@@ -75,9 +73,9 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 	}
 	//Finds the lowestIP and sets the ServerIP equal to it
 	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
-	if ServerIP != lowestIP {
+	if variable.ServerIP != lowestIP {
 		connected = false
-		ServerIP = lowestIP
+		variable.ServerIP = lowestIP
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
@@ -86,20 +84,20 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 		return
 	}
 
-	if MyIP == lowestIP && !serverListening {
+	if MyIP == lowestIP && !variable.ServerListening {
 		//Set role to master and starts a new server on
 		shutdownServer()
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = elevData.Master
-	} else if MyIP != lowestIP && serverListening {
+	} else if MyIP != lowestIP && variable.ServerListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
-	} else if !serverListening {
+	} else if !variable.ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
@@ -109,41 +107,32 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 	}
 }
 
-var (
-	// Global cancellation context to control the server lifecycle
-	serverCancel    context.CancelFunc = func() {} // No-op cancel function by default
-	serverListening bool               = false
-	// Updated to track multiple client connections.
-	clientConnections map[net.Conn]bool
-	clientMutex       sync.Mutex // Protects access to clientConnections
-)
-
 func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
-	clientConnections = make(map[net.Conn]bool)
+	variable.ClientConnections = make(map[net.Conn]bool)
 	_, err := udp.GetPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return
 	}
 	// Check if the server is already running, and if so, initiate shutdown for role switch
-	if serverListening {
+	if variable.ServerListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
-		serverCancel()              // Request server shutdown
+		variable.ServerCancel()     // Request server shutdown
 		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
 
 	// Create a new context for this server instance
 	var ctx context.Context
-	ctx, serverCancel = context.WithCancel(context.Background())
-	serverListening = true
+	ctx, variable.ServerCancel = context.WithCancel(context.Background())
+	variable.ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
 	fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
-		serverListening = false // Ensure the state reflects that the server didn't start
+		variable.ServerListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
 	defer func() {
@@ -161,7 +150,7 @@ func startServer(masterElevator *elevData.MasterList) {
 				case <-ctx.Done(): // Shutdown was requested
 					fmt.Println("Server shutting down...")
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
-					serverListening = false
+					variable.ServerListening = false
 					return
 				default:
 					fmt.Printf("Failed to accept connection: %s\n", err)
@@ -179,57 +168,16 @@ func startServer(masterElevator *elevData.MasterList) {
 
 // Ensure this function exists and is correctly implemented to close all client connections
 func closeAllClientConnections() {
-	clientMutex.Lock()
-	defer clientMutex.Unlock()
+	variable.ClientMutex.Lock()
+	defer variable.ClientMutex.Unlock()
 
-	for conn := range clientConnections {
+	for conn := range variable.ClientConnections {
 		err := conn.Close()
 		if err != nil {
 			fmt.Printf("Error closing connection: %s\n", err)
 		}
-		delete(clientConnections, conn)
+		delete(variable.ClientConnections, conn)
 	}
-}
-
-// Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(origin net.Conn, message []byte) error {
-	fmt.Println("BroadcastMessage: ", string(message))
-	clientMutex.Lock()
-	defer clientMutex.Unlock()
-
-	message = append(message, '\n')
-
-	for conn := range clientConnections {
-		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
-		if origin != nil && conn == origin {
-			fmt.Println("Skipping connection")
-			continue // Skip sending the message back to the origin client
-		}
-
-		for {
-			_, err := conn.Write(message)
-			timesent = time.Now()
-			fmt.Println("Error: ", err)
-			if err != nil {
-				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-				if error_buffer == 0 {
-					fmt.Println("Too many consecutive errors, stopping...")
-					ShouldServerReconnect = true
-					return err // Stop if there are too many consecutive errors
-				} else {
-					error_buffer--
-				}
-			} else {
-				error_buffer = 3 // Reset the error buffer on successful send
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-	WaitingForConfirmation = true
-	ShouldServerReconnect = false
-	fmt.Println("Broadcasting done...")
-	return nil
 }
 
 // Implement or adjust compareMasterLists to be compatible with the above modifications
@@ -238,15 +186,15 @@ func CompareMasterLists(list1, list2 []byte) bool {
 
 } // Handles individual client connections.
 func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
-	clientMutex.Lock()
-	clientConnections[conn] = true
-	clientMutex.Unlock()
+	variable.ClientMutex.Lock()
+	variable.ClientConnections[conn] = true
+	variable.ClientMutex.Unlock()
 
 	defer func() {
 		conn.Close()
-		clientMutex.Lock()
-		delete(clientConnections, conn)
-		clientMutex.Unlock()
+		variable.ClientMutex.Lock()
+		delete(variable.ClientConnections, conn)
+		variable.ClientMutex.Unlock()
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
@@ -291,6 +239,9 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 			case elevData.ElevStatus:
 				fmt.Printf("Unmarshaled ElevStatus from client %s. Data: %+v\n", clientAddr, v)
 				// Handle ElevStatus-specific logic here
+				requestFloor := v.Buttonfloor
+				requestButton := v.Buttontype
+				elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, variable.MyIP, elevData.Slave)
 			case elevData.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s. Data: %+v\n", clientAddr, v)
 				// Handle Elevator-specific logic here
@@ -303,20 +254,20 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 
 func shutdownServer() {
 	// First, cancel the server context to stop accepting new connections
-	serverCancel()
+	variable.ServerCancel()
 
 	// Next, close all active client connections
-	clientMutex.Lock()
-	for conn := range clientConnections {
+	variable.ClientMutex.Lock()
+	for conn := range variable.ClientConnections {
 		err := conn.Close()
 		if err != nil {
 			fmt.Printf("Error closing connection: %s\n", err)
 		}
-		delete(clientConnections, conn)
+		delete(variable.ClientConnections, conn)
 	}
-	clientMutex.Unlock()
+	variable.ClientMutex.Unlock()
 
 	// Finally, mark the server as not listening
-	serverListening = false
+	variable.ServerListening = false
 	fmt.Println("Server has been shut down and all connections are closed.")
 }

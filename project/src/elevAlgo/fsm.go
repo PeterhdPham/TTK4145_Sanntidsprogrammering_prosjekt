@@ -3,8 +3,10 @@ package elevAlgo
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/broadcast"
 	"project/cost"
 	"project/elevData"
+	"project/utility"
 )
 
 const (
@@ -56,6 +58,9 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	if myRole == elevData.Master {
 		fmt.Println("IM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
+		jsonToSend := utility.MarshalJson(master)
+		fmt.Println("Broadcasting master")
+		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
 
 	//Check orders and starts moving
