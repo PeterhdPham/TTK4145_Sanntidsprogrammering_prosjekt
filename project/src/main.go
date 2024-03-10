@@ -44,7 +44,7 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
-			// fmt.Println("New status: ", newStatus)
+ 
 			elevator.Status = newStatus
 
 			//Turns data into string

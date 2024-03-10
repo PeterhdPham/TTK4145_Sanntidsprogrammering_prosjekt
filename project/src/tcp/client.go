@@ -1,10 +1,8 @@
 package tcp
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"os"
 	"project/elevAlgo"
 	"project/elevData"
 	"project/utility"
@@ -72,9 +70,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 					// Process Elevator message
 				case elevData.ElevStatus:
 					fmt.Println("Received ElevStatus message")
-					requestFloor := msg.Buttonfloor
-					requestButton := msg.Buttontype
-					elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, MyIP, elevData.Slave)
 				default:
 					fmt.Println("Received an unknown type of message")
 				}
@@ -86,18 +81,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 	ticker = time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
-
-	// Run a separate goroutine to listen for the exit command
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			if scanner.Text() == "exit" {
-				fmt.Println("Disconnecting from server...")
-				ticker.Stop() // Stop the ticker to exit the loop
-				break
-			}
-		}
-	}()
 
 	for {
 		if ShouldReconnect {
