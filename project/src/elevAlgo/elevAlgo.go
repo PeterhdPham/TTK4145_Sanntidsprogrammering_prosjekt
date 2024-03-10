@@ -43,7 +43,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
-			fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttontype)
+			fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
 		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
