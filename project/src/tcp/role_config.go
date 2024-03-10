@@ -250,17 +250,13 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 					elevData.RemoteStatus = v
 					variable.UpdateOrdersFromMessage = true
 					fmt.Printf("Variable: %v\n", variable.UpdateOrdersFromMessage)
+					// variable.DrvButtons <- elevio.ButtonEvent{Floor: elevData.RemoteStatus.Floor, Button: elevio.ButtonType(elevData.RemoteStatus.Buttontype)}
+
 				} else {
 					elevData.RemoteStatus = v
 					variable.UpdateStatusFromMessage = true
 					// IP IMportant
 				}
-
-				var ReceivedButton = elevio.ButtonEvent{
-					Floor:  elevData.RemoteStatus.Floor,
-					Button: elevio.ButtonType(elevData.RemoteStatus.Buttontype),
-				}
-				variable.DrvButtons <- ReceivedButton // Non-blocking send, in case no receiver is ready
 
 			case elevData.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)

@@ -1,7 +1,6 @@
 package variable
 
 import (
-	"Driver-go/elevio"
 	"context"
 	"net"
 	"sync"
@@ -30,7 +29,3 @@ const (
 )
 
 var MessageReceived = make(chan struct{})
-
-var DrvButtons chan elevio.ButtonEvent
-var DrvFloors chan int
-var DrvObstr chan bool

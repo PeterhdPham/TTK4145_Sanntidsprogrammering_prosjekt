@@ -19,9 +19,13 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	N_FLOORS = N_Floors
 	MyIP, _ = ip.GetPrimaryIP()
 
-	go elevio.PollButtons(variable.DrvButtons)
-	go elevio.PollFloorSensor(variable.DrvFloors)
-	go elevio.PollObstructionSwitch(variable.DrvObstr)
+	drvButtons := make(chan elevio.ButtonEvent)
+	drvFloors := make(chan int)
+	drvObstr := make(chan bool)
+
+	go elevio.PollButtons(drvButtons)
+	go elevio.PollFloorSensor(drvFloors)
+	go elevio.PollObstructionSwitch(drvObstr)
 
 	// Moves the elevator down if in between floors
 	if elevio.GetFloor() == -1 {
@@ -33,7 +37,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 
 	for {
 		select {
-		case a := <-variable.DrvButtons:
+		case a := <-drvButtons:
 			if role == elevData.Master {
 				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
 			} else {
@@ -42,9 +46,9 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 				fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
 				fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttonfloor)
 			}
-		case a := <-variable.DrvFloors:
+		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
-		case a := <-variable.DrvObstr:
+		case a := <-drvObstr:
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 			}
