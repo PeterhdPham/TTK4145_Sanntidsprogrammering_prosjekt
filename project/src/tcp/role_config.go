@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"Driver-go/elevio"
 	"bytes"
 	"context"
 	"fmt"
@@ -255,7 +256,11 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 					// IP IMportant
 				}
 
-				variable.MessageReceived <- struct{}{} // Non-blocking send, in case no receiver is ready
+				var ReceivedButton = elevio.ButtonEvent{
+					Floor:  elevData.RemoteStatus.Floor,
+					Button: elevio.ButtonType(elevData.RemoteStatus.Buttontype),
+				}
+				variable.DrvButtons <- ReceivedButton // Non-blocking send, in case no receiver is ready
 
 			case elevData.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)

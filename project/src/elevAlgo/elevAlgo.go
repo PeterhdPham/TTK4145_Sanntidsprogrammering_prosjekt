@@ -19,13 +19,9 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	N_FLOORS = N_Floors
 	MyIP, _ = ip.GetPrimaryIP()
 
-	drvButtons := make(chan elevio.ButtonEvent)
-	drvFloors := make(chan int)
-	drvObstr := make(chan bool)
-
-	go elevio.PollButtons(drvButtons)
-	go elevio.PollFloorSensor(drvFloors)
-	go elevio.PollObstructionSwitch(drvObstr)
+	go elevio.PollButtons(variable.DrvButtons)
+	go elevio.PollFloorSensor(variable.DrvFloors)
+	go elevio.PollObstructionSwitch(variable.DrvObstr)
 
 	// Moves the elevator down if in between floors
 	if elevio.GetFloor() == -1 {
@@ -37,7 +33,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 
 	for {
 		select {
-		case a := <-drvButtons:
+		case a := <-variable.DrvButtons:
 			if role == elevData.Master {
 				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
 			} else {
@@ -46,9 +42,9 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 				fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
 				fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttonfloor)
 			}
-		case a := <-drvFloors:
+		case a := <-variable.DrvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
-		case a := <-drvObstr:
+		case a := <-variable.DrvObstr:
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
 			}
@@ -67,22 +63,21 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
-		case <-variable.MessageReceived:
-			if role == elevData.Master {
-				fmt.Println("Test message")
-				if variable.UpdateOrdersFromMessage {
-					fmt.Print("UpdateFromMessage")
-					variable.UpdateStatusFromMessage = false
-					requestFloor := elevData.RemoteStatus.Buttonfloor
-					requestButton := elevData.RemoteStatus.Buttontype
-					myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, variable.MyIP, elevData.Master)
-				} else if variable.UpdateStatusFromMessage {
-					fmt.Print("update status from message")
-					myStatus = elevData.RemoteStatus
-					variable.UpdateStatusFromMessage = false
-				}
-			}
-
+			// case <-variable.MessageReceived:
+			// 	if role == elevData.Master {
+			// 		fmt.Println("Test message")
+			// 		if variable.UpdateOrdersFromMessage {
+			// 			fmt.Print("UpdateFromMessage")
+			// 			variable.UpdateStatusFromMessage = false
+			// 			requestFloor := elevData.RemoteStatus.Buttonfloor
+			// 			requestButton := elevData.RemoteStatus.Buttontype
+			// 			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, variable.MyIP, elevData.Master)
+			// 		} else if variable.UpdateStatusFromMessage {
+			// 			fmt.Print("update status from message")
+			// 			myStatus = elevData.RemoteStatus
+			// 			variable.UpdateStatusFromMessage = false
+			// 		}
+			// 	}
 		}
 		if variable.UpdateLocal {
 			variable.UpdateLocal = false
