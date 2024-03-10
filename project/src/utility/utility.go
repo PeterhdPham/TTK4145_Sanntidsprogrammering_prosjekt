@@ -43,7 +43,10 @@ func SlicesAreEqual(a, b interface{}) bool {
 	}
 
 	if sliceA.Len() != sliceB.Len() {
-		fmt.Println("SlicesAreEqual: Slices have different lengths")
+		// for debug purposes
+		if sliceA.Len() > 5 || sliceB.Len() > 5 {
+			fmt.Println("SlicesAreEqual: Slices have different lengths")
+		}
 		return false
 	}
 
