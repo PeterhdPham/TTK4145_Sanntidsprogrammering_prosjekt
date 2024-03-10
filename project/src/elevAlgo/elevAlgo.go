@@ -40,12 +40,12 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 		case a := <-drvButtons:
 			if role == elevData.Master {
 				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
+			} else {
+				myStatus.Buttonfloor = a.Floor
+				myStatus.Buttontype = int(a.Button)
+				fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
+				fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttonfloor)
 			}
-			myStatus.Buttonfloor = a.Floor
-			myStatus.Buttontype = int(a.Button)
-			fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
-			fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttonfloor)
-
 		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:

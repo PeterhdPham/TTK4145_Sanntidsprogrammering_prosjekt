@@ -55,6 +55,7 @@ func main() {
 
 			//Sends message to server
 			fmt.Println("Role: ", elevator.Role)
+			fmt.Println("Status: ", elevator.Status)
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
 				fmt.Println("Message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
