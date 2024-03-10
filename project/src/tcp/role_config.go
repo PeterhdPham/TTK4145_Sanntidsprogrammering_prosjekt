@@ -267,12 +267,25 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 		}
 
 		splitData := strings.Split(string(buffer[:n]), ":")
-		lastItem := splitData[len(splitData)-1]
-
-		fmt.Printf("Received from client %s: %s\n", clientAddr, lastItem)
-		fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
+		itemIndex := len(splitData) - 1 // Start with the last item
 		var responseMessage elevData.MasterList
-		utility.UnmarshalJson([]byte(lastItem), &responseMessage)
+		var unmarshalErr error
+
+		// Attempt to unmarshal from the last item; if fails, try the second last if available
+		for ; itemIndex > 0 && unmarshalErr != nil; itemIndex-- {
+			_, unmarshalErr = utility.UnmarshalJson([]byte(splitData[itemIndex]), &responseMessage)
+		}
+
+		if unmarshalErr == nil {
+			fmt.Printf("Received from client %s: %s\n", clientAddr, splitData[itemIndex])
+			fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
+			// Further processing based on unmarshalled data
+		} else {
+			fmt.Printf("Failed to unmarshal message from client %s: %s\n", clientAddr, unmarshalErr)
+		}
+
+		// fmt.Printf("Received from client %s: %s\n", clientAddr, lastItem)
+		fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
 		if reflect.DeepEqual(responseMessage, *masterElevator) {
 			fmt.Println("Server received the correct masterList")
 			WaitingForConfirmation = false
