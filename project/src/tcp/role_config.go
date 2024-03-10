@@ -63,7 +63,7 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 func ReassignOrders(masterElevator *elevData.MasterList, oldList []string, newList []string) {
 	fmt.Println("Reassigning orders")
 	for _, elevator := range oldList {
-		if !contains(newList, elevator) {
+		if !utility.Contains(newList, elevator) {
 			for _, e := range masterElevator.Elevators {
 				if e.Ip == elevator {
 					for floorIndex, floorOrders := range e.Orders {
@@ -96,15 +96,6 @@ func ReassignOrders2(masterList *elevData.MasterList) {
 	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
 		ReassignOrders(masterList, livingElevators, operativeElevators)
 	}
-}
-
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
 }
 
 func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
