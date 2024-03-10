@@ -53,16 +53,30 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			}
 
 			splitData := strings.Split(string(buffer[:n]), ":")
-			lastItem := splitData[len(splitData)-1]
+			// Initially assume the last item is what we want to unmarshal
+			itemToUnmarshal := splitData[len(splitData)-1]
 
 			var incomingMasterElevator elevData.MasterList
-			responseType := utility.UnmarshalJson([]byte(lastItem), &incomingMasterElevator)
+			// Try to unmarshal the last item
+			_, err = utility.UnmarshalJson([]byte(itemToUnmarshal), &incomingMasterElevator)
 
-			// Serialize masterElevator to JSON
+			// If unmarshal fails and there are at least two items, try the second last item
+			if err != nil && len(splitData) > 1 {
+				secondLastItem := splitData[len(splitData)-2]
+				_, err = utility.UnmarshalJson([]byte(secondLastItem), &incomingMasterElevator)
+				if err != nil {
+					fmt.Printf("Error unmarshaling both last and second last items: %v\n", err)
+					continue // Skip processing this set of data
+				}
+			} else if err != nil {
+				// If there's an error with the last item and there's no second last item to try
+				fmt.Printf("Error unmarshaling the last item: %v\n", err)
+				continue // Skip processing this set of data
+			}
+
+			// If unmarshal is successful, serialize and send the data back
 			jsonData := utility.MarshalJson(&incomingMasterElevator)
-
-			// Send jsonData back to the primary
-			err = SendMessage(ServerConnection, jsonData, responseType)
+			err = SendMessage(ServerConnection, jsonData, reflect.TypeOf(incomingMasterElevator))
 			if err != nil {
 				fmt.Printf("Error sending updated masterElevator: %v\n", err)
 			} else {
