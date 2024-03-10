@@ -1,53 +1,57 @@
 package tcp
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"project/elevData"
 	"project/udp"
-	"sort"
+	"project/utility"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
 )
 
 var (
-	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs      []string                      //List of active IPs
-	connected      bool                  = false //Client connection state
-	ServerIP       string                        //Server IP
-	lowestIP       string                        //Lowest IP
-	MyIP           string                        //IP address for current computer
+	LivingIPsChan          = make(chan []string)         //Stores living IPs from the Look_for_life function
+	ActiveIPsMutex         sync.Mutex                    //Mutex for protecting active IPs
+	ActiveIPs              []string                      //List of active IPs
+	connected              bool                  = false //Client connection state
+	ServerIP               string                        //Server IP
+	MyIP                   string                        //IP address for current computer
+	ShouldServerReconnect  bool                          //Flag to indicate if the server should reconnect
+	WaitingForConfirmation bool                          //
 )
 
-func Config_Roles(pointerElevator *elevData.Elevator) {
+func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	//Go routines for finding active IPs
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			ActiveIPsMutex.Lock()
-			ActiveIPs = livingIPs
-			ActiveIPsMutex.Unlock()
+			if !utility.SlicesAreEqual(ActiveIPs, livingIPs) {
+				ActiveIPsMutex.Lock()
+				ActiveIPs = livingIPs
+				ActiveIPsMutex.Unlock()
+				updateRole(pointerElevator, masterElevator)
+			}
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
-			updateRole(pointerElevator)
+			// updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
-func updateRole(pointerElevator *elevData.Elevator) {
+func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
@@ -57,8 +61,6 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		pointerElevator.Role = elevData.Master
 		return
 	}
-
-	sort.Strings(ActiveIPs)
 
 	//Find the IP for the current computer
 	MyIP, err := udp.GetPrimaryIP()
@@ -84,19 +86,19 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		shutdownServer()
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
-		go startServer() // Ensure server starts in a non-blocking manner
+		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = elevData.Master
 	} else if MyIP != lowestIP && serverListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer()                                       // Stop the server
-		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
+		shutdownServer()                                                       // Stop the server
+		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(lowestIP+":55555", pointerElevator)
+			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = elevData.Slave
 		}
 	}
@@ -111,10 +113,14 @@ var (
 	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
-func startServer() {
+func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
-
+	_, err := udp.GetPrimaryIP()
+	if err != nil {
+		fmt.Println("Error obtaining the primary IP:", err)
+		return
+	}
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
@@ -141,23 +147,6 @@ func startServer() {
 	}()
 	fmt.Println("Server listening on", listenAddr)
 
-	// Goroutine for server admin to broadcast messages to all clients
-	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			fmt.Print("Enter message to broadcast: ")
-			msg, _ := reader.ReadString('\n')
-			msg = strings.TrimSpace(msg) // Remove newline character
-
-			// Broadcast the message to all connected clients
-			BroadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
-			if connected {
-				break
-			}
-		}
-
-	}()
-
 	// Accept new connections unless server shutdown is requested
 	go func() {
 		for {
@@ -174,7 +163,7 @@ func startServer() {
 					continue
 				}
 			}
-			go handleConnection(conn)
+			go handleConnection(conn, masterElevator)
 		}
 	}()
 
@@ -198,25 +187,48 @@ func closeAllClientConnections() {
 }
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(message string, origin net.Conn) {
+func BroadcastMessage(origin net.Conn, message []byte) error {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
+			fmt.Println("Skipping connection")
 			continue // Skip sending the message back to the origin client
 		}
-		_, err := conn.Write([]byte(message))
-		if err != nil {
-			fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-			// Handle failed send e.g., by removing the client connection if necessary
+
+		for {
+			_, err := conn.Write(message)
+			fmt.Println("Error: ", err)
+			if err != nil {
+				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				if error_buffer == 0 {
+					fmt.Println("Too many consecutive errors, stopping...")
+					ShouldServerReconnect = true
+					return err // Stop if there are too many consecutive errors
+				} else {
+					error_buffer--
+				}
+			} else {
+				error_buffer = 3 // Reset the error buffer on successful send
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
+	WaitingForConfirmation = true
+	ShouldServerReconnect = false
+	return nil
 }
 
-// Handles individual client connections.
-func handleConnection(conn net.Conn) {
+// Implement or adjust compareMasterLists to be compatible with the above modifications
+func CompareMasterLists(list1, list2 []byte) bool {
+	return bytes.Equal(list1, list2)
+
+} // Handles individual client connections.
+func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
+
 	clientMutex.Lock()
 	clientConnections[conn] = true
 	clientMutex.Unlock()
@@ -231,8 +243,8 @@ func handleConnection(conn net.Conn) {
 	clientAddr := conn.RemoteAddr().String()
 	fmt.Printf("Client connected: %s\n", clientAddr)
 
-	buffer := make([]byte, 1024)
 	for {
+		buffer := make([]byte, 1024)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {
@@ -242,10 +254,17 @@ func handleConnection(conn net.Conn) {
 			}
 			break
 		}
-		message := string(buffer[:n])
+		message := []byte(string(buffer[:n]))
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
+		var responseMessage elevData.MasterList
+		utility.UnmarshalJson(message, &responseMessage)
+		if reflect.DeepEqual(responseMessage, *masterElevator) {
+			fmt.Println("Server received the correct masterList")
+			WaitingForConfirmation = false
+		} else {
+			fmt.Println("Server did not receive the correct confirmation")
+		}
 
-		// Previously here was the logic to send a confirmation back to the client, which has been removed as per request.
 	}
 }
 

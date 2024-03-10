@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -33,18 +34,21 @@ func BroadcastLife() {
 
 	for range ticker.C {
 		// Construct the message with timestamp and sender's IP
-		message := "Hello" // Simplified message for demonstration
+		message := "Please give us an A on the project:)" // Simplified message for demonstration
 		_, err := conn.Write([]byte(message))
-		for err != nil {
-			fmt.Println("Failed to broadcast life: ", err)
-			fmt.Println("Broadcasting again soon...")
-			time.Sleep(BROADCAST_PERIOD)
-			conn, err = net.Dial("udp4", BROADCAST_ADDR)
+		if err != nil {
+			fmt.Println("Error sending udp-message: ", err)
 		}
 	}
 }
 
 func LookForLife(livingIPsChan chan<- []string) {
+
+	myIP,err := GetPrimaryIP()
+	if err!= nil {
+        fmt.Println("Error obtaining the primary IP:", err)
+        return
+    }
 
 	IPLifetimes := make(map[string]time.Time)
 
@@ -59,13 +63,11 @@ func LookForLife(livingIPsChan chan<- []string) {
 	// Create a buffer to store received messages.
 	buffer := make([]byte, 2048)
 
-	fmt.Printf("Listening for UDP packets on %s...\n", PORT)
 	for {
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {
 			fmt.Println("Failed to set a deadline for the read operation:", err)
-			os.Exit(1)
 		}
 
 		// Read from the UDP socket.
@@ -73,8 +75,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 		if err != nil {
 			if os.IsTimeout(err) {
-				fmt.Println("Read timeout: No messages received for 5 seconds\nAll other nodes assumed dead")
-				IPLifetimes = updateLivingIPs(IPLifetimes, addr)
+				IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
 				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue
 			} else {
@@ -83,13 +84,13 @@ func LookForLife(livingIPsChan chan<- []string) {
 			}
 		} else {
 			// Handle the received message.
-			IPLifetimes = updateLivingIPs(IPLifetimes, addr)
+			IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
 			livingIPsChan <- getLivingIPs(IPLifetimes)
 		}
 	}
 }
 
-func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[string]time.Time {
+func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP string) map[string]time.Time {
 
 	if newAddr == nil {
 		for addrInList := range IPLifetimes {
@@ -98,7 +99,11 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[str
 	} else {
 		_, ok := IPLifetimes[newAddr.String()]
 		if !ok {
+			if strings.Split(newAddr.String(), ":")[0] != myIP{
 			fmt.Println("New node discovered: ", newAddr.String())
+			} else {
+				fmt.Println("This is my IP: ", myIP)
+			}
 		}
 		IPLifetimes[newAddr.String()] = time.Now().Add(NODE_LIFE)
 	}
@@ -106,17 +111,33 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[str
 }
 
 func getLivingIPs(m map[string]time.Time) []string {
-	myIP, err := GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error getting my IP: ", err)
-	}
-	livingIPs := []string{myIP}
+	livingIPs := []string{}
 	for address, death := range m {
 		address = strings.Split(address, ":")[0]
-		if (death.After(time.Now())) && (address != myIP) {
+		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
-		sort.Strings(livingIPs)
 	}
+	livingIPs = ipSorter(livingIPs)
 	return livingIPs
+}
+
+func ipSorter(ipStrings []string) []string {
+	ipMap := make(map[string]int)
+	var ipStringsNew []string
+	var ipIntsNew []int
+	for _, ipStr := range ipStrings {
+		ipInt, _ := strconv.Atoi(strings.Replace(ipStr, ".", "", -1))
+		ipMap[ipStr] = ipInt
+		ipIntsNew = append(ipIntsNew, ipInt)
+	}
+	sort.Ints(ipIntsNew)
+	for _, ipInt := range ipIntsNew {
+		for ipStr, ipInt2 := range ipMap {
+			if ipInt == ipInt2 {
+				ipStringsNew = append(ipStringsNew, ipStr)
+			}
+		}
+	}
+	return ipStringsNew
 }

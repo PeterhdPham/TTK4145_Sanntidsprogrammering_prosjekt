@@ -22,7 +22,7 @@
 			elevator.Status = newStatus
 
 			//Turns data into string
-			byteStream, err := json.Marshal(elevator.Status)
+			byteStream := utility.MarshalJson(elevator.Status)
 			if err != nil {
 				panic(err)
 			}
@@ -41,7 +41,7 @@
 
 		case <-ticker.C:
 			fmt.Println("Active ips: ",tcp.ActiveIPs)
-			// 	byteStream, err := json.Marshal(elevator)
+			// 	byteStream := utility.MarshalJson(elevator)
 			// 	if err != nil {
 			// 		panic(err)
 			// 	}

@@ -2,18 +2,16 @@ package elevData
 
 import (
 	"Driver-go/elevio"
-	"encoding/json"
-	"project/light_status"
 	"project/udp"
 )
 
 func InitElevator(NumberOfFloors int) Elevator {
 	var elevator Elevator
 	ip, _ := udp.GetPrimaryIP()
-	elevator.Lights = light_status.InitLights(NumberOfFloors)
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
+	elevator.Orders = InitOrders(NumberOfFloors)
 	return elevator
 }
 
@@ -23,6 +21,15 @@ func InitOrders(NumberOfFloors int) [][]bool {
 		orders[i] = make([]bool, 3)
 	}
 	return orders
+}
+
+func InitOrdersChan(orders chan [][]bool, numOfFloors int) {
+	o := make([][]bool, numOfFloors)
+	for i := 0; i < numOfFloors; i++ {
+		o[i] = make([]bool, 3) // Assuming 3 buttons per floor.
+	}
+	// Send the initialized slice of slices through the channel.
+	orders <- o
 }
 
 func UpdateStatus(
@@ -82,22 +89,6 @@ func UpdateStatus(
 	}
 }
 
-func StatusToBytestream(statusToSend ElevStatus) []byte {
-	byteSlice, err := json.Marshal(statusToSend)
-	if err != nil {
-		panic(err)
-	}
-	return byteSlice
-}
-
-func BytestreamToStatus(byteSlice []byte) ElevStatus {
-	var status ElevStatus
-	err := json.Unmarshal(byteSlice, &status)
-	if err != nil {
-		panic(err)
-	}
-	return status
-}
 
 func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
