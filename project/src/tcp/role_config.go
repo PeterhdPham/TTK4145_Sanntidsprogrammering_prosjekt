@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"project/broadcast"
 	"project/elevAlgo"
 	"project/elevData"
 	"project/udp"
@@ -183,8 +184,9 @@ func closeAllClientConnections() {
 // Implement or adjust compareMasterLists to be compatible with the above modifications
 func CompareMasterLists(list1, list2 []byte) bool {
 	return bytes.Equal(list1, list2)
+}
 
-} // Handles individual client connections.
+// Handles individual client connections.
 func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 	variable.ClientMutex.Lock()
 	variable.ClientConnections[conn] = true
@@ -229,7 +231,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
 			case elevData.MasterList:
-				fmt.Printf("Unmarshaled MasterList from client %s. Data: %+v\n", clientAddr, v)
+				fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
 					fmt.Println("Server received the correct masterList")
 					WaitingForConfirmation = false
@@ -237,14 +239,21 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
 			case elevData.ElevStatus:
-				fmt.Printf("Unmarshaled ElevStatus from client %s. Data: %+v\n", clientAddr, v)
+				fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
 				// Handle ElevStatus-specific logic here
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
 				elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, variable.MyIP, elevData.Slave)
 			case elevData.Elevator:
-				fmt.Printf("Unmarshaled Elevator from client %s. Data: %+v\n", clientAddr, v)
+				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
+				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
+					masterElevator.Elevators = append(masterElevator.Elevators, v)
+				}
+
+				jsonToSend := utility.MarshalJson(masterElevator)
+				fmt.Println("Broadcasting master")
+				broadcast.BroadcastMessage(nil, jsonToSend)
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
 			}
