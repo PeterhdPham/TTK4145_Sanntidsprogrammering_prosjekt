@@ -51,6 +51,7 @@ func main() {
 			// message := []byte(string(byteStream)) // Convert message to byte slice
 
 			//Sends message to server
+			fmt.Println("Role: ", elevator.Role)
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
 				// err := tcp.SendMessage(tcp.ServerConnection, message) // Assign the error value to "err"
 				// if err != nil {
@@ -62,15 +63,7 @@ func main() {
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
 				jsonToSend := utility.MarshalJson(masterElevator)
 				fmt.Println("Master status update")
-				for {
-					if !tcp.WaitingForConfirmation {
-						fmt.Println("Master status update confirmed")
-						break
-					}
-				}
 				tcp.BroadcastMessage(nil, jsonToSend)
-
-				continue
 			}
 		case newOrders := <-myOrders:
 			// fmt.Println("New orders: ", newOrders)

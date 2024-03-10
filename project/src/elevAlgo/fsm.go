@@ -71,6 +71,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	case DoorOpen:
 		if requestShouldClearImmediately(status, orders, floor, button) {
 			orders[floor][button] = false
+			SetAllLights(orders)
 			timerStop()
 			timerStart(doorOpenDuration)
 			status.FSM_State = DoorOpen
