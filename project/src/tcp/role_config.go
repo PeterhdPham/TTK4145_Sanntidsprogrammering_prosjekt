@@ -234,16 +234,23 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
 					fmt.Println("Server received the correct masterList")
-					WaitingForConfirmation = false
+					jsonToSend := utility.MarshalJson(masterElevator)
+					fmt.Println("Master:", string(jsonToSend))
 				} else {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
 			case elevData.ElevStatus:
 				fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
-				// Handle ElevStatus-specific logic here
+				fmt.Printf("Data: %v\n", v)
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
-				elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, variable.MyIP, elevData.Slave)
+				// Handle ElevStatus-specific logic here
+				if requestButton != -1 || requestFloor != -1 {
+					elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, variable.MyIP, elevData.Master)
+				} else {
+                    
+				}
+
 			case elevData.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here

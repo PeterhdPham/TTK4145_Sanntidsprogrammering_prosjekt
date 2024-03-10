@@ -56,7 +56,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == elevData.Master {
-		fmt.Println("IM MASTER")
+		fmt.Println("I AM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
 		jsonToSend := utility.MarshalJson(master)
 		fmt.Println("Broadcasting master")

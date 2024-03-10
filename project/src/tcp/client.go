@@ -31,8 +31,10 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
+
 	elevatorJson := utility.MarshalJson(*pointerElevator)
 	SendMessage(ServerConnection, elevatorJson, reflect.TypeOf(*pointerElevator))
+
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {

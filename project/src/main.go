@@ -45,7 +45,7 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
- 
+
 			elevator.Status = newStatus
 
 			//Turns data into string
@@ -56,6 +56,7 @@ func main() {
 			//Sends message to server
 			fmt.Println("Role: ", elevator.Role)
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
+				fmt.Println("Message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
