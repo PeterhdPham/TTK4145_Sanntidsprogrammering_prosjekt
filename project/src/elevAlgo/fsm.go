@@ -7,17 +7,12 @@ import (
 	"project/cost"
 	"project/elevData"
 	"project/utility"
-)
-
-const (
-	Idle     = "EB_Idle"
-	Moving   = "EB_Moving"
-	DoorOpen = "EB_DoorOpen"
+	"project/variable"
 )
 
 func FSM_InitBetweenFloors(status elevData.ElevStatus) elevData.ElevStatus {
 	elevio.SetMotorDirection(-1)
-	status.FSM_State = Moving
+	status.FSM_State = variable.Moving
 	status.Direction = -1
 
 	return status
@@ -29,7 +24,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 	status.Buttonfloor = -1
 	status.Buttontype = -1
 	switch status.FSM_State {
-	case Moving:
+	case variable.Moving:
 		if requestShouldStop(status, orders, floor) {
 			//Stops elevator and updates status accordingly
 			elevio.SetMotorDirection(elevio.MD_Stop)
@@ -38,7 +33,7 @@ func FSM_ArrivalAtFloor(status elevData.ElevStatus, orders [][]bool, floor int) 
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
-			status.FSM_State = DoorOpen
+			status.FSM_State = variable.DoorOpen
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
@@ -59,7 +54,6 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 		fmt.Println("I AM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
 		jsonToSend := utility.MarshalJson(master)
-		fmt.Println("Broadcasting master")
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
 
@@ -74,26 +68,26 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	}
 
 	switch status.FSM_State {
-	case DoorOpen:
+	case variable.DoorOpen:
 		if requestShouldClearImmediately(status, orders, floor, button) {
 			orders[floor][button] = false
 			SetAllLights(orders)
 			timerStop()
 			timerStart(doorOpenDuration)
-			status.FSM_State = DoorOpen
+			status.FSM_State = variable.DoorOpen
 			status.Doors = true
 		}
-	case Idle:
-		status.FSM_State = Moving
+	case variable.Idle:
+		status.FSM_State = variable.Moving
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
 		status.FSM_State = pair.Behaviour
-		if pair.Behaviour == DoorOpen {
+		if pair.Behaviour == variable.DoorOpen {
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
-			status.FSM_State = DoorOpen
+			status.FSM_State = variable.DoorOpen
 		}
 
 	}
@@ -104,17 +98,17 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 func FSM_onDoorTimeout(status elevData.ElevStatus, orders [][]bool, floor int) (elevData.ElevStatus, [][]bool) {
 
 	switch status.FSM_State {
-	case DoorOpen:
+	case variable.DoorOpen:
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		status.FSM_State = pair.Behaviour
 
 		switch status.FSM_State {
-		case DoorOpen:
+		case variable.DoorOpen:
 			timerStart(doorOpenDuration)
 			status, orders = requestClearAtFloor(status, orders, floor)
 			SetAllLights(orders)
-		case Moving, Idle:
+		case variable.Moving, variable.Idle:
 			elevio.SetDoorOpenLamp(false)
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
 		}

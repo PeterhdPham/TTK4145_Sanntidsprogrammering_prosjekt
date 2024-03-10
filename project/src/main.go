@@ -66,7 +66,7 @@ func main() {
 
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, variable.MyIP)
 				jsonToSend := utility.MarshalJson(masterElevator)
-				fmt.Println("Master status update")
+				fmt.Println("Master status update: ", string(jsonToSend))
 				broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:

@@ -4,6 +4,7 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
+	"project/variable"
 )
 
 var N_BUTTONS = 3
@@ -117,35 +118,35 @@ func requestsChooseDirection(status elevData.ElevStatus, orders [][]bool) DirnBe
 	switch status.Direction {
 	case int(elevio.MD_Up):
 		if requestsAbove(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.Moving}
 		} else if requestsHere(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: DoorOpen}
+			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.DoorOpen}
 		} else if requestsBelow(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.Moving}
 		} else {
-			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
+			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.Idle}
 		}
 	case int(elevio.MD_Down):
 		if requestsBelow(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.Moving}
 		} else if requestsHere(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: DoorOpen}
+			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.DoorOpen}
 		} else if requestsAbove(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.Moving}
 		} else {
-			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
+			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.Idle}
 		}
 	case int(elevio.MD_Stop):
 		if requestsHere(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: DoorOpen}
+			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.DoorOpen}
 		} else if requestsAbove(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.Moving}
 		} else if requestsBelow(status, orders) {
-			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: Moving}
+			return DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.Moving}
 		} else {
-			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
+			return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.Idle}
 		}
 	default:
-		return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: Idle}
+		return DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.Idle}
 	}
 }

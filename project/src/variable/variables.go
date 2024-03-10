@@ -18,3 +18,9 @@ var (
 	ShouldServerReconnect bool               //Flag to indicate if the server should reconnect
 	ErrorBuffer           = 3
 )
+
+const (
+	Idle     = "EB_Idle"
+	Moving   = "EB_Moving"
+	DoorOpen = "EB_DoorOpen"
+)

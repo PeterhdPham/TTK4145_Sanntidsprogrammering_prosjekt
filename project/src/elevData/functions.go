@@ -3,6 +3,7 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"project/udp"
+	"project/variable"
 )
 
 func InitElevator(NumberOfFloors int) Elevator {
@@ -12,6 +13,7 @@ func InitElevator(NumberOfFloors int) Elevator {
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	elevator.Orders = InitOrders(NumberOfFloors)
+	elevator.Status.FSM_State = variable.Idle
 	return elevator
 }
 
@@ -88,7 +90,6 @@ func UpdateStatus(
 		}
 	}
 }
-
 
 func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {

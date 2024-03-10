@@ -31,7 +31,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
 	} else {
-		myStatus.FSM_State = Idle
+		myStatus.FSM_State = variable.Idle
 	}
 
 	for {
