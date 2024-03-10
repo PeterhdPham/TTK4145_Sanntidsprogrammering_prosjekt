@@ -245,10 +245,13 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
 				if requestButton != -1 || requestFloor != -1 {
+					fmt.Println("Button from remote")
 					elevData.RemoteStatus = v
-					variable.UpdateFromMessage = true
+					variable.UpdateOrdersFromMessage = true
+					fmt.Printf("Variable: %v\n", variable.UpdateOrdersFromMessage)
 				} else {
-					// TODO:
+					elevData.RemoteStatus = v
+					variable.UpdateStatusFromMessage = true
 				}
 
 			case elevData.Elevator:

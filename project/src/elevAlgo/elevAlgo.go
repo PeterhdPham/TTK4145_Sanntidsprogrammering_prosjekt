@@ -64,7 +64,6 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
-
 		}
 		if variable.UpdateLocal {
 			variable.UpdateLocal = false
@@ -72,12 +71,17 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
 		}
 
-		if variable.UpdateFromMessage {
-			variable.UpdateFromMessage = false
+		if variable.UpdateOrdersFromMessage {
 			fmt.Print("UpdateFromMessage")
+
+			variable.UpdateStatusFromMessage = false
 			requestFloor := elevData.RemoteStatus.Buttonfloor
 			requestButton := elevData.RemoteStatus.Buttontype
 			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, variable.MyIP, elevData.Master)
+		} else if variable.UpdateStatusFromMessage {
+			fmt.Print("update status from message")
+			myStatus = elevData.RemoteStatus
+			variable.UpdateStatusFromMessage = false
 		}
 
 		elevStatus <- myStatus

@@ -7,7 +7,9 @@ import (
 )
 
 var UpdateLocal bool = false
-var UpdateFromMessage bool = false
+var UpdateMutex sync.Mutex
+var UpdateOrdersFromMessage bool
+var UpdateStatusFromMessage bool
 
 var (
 	ServerCancel          context.CancelFunc = func() {} // No-op cancel function by default
