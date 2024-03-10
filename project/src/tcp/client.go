@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"project/elevAlgo"
 	"project/elevData"
 	"project/utility"
 	"reflect"
@@ -72,12 +73,12 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 					fmt.Println("Received ElevStatus message")
 					requestFloor := msg.Buttonfloor
 					requestButton := msg.Buttontype
-					elevalgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, MyIP, elevData.Slave)
+					elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, MyIP, elevData.Slave)
 				default:
 					fmt.Println("Received an unknown type of message")
 				}
 
-				elevalgo.UpdateLocal = true // Assuming this triggers some update logic
+				elevAlgo.UpdateLocal = true // Assuming this triggers some update logic
 			}
 		}
 	}()

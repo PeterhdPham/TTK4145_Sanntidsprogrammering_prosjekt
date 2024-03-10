@@ -2,10 +2,7 @@ package cost
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/elevData"
-	"project/tcp"
-	"project/utility"
 )
 
 func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
@@ -23,9 +20,9 @@ func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP st
 			}
 		}
 	}
-	jsonToSend := utility.MarshalJson(master)
-	fmt.Println("Broadcasting master")
-	tcp.BroadcastMessage(nil, jsonToSend)
+	// jsonToSend := utility.MarshalJson(master)
+	// fmt.Println("Broadcasting master")
+	// tcp.BroadcastMessage(nil, jsonToSend)
 }
 
 func findBestElevIP(master *elevData.MasterList) string {
