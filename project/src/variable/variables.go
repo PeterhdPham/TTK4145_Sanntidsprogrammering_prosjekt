@@ -27,3 +27,5 @@ const (
 	Moving   = "EB_Moving"
 	DoorOpen = "EB_DoorOpen"
 )
+
+var MessageReceived = make(chan struct{})

@@ -254,6 +254,11 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 					variable.UpdateStatusFromMessage = true
 					// IP IMportant
 				}
+				// Now, signal the messageReceived channel to run its case
+				select {
+				case variable.MessageReceived <- struct{}{}: // Non-blocking send, in case no receiver is ready
+				default:
+				}
 
 			case elevData.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
