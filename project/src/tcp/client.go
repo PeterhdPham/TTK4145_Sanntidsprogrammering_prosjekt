@@ -40,7 +40,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 		for {
 			buffer := make([]byte, 1024)            // Create a buffer to store incoming data
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
-			fmt.Println("Debugging 1")
 
 			if err != nil {
 				if err == io.EOF {
@@ -54,13 +53,10 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			}
 
 			var incomingMasterElevator elevData.MasterList
-			fmt.Println("Debugging 2")
 			responseType := utility.UnmarshalJson(buffer[:n], &incomingMasterElevator)
-			fmt.Println("Debugging 3")
 
 			// Serialize masterElevator to JSON
 			jsonData := utility.MarshalJson(&incomingMasterElevator)
-			fmt.Println("Debugging 4")
 
 			// Send jsonData back to the primary
 			err = SendMessage(ServerConnection, jsonData, responseType)
@@ -70,7 +66,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 				fmt.Println("Updated and sent masterElevator")
 				*masterElevator = incomingMasterElevator
 			}
-			fmt.Println("Debugging 5")
 
 			UpdateLocal = true
 		}
