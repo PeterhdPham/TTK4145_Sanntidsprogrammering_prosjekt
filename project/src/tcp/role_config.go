@@ -268,30 +268,30 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 			}
 
 			var genericStruct interface{}
-			unmarshalErr := utility.UnmarshalJson([]byte(message), &genericStruct)
+			responseType, unmarshalErr := utility.UnmarshalJson([]byte(message), &genericStruct)
 			if unmarshalErr != nil {
 				fmt.Printf("Failed to unmarshal message from client %s: %s\n", clientAddr, unmarshalErr)
 				continue // Skip to the next message if unmarshaling fails
 			}
 
 			// Handle the unmarshaled data based on its type
-			switch v := genericStruct.(type) {
-			case elevData.MasterList:
+			switch responseType.String() {
+			case "elevData.MasterList":
 				fmt.Printf("Unmarshaled MasterList from client %s\n", clientAddr)
-				if reflect.DeepEqual(v, *masterElevator) {
+				if reflect.DeepEqual(responseType, *masterElevator) {
 					fmt.Println("Server received the correct masterList")
 					WaitingForConfirmation = false
 				} else {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
-			case elevData.ElevStatus:
+			case "elevData.ElevStatus":
 				fmt.Printf("Unmarshaled ElevStatus from client %s\n", clientAddr)
 				// Handle ElevStatus-specific logic here
-			case elevData.Elevator:
+			case "elevData.Elevator":
 				fmt.Printf("Unmarshaled Elevator from client %s\n", clientAddr)
 				// Handle Elevator-specific logic here
 			default:
-				fmt.Printf("Received unknown type from client %s\n", clientAddr)
+				fmt.Printf("Received unknown type from client %s: %v\n", clientAddr, responseType.String())
 			}
 
 			fmt.Println("Time to send and receive: ", timeReceived.Sub(timesent))

@@ -16,15 +16,21 @@ func MarshalJson(data interface{}) []byte {
 	return jsonData
 }
 
-func UnmarshalJson(data []byte, v interface{}) error {
+func UnmarshalJson(data []byte, v interface{}) (reflect.Type, error) {
 	err := json.Unmarshal(data, v)
 	if err != nil {
 		fmt.Println("Error unmarshaling JSON:", err)
 		fmt.Println("Data:", data)
 		fmt.Println("String:", string(data))
-		return err
+		return nil, err
 	}
-	return nil
+
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		// If v is a pointer, get the type it points to
+		return t.Elem(), nil
+	}
+	return t, nil
 }
 
 func SlicesAreEqual(a, b interface{}) bool {

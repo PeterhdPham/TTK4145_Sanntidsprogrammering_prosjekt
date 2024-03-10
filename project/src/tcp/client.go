@@ -61,28 +61,28 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 
 				// Attempt to unmarshal the message into a generic interface
 				var genericMessage interface{}
-				err := utility.UnmarshalJson([]byte(message), &genericMessage)
+				responseType, err := utility.UnmarshalJson([]byte(message), &genericMessage)
 				if err != nil {
 					fmt.Printf("Error unmarshaling message: %v\n", err)
 					continue // Skip to the next message
 				}
 
 				// Use type switch to handle different possible struct types
-				switch msg := genericMessage.(type) {
-				case elevData.MasterList:
+				switch responseType.String() {
+				case "elevData.MasterList":
 					fmt.Println("Received MasterList message")
 					// Process MasterList message
-					*masterElevator = msg
-					jsonData := utility.MarshalJson(msg)
-					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
-				case elevData.Elevator:
+					// // *masterElevator = msg
+					// jsonData := utility.MarshalJson(msg)
+					// SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
+				case "elevData.Elevator":
 					fmt.Println("Received Elevator message")
 					// Process Elevator message
-				case elevData.ElevStatus:
+				case "elevData.ElevStatus":
 					fmt.Println("Received ElevStatus message")
 					// Process ElevStatus message
 				default:
-					fmt.Printf("Received an unknown type of message: %v\n", msg)
+					fmt.Printf("Received an unknown type of message: %v\n", responseType.String())
 				}
 
 				UpdateLocal = true
