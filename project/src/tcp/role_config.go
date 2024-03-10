@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"project/elevData"
 	"project/udp"
@@ -238,7 +237,6 @@ func CompareMasterLists(list1, list2 []byte) bool {
 
 } // Handles individual client connections.
 func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
-
 	clientMutex.Lock()
 	clientConnections[conn] = true
 	clientMutex.Unlock()
@@ -256,43 +254,48 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 	for {
 		buffer := make([]byte, 1024)
 		n, err := conn.Read(buffer)
-		timeRecived = time.Now()
+		timeReceived := time.Now() // Ensure this variable is declared appropriately
 		if err != nil {
-			if err == io.EOF {
-				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
-			} else {
-				fmt.Printf("Error reading from client %s: %s\n", clientAddr, err)
-			}
+			// Handle disconnection or reading errors
 			break
 		}
 
-		splitData := strings.Split(string(buffer[:n]), "\n")
-		itemIndex := len(splitData) - 1 // Start with the last item
-		var responseMessage elevData.MasterList
-		var unmarshalErr error
+		// Assuming messages are separated by newline characters
+		messages := strings.Split(string(buffer[:n]), "\n")
+		for _, message := range messages {
+			if message == "" {
+				continue // Skip empty messages
+			}
 
-		// Attempt to unmarshal from the last item; if fails, try the second last if available
-		for ; itemIndex > 0 && unmarshalErr != nil; itemIndex-- {
-			_, unmarshalErr = utility.UnmarshalJson([]byte(splitData[itemIndex]), &responseMessage)
+			var genericStruct interface{}
+			unmarshalErr := utility.UnmarshalJson([]byte(message), &genericStruct)
+			if unmarshalErr != nil {
+				fmt.Printf("Failed to unmarshal message from client %s: %s\n", clientAddr, unmarshalErr)
+				continue // Skip to the next message if unmarshaling fails
+			}
+
+			// Handle the unmarshaled data based on its type
+			switch v := genericStruct.(type) {
+			case elevData.MasterList:
+				fmt.Printf("Unmarshaled MasterList from client %s\n", clientAddr)
+				if reflect.DeepEqual(v, *masterElevator) {
+					fmt.Println("Server received the correct masterList")
+					WaitingForConfirmation = false
+				} else {
+					fmt.Println("Server did not receive the correct confirmation")
+				}
+			case elevData.ElevStatus:
+				fmt.Printf("Unmarshaled ElevStatus from client %s\n", clientAddr)
+				// Handle ElevStatus-specific logic here
+			case elevData.Elevator:
+				fmt.Printf("Unmarshaled Elevator from client %s\n", clientAddr)
+				// Handle Elevator-specific logic here
+			default:
+				fmt.Printf("Received unknown type from client %s\n", clientAddr)
+			}
+
+			fmt.Println("Time to send and receive: ", timeReceived.Sub(timesent))
 		}
-
-		if unmarshalErr == nil {
-			fmt.Printf("Received from client %s: %s\n", clientAddr, splitData[itemIndex])
-			fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
-			// Further processing based on unmarshalled data
-		} else {
-			fmt.Printf("Failed to unmarshal message from client %s: %s\n", clientAddr, unmarshalErr)
-		}
-
-		// fmt.Printf("Received from client %s: %s\n", clientAddr, lastItem)
-		fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
-		if reflect.DeepEqual(responseMessage, *masterElevator) {
-			fmt.Println("Server received the correct masterList")
-			WaitingForConfirmation = false
-		} else {
-			fmt.Println("Server did not receive the correct confirmation")
-		}
-
 	}
 }
 

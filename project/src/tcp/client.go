@@ -3,7 +3,6 @@ package tcp
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"project/elevData"
@@ -42,49 +41,45 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
 
 			if err != nil {
-				if err == io.EOF {
-					fmt.Println("Server closed the connection.")
-				} else {
-					fmt.Printf("Error reading from server: %s\n", err)
-				}
-				connected = false
-				ServerConnection.Close()
+				// Handle disconnection or reading errors
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
-			splitData := strings.Split(string(buffer[:n]), "\n")
-			// Initially assume the last item is what we want to unmarshal
-			itemToUnmarshal := splitData[len(splitData)-1]
-
-			var incomingMasterElevator elevData.MasterList
-			// Try to unmarshal the last item
-			_, err = utility.UnmarshalJson([]byte(itemToUnmarshal), &incomingMasterElevator)
-
-			// If unmarshal fails and there are at least two items, try the second last item
-			if err != nil && len(splitData) > 1 {
-				secondLastItem := splitData[len(splitData)-2]
-				_, err = utility.UnmarshalJson([]byte(secondLastItem), &incomingMasterElevator)
-				if err != nil {
-					fmt.Printf("Error unmarshaling both last and second last items: %v\n", err)
-					continue // Skip processing this set of data
+			// Process each newline-separated message
+			messages := strings.Split(string(buffer[:n]), "\n")
+			for _, message := range messages {
+				if message == "" {
+					continue // Skip empty messages
 				}
-			} else if err != nil {
-				// If there's an error with the last item and there's no second last item to try
-				fmt.Printf("Error unmarshaling the last item: %v\n", err)
-				continue // Skip processing this set of data
-			}
 
-			// If unmarshal is successful, serialize and send the data back
-			jsonData := utility.MarshalJson(&incomingMasterElevator)
-			err = SendMessage(ServerConnection, jsonData, reflect.TypeOf(incomingMasterElevator))
-			if err != nil {
-				fmt.Printf("Error sending updated masterElevator: %v\n", err)
-			} else {
-				fmt.Println("Updated and sent masterElevator")
-				*masterElevator = incomingMasterElevator
-			}
+				// Attempt to unmarshal the message into a generic interface
+				var genericMessage interface{}
+				err := utility.UnmarshalJson([]byte(message), &genericMessage)
+				if err != nil {
+					fmt.Printf("Error unmarshaling message: %v\n", err)
+					continue // Skip to the next message
+				}
 
-			UpdateLocal = true
+				// Use type switch to handle different possible struct types
+				switch msg := genericMessage.(type) {
+				case elevData.MasterList:
+					fmt.Println("Received MasterList message")
+					// Process MasterList message
+					*masterElevator = msg
+					jsonData := utility.MarshalJson(msg)
+					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
+				case elevData.Elevator:
+					fmt.Println("Received Elevator message")
+					// Process Elevator message
+				case elevData.ElevStatus:
+					fmt.Println("Received ElevStatus message")
+					// Process ElevStatus message
+				default:
+					fmt.Printf("Received an unknown type of message\n")
+				}
+
+				UpdateLocal = true
+			}
 		}
 	}()
 
@@ -113,7 +108,6 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 }
 
 func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {
-
 	message = append(message, '\n')
 	for {
 		_, err := conn.Write(message)
