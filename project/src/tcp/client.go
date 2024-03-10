@@ -3,6 +3,7 @@ package tcp
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"project/elevData"
@@ -41,7 +42,13 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
 
 			if err != nil {
-				// Handle disconnection or reading errors
+				if err == io.EOF {
+					fmt.Println("Server closed the connection.")
+				} else {
+					fmt.Printf("Error reading from server: %s\n", err)
+				}
+				connected = false
+				ServerConnection.Close()
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
