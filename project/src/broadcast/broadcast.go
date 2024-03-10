@@ -9,7 +9,6 @@ import (
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, message []byte) error {
-	fmt.Println("BroadcastMessage: ", string(message))
 	variable.ClientMutex.Lock()
 	defer variable.ClientMutex.Unlock()
 

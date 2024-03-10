@@ -43,6 +43,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
+			continue
 		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 		case a := <-drvObstr:
@@ -65,6 +66,7 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
 		case <-variable.MessageReceived:
+			fmt.Println("Test message")
 			if variable.UpdateOrdersFromMessage {
 				fmt.Print("UpdateFromMessage")
 				variable.UpdateStatusFromMessage = false
