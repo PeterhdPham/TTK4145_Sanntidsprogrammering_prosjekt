@@ -138,20 +138,6 @@ func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error
 		return nil
 	}
 
-	// // Read the response from the server
-	// response := make([]byte, 1024)
-	// _, err := conn.Read(response)
-	// if err != nil {
-	// 	fmt.Printf("Error reading response: %s\n", err)
-	// 	return err
-	// }
-
-	// // Compare the response with the message that was sent
-	// if !bytes.Equal(message, response) {
-	// 	fmt.Println("Server did not receive the correct message")
-	// 	return errors.New("server did not receive the correct message")
-	// }
-
 	ShouldReconnect = false
 	return nil
 }

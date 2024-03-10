@@ -7,6 +7,7 @@ import (
 	"project/elevData"
 	"project/tcp"
 	"project/utility"
+	"reflect"
 	"time"
 )
 
@@ -46,17 +47,17 @@ func main() {
 			elevator.Status = newStatus
 
 			//Turns data into string
-			// byteStream := utility.MarshalJson(elevator.Status)
+			byteStream := utility.MarshalJson(elevator.Status)
 
-			// message := []byte(string(byteStream)) // Convert message to byte slice
+			message := []byte(string(byteStream)) // Convert message to byte slice
 
 			//Sends message to server
 			fmt.Println("Role: ", elevator.Role)
 			if tcp.ServerConnection != nil && elevator.Role == elevData.Slave {
-				// err := tcp.SendMessage(tcp.ServerConnection, message) // Assign the error value to "err"
-				// if err != nil {
-				// 	fmt.Printf("Error sending elevator data: %s\n", err)
-				// }
+				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
+				if err != nil {
+					fmt.Printf("Error sending elevator data: %s\n", err)
+				}
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
 
