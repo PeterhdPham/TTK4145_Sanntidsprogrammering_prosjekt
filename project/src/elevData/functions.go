@@ -14,7 +14,6 @@ func InitElevator(NumberOfFloors int) Elevator {
 	elevator.Ip = ip
 	elevator.Orders = InitOrders(NumberOfFloors)
 	elevator.Status.FSM_State = variable.Idle
-	elevator.Status.Floor = elevio.GetFloor()
 	return elevator
 }
 
