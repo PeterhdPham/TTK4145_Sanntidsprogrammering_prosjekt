@@ -75,7 +75,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 					fmt.Println("Received ElevStatus message")
 					// Process ElevStatus message
 				default:
-					fmt.Printf("Received an unknown type of message\n")
+					fmt.Printf("Received an unknown type of message: %v\n", msg)
 				}
 
 				UpdateLocal = true
