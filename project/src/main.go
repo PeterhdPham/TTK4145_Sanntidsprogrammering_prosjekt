@@ -44,7 +44,7 @@ func main() {
 		case newStatus := <-myStatus:
 			// fmt.Println("New status: ", newStatus)
 			elevator.Status = newStatus
-
+			fmt.Println("Operative: ",newStatus.Operative)
 			//Turns data into string
 			byteStream := utility.MarshalJson(elevator.Status)
 
@@ -63,7 +63,7 @@ func main() {
 				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
 				jsonToSend := utility.MarshalJson(masterElevator)
 				tcp.BroadcastMessage(nil, jsonToSend)
-				fmt.Println("Master status update")
+				// fmt.Println("Master status update")
 				continue
 			}
 		case newOrders := <-myOrders:
