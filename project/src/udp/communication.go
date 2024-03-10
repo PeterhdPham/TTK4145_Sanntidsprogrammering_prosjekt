@@ -35,11 +35,9 @@ func BroadcastLife() {
 		// Construct the message with timestamp and sender's IP
 		message := "Hello" // Simplified message for demonstration
 		_, err := conn.Write([]byte(message))
-		for err != nil {
-			fmt.Println("Failed to broadcast life: ", err)
-			fmt.Println("Broadcasting again soon...")
-			time.Sleep(BROADCAST_PERIOD)
-			conn, err = net.Dial("udp4", BROADCAST_ADDR)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
 	}
 }
@@ -106,14 +104,10 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr) map[str
 }
 
 func getLivingIPs(m map[string]time.Time) []string {
-	myIP, err := GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error getting my IP: ", err)
-	}
-	livingIPs := []string{myIP}
+	livingIPs := []string{}
 	for address, death := range m {
 		address = strings.Split(address, ":")[0]
-		if (death.After(time.Now())) && (address != myIP) {
+		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
 		sort.Strings(livingIPs)
