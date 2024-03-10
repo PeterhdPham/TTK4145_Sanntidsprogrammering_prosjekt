@@ -7,6 +7,7 @@ import (
 )
 
 var UpdateLocal bool = false
+var UpdateFromMessage bool = false
 
 var (
 	ServerCancel          context.CancelFunc = func() {} // No-op cancel function by default

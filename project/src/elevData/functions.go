@@ -6,6 +6,8 @@ import (
 	"project/variable"
 )
 
+var RemoteStatus ElevStatus
+
 func InitElevator(NumberOfFloors int) Elevator {
 	var elevator Elevator
 	ip, _ := udp.GetPrimaryIP()

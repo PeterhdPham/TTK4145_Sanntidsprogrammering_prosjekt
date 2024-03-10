@@ -72,6 +72,14 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
 		}
 
+		if variable.UpdateFromMessage {
+			variable.UpdateFromMessage = false
+			fmt.Print("UpdateFromMessage")
+			requestFloor := elevData.RemoteStatus.Buttonfloor
+			requestButton := elevData.RemoteStatus.Buttontype
+			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, variable.MyIP, elevData.Master)
+		}
+
 		elevStatus <- myStatus
 		orders <- myOrders
 	}

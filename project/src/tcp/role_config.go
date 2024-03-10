@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"project/broadcast"
-	"project/elevAlgo"
 	"project/elevData"
 	"project/udp"
 	"project/utility"
@@ -246,9 +245,10 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
 				if requestButton != -1 || requestFloor != -1 {
-					elevAlgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, variable.MyIP, elevData.Master)
+					elevData.RemoteStatus = v
+					variable.UpdateFromMessage = true
 				} else {
-                    
+					// TODO:
 				}
 
 			case elevData.Elevator:
