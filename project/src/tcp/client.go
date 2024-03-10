@@ -16,7 +16,6 @@ var ServerConnection net.Conn
 var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
-var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	serverAddr := serverIP
@@ -71,12 +70,14 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 					// Process Elevator message
 				case elevData.ElevStatus:
 					fmt.Println("Received ElevStatus message")
-					// Process ElevStatus message
+					requestFloor := msg.Buttonfloor
+					requestButton := msg.Buttontype
+					elevalgo.FSM_RequestFloor(masterElevator, requestFloor, requestButton, MyIP, elevData.Slave)
 				default:
 					fmt.Println("Received an unknown type of message")
 				}
 
-				UpdateLocal = true // Assuming this triggers some update logic
+				elevalgo.UpdateLocal = true // Assuming this triggers some update logic
 			}
 		}
 	}()

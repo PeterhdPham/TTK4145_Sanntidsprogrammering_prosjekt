@@ -4,19 +4,20 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
-	"project/tcp"
+	"project/ip"
 	"time"
 )
 
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
 var MyIP string
+var UpdateLocal bool = false
 
 func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
 	var myStatus elevData.ElevStatus
 	myOrders := init_order
 	N_FLOORS = N_Floors
-	MyIP, _ = tcp.GetPrimaryIP()
+	MyIP, _ = ip.GetPrimaryIP()
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -64,8 +65,8 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 
 		}
-		if tcp.UpdateLocal {
-			tcp.UpdateLocal = false
+		if UpdateLocal {
+			UpdateLocal = false
 			fmt.Print("UpdateLocal")
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
 		}

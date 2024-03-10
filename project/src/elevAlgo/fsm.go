@@ -3,6 +3,7 @@ package elevalgo
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/cost"
 	"project/elevData"
 )
 
@@ -54,7 +55,7 @@ func FSM_RequestFloor(master *elevData.MasterList, floor int, button int, fromIP
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == elevData.Master {
 		fmt.Println("IM MASTER")
-		findAndAssign(master, floor, button, fromIP)
+		cost.FindAndAssign(master, floor, button, fromIP)
 	}
 
 	//Check orders and starts moving

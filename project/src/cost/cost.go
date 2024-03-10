@@ -1,4 +1,4 @@
-package elevalgo
+package cost
 
 import (
 	"Driver-go/elevio"
@@ -8,7 +8,7 @@ import (
 	"project/utility"
 )
 
-func findAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
+func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
 	bestElevIP := findBestElevIP(master)
 	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {

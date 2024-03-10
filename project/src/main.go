@@ -5,6 +5,7 @@ import (
 	"fmt"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
+	"project/ip"
 	"project/tcp"
 	"project/utility"
 	"reflect"
@@ -30,7 +31,7 @@ func main() {
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
 
-	MyIP, _ = tcp.GetPrimaryIP()
+	MyIP, _ = ip.GetPrimaryIP()
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
