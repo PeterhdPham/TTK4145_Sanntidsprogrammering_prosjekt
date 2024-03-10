@@ -24,6 +24,8 @@ var (
 	MyIP                   string                        //IP address for current computer
 	ShouldServerReconnect  bool                          //Flag to indicate if the server should reconnect
 	WaitingForConfirmation bool                          //
+	timesent               time.Time
+	timeRecived            time.Time
 )
 
 func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
@@ -43,6 +45,7 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 				fmt.Print("Active IPs: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
 				ActiveIPsMutex.Lock()
 				ActiveIPs = livingIPs
+				fmt.Println("Active IPs updated")
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
@@ -189,7 +192,7 @@ func closeAllClientConnections() {
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, message []byte) error {
-	fmt.Println("BroadcastMessage running")
+	fmt.Println("BroadcastMessage: ", string(message))
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
@@ -202,6 +205,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 
 		for {
 			_, err := conn.Write(message)
+			timesent = time.Now()
 			fmt.Println("Error: ", err)
 			if err != nil {
 				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
@@ -249,6 +253,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 	for {
 		buffer := make([]byte, 1024)
 		n, err := conn.Read(buffer)
+		timeRecived = time.Now()
 		if err != nil {
 			if err == io.EOF {
 				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
@@ -259,6 +264,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 		}
 		message := []byte(string(buffer[:n]))
 		fmt.Printf("Received from client %s: %s\n", clientAddr, message)
+		fmt.Println("Time to send and receive: ", timeRecived.Sub(timesent))
 		var responseMessage elevData.MasterList
 		utility.UnmarshalJson(message, &responseMessage)
 		if reflect.DeepEqual(responseMessage, *masterElevator) {

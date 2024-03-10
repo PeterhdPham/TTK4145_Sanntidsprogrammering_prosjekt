@@ -19,7 +19,6 @@ var error_buffer = 3
 var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
-
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
