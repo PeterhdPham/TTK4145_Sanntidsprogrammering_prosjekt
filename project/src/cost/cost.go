@@ -1,14 +1,11 @@
-package elevalgo
+package cost
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/elevData"
-	"project/tcp"
-	"project/utility"
 )
 
-func findAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
+func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
 	bestElevIP := findBestElevIP(master)
 	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {
@@ -23,9 +20,6 @@ func findAndAssign(master *elevData.MasterList, floor int, button int, fromIP st
 			}
 		}
 	}
-	jsonToSend := utility.MarshalJson(master)
-	fmt.Println("Broadcasting master")
-	tcp.BroadcastMessage(nil, jsonToSend)
 }
 
 func findBestElevIP(master *elevData.MasterList) string {

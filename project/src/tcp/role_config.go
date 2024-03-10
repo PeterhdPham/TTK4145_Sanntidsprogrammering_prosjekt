@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"Driver-go/elevio"
 	"bytes"
 	"context"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"project/cost"
 )
 
 var (
@@ -40,6 +42,11 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 			// Update the list of active IPs whenever a new list is received.
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
+				if pointerElevator.Ip == livingIPs[0] {
+					// If I'm the master i should reassign orders of the dead node
+					fmt.Println("Reassigning orders")
+					reassignOrders(masterElevator, ActiveIPs, livingIPs)
+				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
@@ -50,6 +57,35 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 		}
 	}
 }
+
+func reassignOrders(masterElevator *elevData.MasterList, oldList []string, newList []string) {
+	for _, elevator := range oldList {
+		if !contains(newList, elevator) {
+			for _, e := range masterElevator.Elevators {
+				if e.Ip == elevator {
+					for floorIndex, floorOrders := range e.Orders {
+						if floorOrders[elevio.BT_HallUp] {
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
+						}
+						if floorOrders[elevio.BT_HallDown] {
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
 func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
