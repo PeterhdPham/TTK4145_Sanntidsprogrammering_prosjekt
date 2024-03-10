@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"project/elevData"
 	"project/ip"
+	"project/variable"
 	"time"
 )
 
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
 var MyIP string
-var UpdateLocal bool = false
 
 func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
 	var myStatus elevData.ElevStatus
@@ -65,8 +65,8 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			}
 
 		}
-		if UpdateLocal {
-			UpdateLocal = false
+		if variable.UpdateLocal {
+			variable.UpdateLocal = false
 			fmt.Print("UpdateLocal")
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
 		}

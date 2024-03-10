@@ -3,11 +3,13 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/broadcast"
 	"project/elevAlgo"
 	"project/elevData"
 	"project/ip"
 	"project/tcp"
 	"project/utility"
+	"project/variable"
 	"reflect"
 	"time"
 )
@@ -16,7 +18,6 @@ const N_FLOORS int = 4
 
 var elevator elevData.Elevator
 var masterElevator elevData.MasterList
-var MyIP string
 
 func main() {
 
@@ -31,7 +32,7 @@ func main() {
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
 
-	MyIP, _ = ip.GetPrimaryIP()
+	variable.MyIP, _ = ip.GetPrimaryIP()
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
@@ -62,10 +63,10 @@ func main() {
 			} else if elevator.Role == elevData.Master {
 				// TODO: logic for master status update
 
-				elevData.UpdateMasterList(&masterElevator, elevator.Status, MyIP)
+				elevData.UpdateMasterList(&masterElevator, elevator.Status, variable.MyIP)
 				jsonToSend := utility.MarshalJson(masterElevator)
 				fmt.Println("Master status update")
-				tcp.BroadcastMessage(nil, jsonToSend)
+				broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
 			// fmt.Println("New orders: ", newOrders)

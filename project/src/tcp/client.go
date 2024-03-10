@@ -3,9 +3,9 @@ package tcp
 import (
 	"fmt"
 	"net"
-	"project/elevAlgo"
 	"project/elevData"
 	"project/utility"
+	"project/variable"
 	"reflect"
 	"strings"
 	"time"
@@ -74,7 +74,7 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator, master
 					fmt.Println("Received an unknown type of message")
 				}
 
-				elevAlgo.UpdateLocal = true // Assuming this triggers some update logic
+				variable.UpdateLocal = true // Assuming this triggers some update logic
 			}
 		}
 	}()
