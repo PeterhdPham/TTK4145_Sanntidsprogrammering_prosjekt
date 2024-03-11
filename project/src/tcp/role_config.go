@@ -91,7 +91,7 @@ func updateRole(pointerElevator *variable.Elevator, masterElevator *variable.Mas
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
-		pointerElevator.Role = variable.SLAVE
+		pointerElevator.Role = variable.MASTER
 	} else if MyIP != lowestIP && variable.ServerListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
