@@ -69,7 +69,7 @@ func main() {
 				fmt.Println("New orders: ", newOrders)
 				byteStream := utility.MarshalJson(newOrders)
 				message := []byte(string(byteStream)) // Convert message to byte slice
-				// fmt.Println("Message: ", string(message))
+				fmt.Println("Order message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
