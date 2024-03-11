@@ -234,8 +234,8 @@ func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 				fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
 					fmt.Println("Server received the correct masterList")
-					jsonToSend := utility.MarshalJson(masterElevator)
-					fmt.Println("Master:", string(jsonToSend))
+					// jsonToSend := utility.MarshalJson(masterElevator)
+					// fmt.Println("Master:", string(jsonToSend))
 				} else {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
@@ -254,9 +254,10 @@ func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 						IP:    strings.Split(clientAddr, ":")[0],
 					}
 				} else {
+					fmt.Println("Status from remote")
 					elevData.RemoteStatus = v
 					// variable.UpdateStatusFromMessage = true
-					variable.StatusReceived <- strings.Split(clientAddr, ":")[0]
+					// variable.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
 			case variable.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)

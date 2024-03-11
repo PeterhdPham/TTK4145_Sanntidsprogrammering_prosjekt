@@ -44,5 +44,6 @@ func findBestElevIP(master *variable.MasterList) string {
 			bestElevIP = ip
 		}
 	}
+	fmt.Println("Best IP: ", bestElevIP)
 	return bestElevIP
 }

@@ -45,11 +45,11 @@ func main() {
 		select {
 		case newStatus := <-myStatus:
 			elevator.Status = newStatus
+			// fmt.Println("Role: ", elevator.Role)
 
 			//Sends message to server
-			fmt.Println("Role: ", elevator.Role)
-			fmt.Println("Status: ", elevator.Status)
 			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
+				fmt.Println("Status: ", elevator.Status)
 				byteStream := utility.MarshalJson(elevator.Status)
 				message := []byte(string(byteStream)) // Convert message to byte slice
 				fmt.Println("Message: ", string(message))
