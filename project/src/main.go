@@ -44,18 +44,14 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
-
 			elevator.Status = newStatus
-
-			//Turns data into string
-			byteStream := utility.MarshalJson(elevator.Status)
-
-			message := []byte(string(byteStream)) // Convert message to byte slice
 
 			//Sends message to server
 			fmt.Println("Role: ", elevator.Role)
 			fmt.Println("Status: ", elevator.Status)
 			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
+				byteStream := utility.MarshalJson(elevator.Status)
+				message := []byte(string(byteStream)) // Convert message to byte slice
 				fmt.Println("Message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 				if err != nil {
