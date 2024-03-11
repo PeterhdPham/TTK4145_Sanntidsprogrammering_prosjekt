@@ -2,7 +2,7 @@ package elevAlgo
 
 import (
 	"Driver-go/elevio"
-	"project/variable"
+	"project/defs"
 )
 
 var N_BUTTONS = 3
@@ -20,7 +20,7 @@ func areAllOrdersFalse(orders [][]bool) bool {
 	return true
 }
 
-func requestShouldStop(status variable.ElevStatus, orders [][]bool, floor int) bool {
+func requestShouldStop(status defs.ElevStatus, orders [][]bool, floor int) bool {
 	if areAllOrdersFalse(orders) {
 		return true
 	}
@@ -38,7 +38,7 @@ func requestShouldStop(status variable.ElevStatus, orders [][]bool, floor int) b
 	return false
 }
 
-func requestClearAtFloor(myStatus variable.ElevStatus, myOrders [][]bool, floor int) (variable.ElevStatus, [][]bool) {
+func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, floor int) (defs.ElevStatus, [][]bool) {
 	switch myStatus.Direction {
 	case 1:
 		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][0] {
@@ -61,13 +61,13 @@ func requestClearAtFloor(myStatus variable.ElevStatus, myOrders [][]bool, floor 
 	return myStatus, myOrders
 }
 
-func requestShouldClearImmediately(myStatus variable.ElevStatus, myOrders [][]bool, floor int, btn int) bool {
+func requestShouldClearImmediately(myStatus defs.ElevStatus, myOrders [][]bool, floor int, btn int) bool {
 	return myStatus.Floor == floor && ((myStatus.Direction == int(elevio.MD_Up) && btn == int(elevio.BT_HallUp)) ||
 		(myStatus.Direction == int(elevio.MD_Down) && btn == int(elevio.BT_HallDown)) ||
 		(myStatus.Direction == int(elevio.MD_Stop) && btn == int(elevio.BT_Cab)))
 }
 
-func requestsAbove(status variable.ElevStatus, orders [][]bool) bool {
+func requestsAbove(status defs.ElevStatus, orders [][]bool) bool {
 	for f := status.Floor + 1; f < N_FLOORS; f++ {
 		for btn := 0; btn < N_BUTTONS; btn++ {
 			if orders[f][btn] {
@@ -78,7 +78,7 @@ func requestsAbove(status variable.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func requestsBelow(status variable.ElevStatus, orders [][]bool) bool {
+func requestsBelow(status defs.ElevStatus, orders [][]bool) bool {
 	for f := 0; f < status.Floor; f++ {
 		for btn := 0; btn < N_BUTTONS; btn++ {
 			if orders[f][btn] {
@@ -89,7 +89,7 @@ func requestsBelow(status variable.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func requestsHere(status variable.ElevStatus, orders [][]bool) bool {
+func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
 	for btn := 0; btn < N_BUTTONS; btn++ {
 		if orders[status.Floor][btn] {
 			return true
@@ -106,39 +106,39 @@ func SetAllLights(orders [][]bool) {
 	}
 }
 
-func requestsChooseDirection(status variable.ElevStatus, orders [][]bool) variable.DirnBehaviourPair {
+func requestsChooseDirection(status defs.ElevStatus, orders [][]bool) defs.DirnBehaviourPair {
 	switch status.Direction {
 	case int(elevio.MD_Up):
 		if requestsAbove(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: defs.MOVING}
 		} else if requestsHere(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.DOOR_OPEN}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: defs.DOOR_OPEN}
 		} else if requestsBelow(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: defs.MOVING}
 		} else {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.IDLE}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: defs.IDLE}
 		}
 	case int(elevio.MD_Down):
 		if requestsBelow(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: defs.MOVING}
 		} else if requestsHere(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.DOOR_OPEN}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: defs.DOOR_OPEN}
 		} else if requestsAbove(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: defs.MOVING}
 		} else {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.IDLE}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: defs.IDLE}
 		}
 	case int(elevio.MD_Stop):
 		if requestsHere(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.DOOR_OPEN}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: defs.DOOR_OPEN}
 		} else if requestsAbove(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: defs.MOVING}
 		} else if requestsBelow(status, orders) {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: variable.MOVING}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: defs.MOVING}
 		} else {
-			return variable.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.IDLE}
+			return defs.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: defs.IDLE}
 		}
 	default:
-		return variable.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: variable.IDLE}
+		return defs.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: defs.IDLE}
 	}
 }

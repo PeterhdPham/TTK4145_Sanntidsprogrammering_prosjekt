@@ -3,16 +3,16 @@ package elevAlgo
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/defs"
 	"project/elevData"
-	"project/variable"
 	"time"
 )
 
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
 
-func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStatus, orders chan [][]bool, init_order [][]bool, role variable.ElevatorRole, N_Floors int) {
-	var myStatus variable.ElevStatus
+func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole, N_Floors int) {
+	var myStatus defs.ElevStatus
 	myOrders := init_order
 	N_FLOORS = N_Floors
 
@@ -28,15 +28,15 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
 	} else {
-		myStatus.FSM_State = variable.IDLE
+		myStatus.FSM_State = defs.IDLE
 		myStatus.Floor = elevio.GetFloor()
 	}
 
 	for {
 		select {
 		case a := <-drvButtons:
-			if role == variable.MASTER {
-				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), variable.MyIP, role)
+			if role == defs.MASTER {
+				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), defs.MyIP, role)
 			} else {
 				myStatus.Buttonfloor = a.Floor
 				myStatus.Buttontype = int(a.Button)
@@ -62,24 +62,16 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
-		case a := <-variable.ButtonReceived:
-			fmt.Println("Update Orders")
+		case a := <-defs.ButtonReceived:
 			requestFloor := a.Event.Floor
 			requestButton := int(a.Event.Button)
-			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, variable.MASTER)
+			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, defs.MASTER)
 
-		case ipAddress := <-variable.StatusReceived:
-			fmt.Printf("update status from %s\n", ipAddress)
+		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, elevData.RemoteStatus, ipAddress)
-		case a := <-variable.UpdateLocal:
-			fmt.Println("Update Local Master List: ", a)
-			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
+		case <-defs.UpdateLocal:
+			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
 		}
-		// if variable.UpdateLocal {
-		// 	variable.UpdateLocal = false
-		// 	fmt.Println("Update Local Master List")
-		// 	myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
-		// }
 
 		elevStatus <- myStatus
 		orders <- myOrders

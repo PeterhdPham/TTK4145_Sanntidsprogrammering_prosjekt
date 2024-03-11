@@ -3,20 +3,20 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/defs"
 	"project/elevAlgo"
 	"project/elevData"
 	"project/ip"
 	"project/tcp"
 	"project/utility"
-	"project/variable"
 	"reflect"
 	"time"
 )
 
 const N_FLOORS int = 4
 
-var elevator variable.Elevator
-var masterElevator variable.MasterList
+var elevator defs.Elevator
+var masterElevator defs.MasterList
 
 func main() {
 
@@ -25,13 +25,13 @@ func main() {
 	elevator = elevData.InitElevator(N_FLOORS)
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
-	myStatus := make(chan variable.ElevStatus)
+	myStatus := make(chan defs.ElevStatus)
 	myOrders := make(chan [][]bool)
 	go elevData.InitOrdersChan(myOrders, N_FLOORS)
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
 
-	variable.MyIP, _ = ip.GetPrimaryIP()
+	defs.MyIP, _ = ip.GetPrimaryIP()
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
@@ -48,7 +48,7 @@ func main() {
 			// fmt.Println("Role: ", elevator.Role)
 
 			//Sends message to server
-			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
+			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				fmt.Println("Status: ", newStatus)
 				byteStream := utility.MarshalJson(newStatus)
 				message := []byte(string(byteStream)) // Convert message to byte slice
@@ -57,17 +57,17 @@ func main() {
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
 				}
-			} else if elevator.Role == variable.MASTER {
+			} else if elevator.Role == defs.MASTER {
 				// TODO: logic for master status update
 
-				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, variable.MyIP)
+				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 				// jsonToSend := utility.MarshalJson(masterElevator)
 				// broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
+				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					// fmt.Println("New orders: ", newOrders)
 					byteStream := utility.MarshalJson(elevator)
 					message := []byte(string(byteStream)) // Convert message to byte slice

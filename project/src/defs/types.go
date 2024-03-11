@@ -1,4 +1,4 @@
-package variable
+package defs
 
 import "Driver-go/elevio"
 

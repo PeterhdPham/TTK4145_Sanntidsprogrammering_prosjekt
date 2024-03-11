@@ -1,4 +1,4 @@
-package variable
+package defs
 
 const (
 	IDLE     = "EB_Idle"

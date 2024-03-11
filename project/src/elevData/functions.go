@@ -3,19 +3,19 @@ package elevData
 import (
 	"Driver-go/elevio"
 	"project/udp"
-	"project/variable"
+	"project/defs"
 )
 
-var RemoteStatus variable.ElevStatus
+var RemoteStatus defs.ElevStatus
 
-func InitElevator(NumberOfFloors int) variable.Elevator {
-	var elevator variable.Elevator
+func InitElevator(NumberOfFloors int) defs.Elevator {
+	var elevator defs.Elevator
 	ip, _ := udp.GetPrimaryIP()
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	elevator.Orders = InitOrders(NumberOfFloors)
-	elevator.Status.FSM_State = variable.IDLE
+	elevator.Status.FSM_State = defs.IDLE
 	return elevator
 }
 
@@ -37,11 +37,11 @@ func InitOrdersChan(orders chan [][]bool, numOfFloors int) {
 }
 
 func UpdateStatus(
-	elevStatusChan chan<- variable.ElevStatus,
+	elevStatusChan chan<- defs.ElevStatus,
 	direction chan elevio.MotorDirection,
 	doorOpen <-chan bool,
 ) {
-	var myStatus variable.ElevStatus
+	var myStatus defs.ElevStatus
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
 	drvObstr := make(chan bool)
@@ -93,14 +93,14 @@ func UpdateStatus(
 	}
 }
 
-func UpdateStatusMasterList(masterList *variable.MasterList, newStatus variable.ElevStatus, ip string) {
+func UpdateStatusMasterList(masterList *defs.MasterList, newStatus defs.ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Status = newStatus
 		}
 	}
 }
-func UpdateOrdersMasterList(masterList *variable.MasterList, newOrders [][]bool, ip string) {
+func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Orders = newOrders

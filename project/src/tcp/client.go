@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 	"project/utility"
-	"project/variable"
+	"project/defs"
 	"reflect"
 	"strings"
 	"time"
@@ -15,7 +15,7 @@ var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
 
-func connectToServer(serverIP string, pointerElevator *variable.Elevator, masterElevator *variable.MasterList) {
+func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
@@ -61,17 +61,17 @@ func connectToServer(serverIP string, pointerElevator *variable.Elevator, master
 
 				// Now, handle the unmarshaled data based on its type
 				switch msg := genericMessage.(type) {
-				case variable.MasterList:
+				case defs.MasterList:
 					fmt.Println("Received MasterList message")
 					// Process MasterList message
 					*masterElevator = msg
 					jsonData := utility.MarshalJson(msg)
 					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
-					variable.UpdateLocal <- "true" // Assuming this triggers some update logic
-				case variable.Elevator:
+					defs.UpdateLocal <- "true" // Assuming this triggers some update logic
+				case defs.Elevator:
 					fmt.Println("Received Elevator message")
 					// Process Elevator message
-				case variable.ElevStatus:
+				case defs.ElevStatus:
 					fmt.Println("Received ElevStatus message")
 				default:
 					fmt.Println("Received an unknown type of message")
