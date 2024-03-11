@@ -26,24 +26,47 @@ func FindAndAssign(master *variable.MasterList, floor int, button int, fromIP st
 }
 
 func findBestElevIP(master *variable.MasterList) string {
-	numRequests := make(map[string]int, len(master.Elevators))
+	if len(master.Elevators) == 0 {
+		fmt.Println("Empty")
+		return ""
+	} else {
+		fmt.Println("Length: ", len(master.Elevators))
+	}
+
+	// Initialize a slice to hold the IP and request count pairs
+	var ipRequests []variable.IpRequestCount
+
+	// Populate ipRequests with all elevators and initialize request counts to 0
 	for _, elevator := range master.Elevators {
+		ipRequests = append(ipRequests, variable.IpRequestCount{Ip: elevator.Ip, Requests: 0})
+	}
+
+	// Count requests for each elevator
+	for i, elevator := range master.Elevators {
 		for _, floor := range elevator.Orders {
 			for _, requested := range floor {
 				if requested {
-					numRequests[elevator.Ip]++
+					ipRequests[i].Requests++
 				}
 			}
 		}
 	}
-	var bestElevIP string = master.Elevators[0].Ip
-	var bestElevVal int = 1000
-	for ip, value := range numRequests {
-		if value < bestElevVal {
-			bestElevVal = value
-			bestElevIP = ip
+
+	// Print the number of requests per IP for debugging
+	for _, ipRequest := range ipRequests {
+		fmt.Printf("Elevator IP: %s, Number of Orders: %d\n", ipRequest.Ip, ipRequest.Requests)
+	}
+
+	// Find the elevator with the least number of requests
+	bestElevIP := ipRequests[0].Ip
+	bestElevVal := ipRequests[0].Requests
+	for _, ipRequest := range ipRequests {
+		if ipRequest.Requests < bestElevVal {
+			bestElevVal = ipRequest.Requests
+			bestElevIP = ipRequest.Ip
 		}
 	}
+
 	fmt.Printf("Best IP: %s with %d orders\n", bestElevIP, bestElevVal)
 	return bestElevIP
 }

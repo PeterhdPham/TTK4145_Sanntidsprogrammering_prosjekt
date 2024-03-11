@@ -35,7 +35,7 @@ func main() {
 
 	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 
 	time.Sleep(5 * time.Second)
 
@@ -65,11 +65,12 @@ func main() {
 				// broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
-			// fmt.Println("New orders: ", newOrders)
+			fmt.Println("New orders: ", newOrders)
 			elevator.Orders = newOrders
 			elevAlgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
+			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}

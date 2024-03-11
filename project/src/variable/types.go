@@ -41,3 +41,8 @@ type ElevStatus struct {
 }
 
 type ElevatorRole int
+
+type IpRequestCount struct {
+	Ip       string
+	Requests int
+}

@@ -33,6 +33,7 @@ func connectToServer(serverIP string, pointerElevator *variable.Elevator, master
 
 	elevatorJson := utility.MarshalJson(*pointerElevator)
 	SendMessage(ServerConnection, elevatorJson, reflect.TypeOf(*pointerElevator))
+	fmt.Println("Sent elevator")
 
 	// Start a goroutine to listen for messages from the server
 	go func() {
@@ -110,10 +111,6 @@ func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
-	}
-
-	if responseType.String() == "variable.MasterList" {
-		return nil
 	}
 
 	ShouldReconnect = false

@@ -41,6 +41,5 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		}
 	}
 	variable.ShouldServerReconnect = false
-	fmt.Println("Broadcasting done...")
 	return nil
 }

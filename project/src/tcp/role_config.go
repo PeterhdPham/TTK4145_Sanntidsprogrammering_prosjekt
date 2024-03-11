@@ -43,11 +43,9 @@ func Config_Roles(pointerElevator *variable.Elevator, masterElevator *variable.M
 			if !utility.SlicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				ActiveIPs = livingIPs
-				fmt.Println("Active IPs updated")
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
-			// fmt.Print("Active IPs: ", ActiveIPs, "\n", "Living IP: ", livingIPs, "\n")
 
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
@@ -88,20 +86,20 @@ func updateRole(pointerElevator *variable.Elevator, masterElevator *variable.Mas
 	if MyIP == lowestIP && !variable.ServerListening {
 		//Set role to master and starts a new server on
 		shutdownServer()
-		fmt.Println("This node is the server.")
+		// fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = variable.MASTER
 	} else if MyIP != lowestIP && variable.ServerListening {
 		//Stops the server and switches from master to slave role
-		fmt.Println("This node is no longer the server, transitioning to client...")
+		// fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = variable.SLAVE
 	} else if !variable.ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			fmt.Println("This node is a client.")
+			// fmt.Println("This node is a client.")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = variable.SLAVE
 		}
@@ -129,7 +127,7 @@ func startServer(masterElevator *variable.MasterList) {
 	variable.ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
-	fmt.Println("Starting server at: " + listenAddr)
+	// fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
@@ -267,7 +265,7 @@ func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 				}
 
 				jsonToSend := utility.MarshalJson(masterElevator)
-				fmt.Println("Broadcasting master")
+				fmt.Println("Broadcasting master: ", string(jsonToSend))
 				broadcast.BroadcastMessage(nil, jsonToSend)
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
