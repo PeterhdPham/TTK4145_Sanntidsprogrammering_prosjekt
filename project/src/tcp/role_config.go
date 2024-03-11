@@ -262,16 +262,13 @@ func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
+				} else {
+					elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
 				}
 
 				jsonToSend := utility.MarshalJson(masterElevator)
 				fmt.Println("Broadcasting master: ", string(jsonToSend))
 				broadcast.BroadcastMessage(nil, jsonToSend)
-
-			case [][]bool:
-				fmt.Printf("Unmarshaled bool from client %s.\n", clientAddr)
-				elevData.UpdateOrdersMasterList(masterElevator, v, strings.Split(clientAddr, ":")[0])
-
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
 			}

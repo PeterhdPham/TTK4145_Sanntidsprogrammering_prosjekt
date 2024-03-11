@@ -65,9 +65,10 @@ func main() {
 				// broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
+			elevator.Orders = newOrders
 			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
-				fmt.Println("New orders: ", newOrders)
-				byteStream := utility.MarshalJson(newOrders)
+				// fmt.Println("New orders: ", newOrders)
+				byteStream := utility.MarshalJson(elevator)
 				message := []byte(string(byteStream)) // Convert message to byte slice
 				fmt.Println("Order message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
@@ -76,7 +77,6 @@ func main() {
 				}
 			}
 
-			elevator.Orders = newOrders
 			elevAlgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders
 		case <-ticker.C:
