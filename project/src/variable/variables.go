@@ -6,7 +6,6 @@ import (
 	"sync"
 )
 
-var UpdateLocal bool = false
 var UpdateMutex sync.Mutex
 var UpdateOrdersFromMessage bool = false
 var UpdateStatusFromMessage bool = false
@@ -22,7 +21,6 @@ var (
 	ErrorBuffer           = 3
 )
 
-
-
+var UpdateLocal = make(chan string)
 var ButtonReceived = make(chan ButtonEventWithIP)
 var StatusReceived = make(chan string)

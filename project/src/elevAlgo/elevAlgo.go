@@ -41,7 +41,6 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 				myStatus.Buttonfloor = a.Floor
 				myStatus.Buttontype = int(a.Button)
 				fmt.Printf("Floor %d and Button %d\n", a.Floor, int(a.Button))
-				fmt.Printf("Floor %d and Button %d\n", myStatus.Floor, myStatus.Buttonfloor)
 			}
 		case a := <-drvFloors:
 			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
@@ -56,7 +55,6 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 			} else {
 				myStatus.Obstructed = false
 			}
-
 		case <-timerChannel:
 			timerStop()
 			if myStatus.Obstructed {
@@ -73,12 +71,15 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 		case ipAddress := <-variable.StatusReceived:
 			fmt.Printf("update status from %s\n", ipAddress)
 			elevData.UpdateMasterList(masterList, elevData.RemoteStatus, ipAddress)
-		}
-		if variable.UpdateLocal {
-			variable.UpdateLocal = false
-			fmt.Println("Update Local Master List")
+		case a := <-variable.UpdateLocal:
+			fmt.Println("Update Local Master List: ", a)
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
 		}
+		// if variable.UpdateLocal {
+		// 	variable.UpdateLocal = false
+		// 	fmt.Println("Update Local Master List")
+		// 	myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
+		// }
 
 		elevStatus <- myStatus
 		orders <- myOrders

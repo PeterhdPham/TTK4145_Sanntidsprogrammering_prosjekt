@@ -66,6 +66,7 @@ func connectToServer(serverIP string, pointerElevator *variable.Elevator, master
 					*masterElevator = msg
 					jsonData := utility.MarshalJson(msg)
 					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
+					variable.UpdateLocal <- "true" // Assuming this triggers some update logic
 				case variable.Elevator:
 					fmt.Println("Received Elevator message")
 					// Process Elevator message
@@ -75,7 +76,6 @@ func connectToServer(serverIP string, pointerElevator *variable.Elevator, master
 					fmt.Println("Received an unknown type of message")
 				}
 
-				variable.UpdateLocal = true // Assuming this triggers some update logic
 			}
 		}
 	}()
