@@ -49,8 +49,8 @@ func main() {
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
-				fmt.Println("Status: ", elevator.Status)
-				byteStream := utility.MarshalJson(elevator.Status)
+				fmt.Println("Status: ", newStatus)
+				byteStream := utility.MarshalJson(newStatus)
 				message := []byte(string(byteStream)) // Convert message to byte slice
 				fmt.Println("Message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
