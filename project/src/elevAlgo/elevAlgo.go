@@ -65,12 +65,11 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
 		case a := <-variable.ButtonReceived:
-			if role == variable.MASTER {
-				fmt.Println("Update Orders")
-				requestFloor := a.Event.Floor
-				requestButton := int(a.Event.Button)
-				myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, variable.MASTER)
-			}
+			fmt.Println("Update Orders")
+			requestFloor := a.Event.Floor
+			requestButton := int(a.Event.Button)
+			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, variable.MASTER)
+
 		case ipAddress := <-variable.StatusReceived:
 			fmt.Printf("update status from %s\n", ipAddress)
 			elevData.UpdateMasterList(masterList, elevData.RemoteStatus, ipAddress)
