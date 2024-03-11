@@ -5,9 +5,7 @@ import (
 	"sync"
 )
 
-var UpdateMutex sync.Mutex
-var UpdateOrdersFromMessage bool = false
-var UpdateStatusFromMessage bool = false
+// Mutex used
 
 var (
 	ServerListening       bool              = false
@@ -19,6 +17,10 @@ var (
 	ErrorBuffer           = 3
 )
 
+// Channels used
 var UpdateLocal = make(chan string)
 var ButtonReceived = make(chan ButtonEventWithIP)
 var StatusReceived = make(chan string)
+
+// ElevStatus for updating
+var RemoteStatus ElevStatus

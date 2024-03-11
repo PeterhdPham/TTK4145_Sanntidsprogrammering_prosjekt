@@ -64,12 +64,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		return
 	}
 
-	//Find the IP for the current computer
-	MyIP, err := udp.GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error obtaining the primary IP:", err)
-		return
-	}
 	//Finds the lowestIP and sets the ServerIP equal to it
 	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
 	if defs.ServerIP != lowestIP {
@@ -83,14 +77,14 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		return
 	}
 
-	if MyIP == lowestIP && !defs.ServerListening {
+	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
 		shutdownServer()
 		// fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
-	} else if MyIP != lowestIP && defs.ServerListening {
+	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
 		// fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                                       // Stop the server
@@ -240,13 +234,13 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
 				if requestButton != -1 || requestFloor != -1 {
-					elevData.RemoteStatus = v
+					defs.RemoteStatus = v
 					defs.ButtonReceived <- defs.ButtonEventWithIP{
 						Event: elevio.ButtonEvent{Floor: v.Buttonfloor, Button: elevio.ButtonType(v.Buttontype)},
 						IP:    strings.Split(clientAddr, ":")[0],
 					}
 				} else {
-					elevData.RemoteStatus = v
+					defs.RemoteStatus = v
 				}
 			case defs.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)

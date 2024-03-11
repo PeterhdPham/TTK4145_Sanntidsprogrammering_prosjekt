@@ -37,7 +37,7 @@ func main() {
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	time.Sleep(5 * time.Second)
+	// time.Sleep(5 * time.Second)
 
 	go elevAlgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role, N_FLOORS)
 
@@ -45,33 +45,25 @@ func main() {
 		select {
 		case newStatus := <-myStatus:
 			elevator.Status = newStatus
-			// fmt.Println("Role: ", elevator.Role)
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				fmt.Println("Status: ", newStatus)
 				byteStream := utility.MarshalJson(newStatus)
-				message := []byte(string(byteStream)) // Convert message to byte slice
-				// fmt.Println("Message: ", string(message))
+				message := []byte(string(byteStream))                                          // Convert message to byte slice
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
 				}
 			} else if elevator.Role == defs.MASTER {
-				// TODO: logic for master status update
-
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
-				// jsonToSend := utility.MarshalJson(masterElevator)
-				// broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
-					// fmt.Println("New orders: ", newOrders)
 					byteStream := utility.MarshalJson(elevator)
-					message := []byte(string(byteStream)) // Convert message to byte slice
-					fmt.Println("Order message: ", string(message))
+					message := []byte(string(byteStream))                                          // Convert message to byte slice
 					err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 					if err != nil {
 						fmt.Printf("Error sending elevator data: %s\n", err)
@@ -80,7 +72,6 @@ func main() {
 			}
 
 			elevAlgo.SetAllLights(elevator.Orders)
-			// elevator.Lights = newOrders
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
