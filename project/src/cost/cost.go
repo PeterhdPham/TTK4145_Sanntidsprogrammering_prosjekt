@@ -37,13 +37,13 @@ func findBestElevIP(master *variable.MasterList) string {
 		}
 	}
 	var bestElevIP string = master.Elevators[0].Ip
-	var bestElevVal int = 1e10
+	var bestElevVal int = 1000
 	for ip, value := range numRequests {
-		if value > bestElevVal {
+		if value < bestElevVal {
 			bestElevVal = value
 			bestElevIP = ip
 		}
 	}
-	fmt.Println("Best IP: ", bestElevIP)
+	fmt.Printf("Best IP: %s with %d orders\n", bestElevIP, bestElevVal)
 	return bestElevIP
 }
