@@ -52,7 +52,7 @@ func main() {
 				fmt.Println("Status: ", newStatus)
 				byteStream := utility.MarshalJson(newStatus)
 				message := []byte(string(byteStream)) // Convert message to byte slice
-				fmt.Println("Message: ", string(message))
+				// fmt.Println("Message: ", string(message))
 				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
 				if err != nil {
 					fmt.Printf("Error sending elevator data: %s\n", err)
@@ -60,12 +60,22 @@ func main() {
 			} else if elevator.Role == variable.MASTER {
 				// TODO: logic for master status update
 
-				elevData.UpdateMasterList(&masterElevator, elevator.Status, variable.MyIP)
+				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, variable.MyIP)
 				// jsonToSend := utility.MarshalJson(masterElevator)
 				// broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 		case newOrders := <-myOrders:
-			fmt.Println("New orders: ", newOrders)
+			if tcp.ServerConnection != nil && elevator.Role == variable.SLAVE {
+				fmt.Println("New orders: ", newOrders)
+				byteStream := utility.MarshalJson(newOrders)
+				message := []byte(string(byteStream)) // Convert message to byte slice
+				// fmt.Println("Message: ", string(message))
+				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
+				if err != nil {
+					fmt.Printf("Error sending elevator data: %s\n", err)
+				}
+			}
+
 			elevator.Orders = newOrders
 			elevAlgo.SetAllLights(elevator.Orders)
 			// elevator.Lights = newOrders

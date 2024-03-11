@@ -267,6 +267,11 @@ func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 				jsonToSend := utility.MarshalJson(masterElevator)
 				fmt.Println("Broadcasting master: ", string(jsonToSend))
 				broadcast.BroadcastMessage(nil, jsonToSend)
+
+			case [][]bool:
+				fmt.Printf("Unmarshaled bool from client %s.\n", clientAddr)
+				elevData.UpdateOrdersMasterList(masterElevator, v, strings.Split(clientAddr, ":")[0])
+
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
 			}

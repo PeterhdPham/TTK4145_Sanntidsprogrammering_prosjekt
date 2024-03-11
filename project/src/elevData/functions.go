@@ -93,10 +93,17 @@ func UpdateStatus(
 	}
 }
 
-func UpdateMasterList(masterList *variable.MasterList, newStatus variable.ElevStatus, ip string) {
+func UpdateStatusMasterList(masterList *variable.MasterList, newStatus variable.ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Status = newStatus
+		}
+	}
+}
+func UpdateOrdersMasterList(masterList *variable.MasterList, newOrders [][]bool, ip string) {
+	for i := 0; i < len(masterList.Elevators); i++ {
+		if masterList.Elevators[i].Ip == ip {
+			masterList.Elevators[i].Orders = newOrders
 		}
 	}
 }

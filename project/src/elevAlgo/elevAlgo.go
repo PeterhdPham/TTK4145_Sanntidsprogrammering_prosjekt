@@ -70,7 +70,7 @@ func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStat
 
 		case ipAddress := <-variable.StatusReceived:
 			fmt.Printf("update status from %s\n", ipAddress)
-			elevData.UpdateMasterList(masterList, elevData.RemoteStatus, ipAddress)
+			elevData.UpdateStatusMasterList(masterList, elevData.RemoteStatus, ipAddress)
 		case a := <-variable.UpdateLocal:
 			fmt.Println("Update Local Master List: ", a)
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
