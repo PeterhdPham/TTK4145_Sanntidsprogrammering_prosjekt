@@ -22,10 +22,7 @@ var (
 	ErrorBuffer           = 3
 )
 
-const (
-	Idle     = "EB_Idle"
-	Moving   = "EB_Moving"
-	DoorOpen = "EB_DoorOpen"
-)
 
-var MessageReceived = make(chan struct{})
+
+var ButtonReceived = make(chan ButtonEventWithIP)
+var StatusReceived = make(chan string)

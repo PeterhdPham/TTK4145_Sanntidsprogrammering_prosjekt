@@ -6,16 +6,16 @@ import (
 	"project/variable"
 )
 
-var RemoteStatus ElevStatus
+var RemoteStatus variable.ElevStatus
 
-func InitElevator(NumberOfFloors int) Elevator {
-	var elevator Elevator
+func InitElevator(NumberOfFloors int) variable.Elevator {
+	var elevator variable.Elevator
 	ip, _ := udp.GetPrimaryIP()
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	elevator.Orders = InitOrders(NumberOfFloors)
-	elevator.Status.FSM_State = variable.Idle
+	elevator.Status.FSM_State = variable.IDLE
 	return elevator
 }
 
@@ -37,11 +37,11 @@ func InitOrdersChan(orders chan [][]bool, numOfFloors int) {
 }
 
 func UpdateStatus(
-	elevStatusChan chan<- ElevStatus,
+	elevStatusChan chan<- variable.ElevStatus,
 	direction chan elevio.MotorDirection,
 	doorOpen <-chan bool,
 ) {
-	var myStatus ElevStatus
+	var myStatus variable.ElevStatus
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
 	drvObstr := make(chan bool)
@@ -93,7 +93,7 @@ func UpdateStatus(
 	}
 }
 
-func UpdateMasterList(masterList *MasterList, newStatus ElevStatus, ip string) {
+func UpdateMasterList(masterList *variable.MasterList, newStatus variable.ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Status = newStatus

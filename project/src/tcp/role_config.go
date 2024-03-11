@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"Driver-go/elevio"
 	"bytes"
 	"context"
 	"fmt"
@@ -26,7 +27,7 @@ var (
 	WaitingForConfirmation bool //
 )
 
-func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
+func Config_Roles(pointerElevator *variable.Elevator, masterElevator *variable.MasterList) {
 	//Go routines for finding active IPs
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
@@ -54,14 +55,14 @@ func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.M
 		}
 	}
 }
-func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
+func updateRole(pointerElevator *variable.Elevator, masterElevator *variable.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
 	//Sets the role to master if there is not active IPs (Internet turned off while running)
 	if len(ActiveIPs) == 0 {
 		fmt.Println("No active IPs found. Waiting for discovery...")
-		pointerElevator.Role = elevData.Master
+		pointerElevator.Role = variable.MASTER
 		return
 	}
 
@@ -80,7 +81,7 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
 		fmt.Println("Running on localhost")
-		pointerElevator.Role = elevData.Master
+		pointerElevator.Role = variable.MASTER
 		return
 	}
 
@@ -90,24 +91,24 @@ func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.Mas
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
-		pointerElevator.Role = elevData.Master
+		pointerElevator.Role = variable.SLAVE
 	} else if MyIP != lowestIP && variable.ServerListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
-		pointerElevator.Role = elevData.Slave
+		pointerElevator.Role = variable.SLAVE
 	} else if !variable.ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
-			pointerElevator.Role = elevData.Slave
+			pointerElevator.Role = variable.SLAVE
 		}
 	}
 }
 
-func startServer(masterElevator *elevData.MasterList) {
+func startServer(masterElevator *variable.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	variable.ClientConnections = make(map[net.Conn]bool)
 	_, err := udp.GetPrimaryIP()
@@ -186,7 +187,7 @@ func CompareMasterLists(list1, list2 []byte) bool {
 }
 
 // Handles individual client connections.
-func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
+func handleConnection(conn net.Conn, masterElevator *variable.MasterList) {
 	variable.ClientMutex.Lock()
 	variable.ClientConnections[conn] = true
 	variable.ClientMutex.Unlock()
@@ -229,7 +230,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
-			case elevData.MasterList:
+			case variable.MasterList:
 				fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
 					fmt.Println("Server received the correct masterList")
@@ -238,7 +239,7 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				} else {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
-			case elevData.ElevStatus:
+			case variable.ElevStatus:
 				fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
 				fmt.Printf("Data: %v\n", v)
 				requestFloor := v.Buttonfloor
@@ -247,17 +248,17 @@ func handleConnection(conn net.Conn, masterElevator *elevData.MasterList) {
 				if requestButton != -1 || requestFloor != -1 {
 					fmt.Println("Button from remote")
 					elevData.RemoteStatus = v
-					variable.UpdateOrdersFromMessage = true
 					fmt.Printf("Variable: %v\n", variable.UpdateOrdersFromMessage)
-					// variable.DrvButtons <- elevio.ButtonEvent{Floor: elevData.RemoteStatus.Floor, Button: elevio.ButtonType(elevData.RemoteStatus.Buttontype)}
-
+					variable.ButtonReceived <- variable.ButtonEventWithIP{
+						Event: elevio.ButtonEvent{Floor: v.Buttonfloor, Button: elevio.ButtonType(v.Buttontype)},
+						IP:    strings.Split(clientAddr, ":")[0],
+					}
 				} else {
 					elevData.RemoteStatus = v
-					variable.UpdateStatusFromMessage = true
-					// IP IMportant
+					// variable.UpdateStatusFromMessage = true
+					variable.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
-
-			case elevData.Elevator:
+			case variable.Elevator:
 				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {

@@ -4,20 +4,17 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/elevData"
-	"project/ip"
 	"project/variable"
 	"time"
 )
 
 var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
-var MyIP string
 
-func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStatus, orders chan [][]bool, init_order [][]bool, role elevData.ElevatorRole, N_Floors int) {
-	var myStatus elevData.ElevStatus
+func ElevAlgo(masterList *variable.MasterList, elevStatus chan variable.ElevStatus, orders chan [][]bool, init_order [][]bool, role variable.ElevatorRole, N_Floors int) {
+	var myStatus variable.ElevStatus
 	myOrders := init_order
 	N_FLOORS = N_Floors
-	MyIP, _ = ip.GetPrimaryIP()
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -31,15 +28,15 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
 	} else {
-		myStatus.FSM_State = variable.Idle
+		myStatus.FSM_State = variable.IDLE
 		myStatus.Floor = elevio.GetFloor()
 	}
 
 	for {
 		select {
 		case a := <-drvButtons:
-			if role == elevData.Master {
-				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), MyIP, role)
+			if role == variable.MASTER {
+				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), variable.MyIP, role)
 			} else {
 				myStatus.Buttonfloor = a.Floor
 				myStatus.Buttontype = int(a.Button)
@@ -67,26 +64,21 @@ func ElevAlgo(masterList *elevData.MasterList, elevStatus chan elevData.ElevStat
 			} else {
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
-			// case <-variable.MessageReceived:
-			// 	if role == elevData.Master {
-			// 		fmt.Println("Test message")
-			// 		if variable.UpdateOrdersFromMessage {
-			// 			fmt.Print("UpdateFromMessage")
-			// 			variable.UpdateStatusFromMessage = false
-			// 			requestFloor := elevData.RemoteStatus.Buttonfloor
-			// 			requestButton := elevData.RemoteStatus.Buttontype
-			// 			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, variable.MyIP, elevData.Master)
-			// 		} else if variable.UpdateStatusFromMessage {
-			// 			fmt.Print("update status from message")
-			// 			myStatus = elevData.RemoteStatus
-			// 			variable.UpdateStatusFromMessage = false
-			// 		}
-			// 	}
+		case a := <-variable.ButtonReceived:
+			if role == variable.MASTER {
+				fmt.Println("Update Orders")
+				requestFloor := a.Event.Floor
+				requestButton := int(a.Event.Button)
+				myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, variable.MASTER)
+			}
+		case ipAddress := <-variable.StatusReceived:
+			fmt.Printf("update status from %s\n", ipAddress)
+			elevData.UpdateMasterList(masterList, elevData.RemoteStatus, ipAddress)
 		}
 		if variable.UpdateLocal {
 			variable.UpdateLocal = false
-			fmt.Print("UpdateLocal")
-			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", elevData.Slave)
+			fmt.Println("Update Local Master List")
+			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", variable.SLAVE)
 		}
 
 		elevStatus <- myStatus

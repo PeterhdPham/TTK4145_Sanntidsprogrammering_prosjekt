@@ -3,10 +3,10 @@ package cost
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"project/elevData"
+	"project/variable"
 )
 
-func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP string) {
+func FindAndAssign(master *variable.MasterList, floor int, button int, fromIP string) {
 	fmt.Printf("Floor: %d and Button: %d\n", floor, button)
 	bestElevIP := findBestElevIP(master)
 	if button == int(elevio.BT_Cab) {
@@ -25,7 +25,7 @@ func FindAndAssign(master *elevData.MasterList, floor int, button int, fromIP st
 
 }
 
-func findBestElevIP(master *elevData.MasterList) string {
+func findBestElevIP(master *variable.MasterList) string {
 	numRequests := make(map[string]int, len(master.Elevators))
 	for _, elevator := range master.Elevators {
 		for _, floor := range elevator.Orders {

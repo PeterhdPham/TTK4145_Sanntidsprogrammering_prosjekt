@@ -4,28 +4,23 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"math/rand"
+	"project/variable"
 	"time"
 )
 
-type LightStatus struct {
-	HallLightUp   []bool `json:"HallLightUp"`
-	HallLightDown []bool `json:"HallLightDown"`
-	CabLight      []bool `json:"CabLight"`
-}
-
-func InitLights(NumberOfFloors int) LightStatus {
+func InitLights(NumberOfFloors int) variable.LightStatus {
 	hallUp := make([]bool, NumberOfFloors)
 	hallDown := make([]bool, NumberOfFloors)
 	cab := make([]bool, NumberOfFloors)
 
-	return LightStatus{
+	return variable.LightStatus{
 		HallLightUp:   hallUp,
 		HallLightDown: hallDown,
 		CabLight:      cab,
 	}
 }
 
-func UpdateLights(lightStatus LightStatus) { // Pass LightStatus as an argument
+func UpdateLights(lightStatus variable.LightStatus) { // Pass LightStatus as an argument
 	// Iterating through hall_light_up and changing the lights based on the values
 	for i, val := range lightStatus.HallLightUp {
 		elevio.SetButtonLamp(0, i, val)
@@ -42,7 +37,7 @@ func UpdateLights(lightStatus LightStatus) { // Pass LightStatus as an argument
 	}
 }
 
-func RandomizeLights(NumberOfFloors int, updateChan chan<- LightStatus) {
+func RandomizeLights(NumberOfFloors int, updateChan chan<- variable.LightStatus) {
 	rand.Seed(time.Now().UnixNano()) // Seed random number generator
 
 	for {
@@ -65,7 +60,7 @@ func RandomizeLights(NumberOfFloors int, updateChan chan<- LightStatus) {
 	}
 }
 
-func ContinuousUpdate(updateChan <-chan LightStatus) {
+func ContinuousUpdate(updateChan <-chan variable.LightStatus) {
 	for newLightStatus := range updateChan {
 		UpdateLights(newLightStatus)                     // Apply the update to the lights
 		fmt.Println("New light status:", newLightStatus) // Optional: print the new status for verification
