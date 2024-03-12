@@ -6,14 +6,12 @@ import (
 	"project/defs"
 	"project/elevAlgo"
 	"project/elevData"
-	"project/ip"
 	"project/tcp"
+	"project/udp"
 	"project/utility"
 	"reflect"
 	"time"
 )
-
-const N_FLOORS int = 4
 
 var elevator defs.Elevator
 var masterElevator defs.MasterList
@@ -22,24 +20,24 @@ func main() {
 
 	fmt.Println("Booting elevator") // just to know we're running
 
-	elevator = elevData.InitElevator(N_FLOORS)
+	elevator = elevData.InitElevator(defs.N_FLOORS)
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
 	myStatus := make(chan defs.ElevStatus)
 	myOrders := make(chan [][]bool)
-	go elevData.InitOrdersChan(myOrders, N_FLOORS)
+	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS)
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
 
-	defs.MyIP, _ = ip.GetPrimaryIP()
+	defs.MyIP, _ = udp.GetPrimaryIP()
 
-	elevio.Init("localhost:15657", N_FLOORS) // connect to elevatorsimulator
+	elevio.Init("localhost:15657", defs.N_FLOORS) // connect to elevatorsimulator
 
 	ticker := time.NewTicker(5 * time.Second)
 
 	// time.Sleep(5 * time.Second)
 
-	go elevAlgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role, N_FLOORS)
+	go elevAlgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {

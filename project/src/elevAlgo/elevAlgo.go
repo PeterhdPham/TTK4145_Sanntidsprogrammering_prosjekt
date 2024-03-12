@@ -8,13 +8,11 @@ import (
 	"time"
 )
 
-var N_FLOORS int
 var doorOpenDuration time.Duration = 3 * time.Second
 
-func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole, N_Floors int) {
+func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	var myStatus defs.ElevStatus
 	myOrders := init_order
-	N_FLOORS = N_Floors
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)

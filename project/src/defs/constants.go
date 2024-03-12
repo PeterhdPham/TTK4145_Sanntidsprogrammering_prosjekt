@@ -1,8 +1,10 @@
 package defs
 
+var N_FLOORS = 4
+
 const (
-	IDLE     = "EB_Idle"
-	MOVING   = "EB_Moving"
+	IDLE      = "EB_Idle"
+	MOVING    = "EB_Moving"
 	DOOR_OPEN = "EB_DoorOpen"
 )
 

@@ -68,7 +68,7 @@ func requestShouldClearImmediately(myStatus defs.ElevStatus, myOrders [][]bool, 
 }
 
 func requestsAbove(status defs.ElevStatus, orders [][]bool) bool {
-	for f := status.Floor + 1; f < N_FLOORS; f++ {
+	for f := status.Floor + 1; f < defs.N_FLOORS; f++ {
 		for btn := 0; btn < N_BUTTONS; btn++ {
 			if orders[f][btn] {
 				return true
@@ -99,7 +99,7 @@ func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
 }
 
 func SetAllLights(orders [][]bool) {
-	for floor := 0; floor < N_FLOORS; floor++ {
+	for floor := 0; floor < defs.N_FLOORS; floor++ {
 		for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
 			elevio.SetButtonLamp(btn, floor, orders[floor][btn])
 		}
