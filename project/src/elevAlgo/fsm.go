@@ -12,7 +12,7 @@ import (
 func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
 	elevio.SetMotorDirection(-1)
 	status.FSM_State = defs.MOVING
-	failureTimerStart(failureTimeoutDuration, int(MotorFail))
+	failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
 	status.Direction = -1
 
 	return status
@@ -34,7 +34,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) defs
 			status.Doors = true
 			timerStart(doorOpenDuration)
 			status.FSM_State = defs.DOOR_OPEN
-			failureTimerStart(failureTimeoutDuration, int(DoorStuck))
+			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
@@ -42,7 +42,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) defs
 			//Sets the lights according to the current orders
 			SetAllLights(orders)
 		} else {
-			failureTimerStart(failureTimeoutDuration, int(MotorFail))
+			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
 
 		}
 	default:
@@ -81,12 +81,12 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 			timerStart(doorOpenDuration)
 			status.FSM_State = defs.DOOR_OPEN
 			status.Doors = true
-			failureTimerStart(failureTimeoutDuration, int(DoorStuck))
+			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
 
 		}
 	case defs.IDLE:
 		status.FSM_State = defs.MOVING
-		failureTimerStart(failureTimeoutDuration, int(MotorFail))
+		failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
 
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
@@ -121,7 +121,7 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, floor int) (defs
 			elevio.SetDoorOpenLamp(false)
 			status.Doors = false
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
-			failureTimerStart(failureTimeoutDuration, int(MotorFail))
+			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
 
 		}
 

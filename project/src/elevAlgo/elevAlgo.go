@@ -14,12 +14,8 @@ import (
 var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
-type FailureMode int
 
-const (
-	DoorStuck FailureMode = 0
-	MotorFail FailureMode = 1
-)
+
 
 func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	var myStatus defs.ElevStatus

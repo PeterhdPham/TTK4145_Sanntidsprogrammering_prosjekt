@@ -13,3 +13,8 @@ const (
 	MASTER    ElevatorRole = 0
 	SLAVE     ElevatorRole = 1
 )
+
+const (
+	DOOR_STUCK FailureMode = 0
+	MOTOR_FAIL FailureMode = 1
+)

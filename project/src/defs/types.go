@@ -47,3 +47,6 @@ type IpRequestCount struct {
 	Ip       string
 	Requests int
 }
+
+type FailureMode int
+
