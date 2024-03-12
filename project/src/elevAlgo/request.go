@@ -38,7 +38,7 @@ func requestShouldStop(status defs.ElevStatus, orders [][]bool, floor int) bool 
 	return false
 }
 
-func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][]bool,floor int) (defs.ElevStatus, [][]bool, [][]bool) {
+func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][]bool,floor int) (defs.ElevStatus, [][]bool) {
 	switch myStatus.Direction {
 	case 1:
 		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][0] {
@@ -63,11 +63,12 @@ func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][
 	}
 
 	myOrders[floor][2] = false
+	lights[floor][2] = false
 
-	return myStatus, myOrders, lights
+	return myStatus, lights
 }
 
-func requestShouldClearImmediately(myStatus defs.ElevStatus, myOrders [][]bool, floor int, btn int) bool {
+func requestShouldClearImmediately(myStatus defs.ElevStatus, floor int, btn int) bool {
 	return myStatus.Floor == floor && ((myStatus.Direction == int(elevio.MD_Up) && btn == int(elevio.BT_HallUp)) ||
 		(myStatus.Direction == int(elevio.MD_Down) && btn == int(elevio.BT_HallDown)) ||
 		myStatus.Direction == int(elevio.MD_Stop) ||

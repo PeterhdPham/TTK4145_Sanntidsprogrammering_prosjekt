@@ -9,7 +9,8 @@ func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string
 	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {
 			if master.Elevators[elevator].Ip == fromIP {
-				master.Elevators[elevator].Orders[floor][int(elevio.BT_Cab)] = true
+				master.Elevators[elevator].Orders[floor][button] = true
+				master.Elevators[elevator].Lights[floor][button] = true
 			}
 		}
 	} else {
