@@ -3,8 +3,8 @@ package tcp
 import (
 	"fmt"
 	"net"
-	"project/utility"
 	"project/defs"
+	"project/utility"
 	"reflect"
 	"strings"
 	"time"
@@ -14,6 +14,7 @@ var ServerConnection net.Conn
 var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
+var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	serverAddr := serverIP

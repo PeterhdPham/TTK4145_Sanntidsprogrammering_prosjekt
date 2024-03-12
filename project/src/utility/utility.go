@@ -101,3 +101,12 @@ func IsIPInMasterList(ip string, masterList defs.MasterList) bool {
 	}
 	return false // IP not found in the list
 }
+
+func Contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}

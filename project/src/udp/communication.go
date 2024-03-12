@@ -32,12 +32,25 @@ func BroadcastLife() {
 	ticker := time.NewTicker(BROADCAST_PERIOD)
 	defer ticker.Stop()
 
+	var errCount int = 0
+
 	for range ticker.C {
 		// Construct the message with timestamp and sender's IP
 		message := "Please give us an A on the project:)" // Simplified message for demonstration
 		_, err := conn.Write([]byte(message))
 		if err != nil {
+			errCount++
 			fmt.Println("Error sending udp-message: ", err)
+			if errCount > 10 {
+				fmt.Println("Too many consecutive errors, Restarting UDP connection")
+				conn.Close()
+				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				errCount = 0
+			}
 		}
 	}
 }

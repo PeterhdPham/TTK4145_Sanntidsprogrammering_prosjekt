@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"project/broadcast"
+	"project/cost"
 	"project/defs"
 	"project/elevData"
 	"project/udp"
@@ -40,19 +41,64 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			if !utility.SlicesAreEqual(ActiveIPs, livingIPs) {
+			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
+				if pointerElevator.Ip == livingIPs[0] {
+					// If I'm the master i should reassign orders of the dead node
+					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
+					jsonToSend := utility.MarshalJson(masterElevator)
+					broadcast.BroadcastMessage(nil, jsonToSend)
+				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
-
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
 			// updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
+
+// Used when the ActiveIPs list is changed
+func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList []string) {
+	fmt.Println("Reassigning orders")
+	for _, elevator := range oldList {
+		if !utility.Contains(newList, elevator) {
+			for _, e := range masterElevator.Elevators {
+				if e.Ip == elevator {
+					for floorIndex, floorOrders := range e.Orders {
+						if floorOrders[elevio.BT_HallUp] {
+							floorOrders[elevio.BT_HallUp] = false
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
+						}
+						if floorOrders[elevio.BT_HallDown] {
+							floorOrders[elevio.BT_HallDown] = false
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// Used when elevators still are online, but one or more elevators are inoperative
+func ReassignOrders2(masterList *defs.MasterList) {
+	operativeElevators := make([]string, 0)
+	livingElevators := make([]string, 0)
+
+	for _, e := range masterList.Elevators {
+		livingElevators = append(livingElevators, e.Ip)
+		if e.Status.Operative && (e.Ip != defs.MyIP) {
+			operativeElevators = append(operativeElevators, e.Ip)
+		}
+	}
+	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
+		ReassignOrders(masterList, livingElevators, operativeElevators)
+	}
+}
+
 func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
@@ -276,4 +322,16 @@ func shutdownServer() {
 	// Finally, mark the server as not listening
 	defs.ServerListening = false
 	fmt.Println("Server has been shut down and all connections are closed.")
+}
+
+func slicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

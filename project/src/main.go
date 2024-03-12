@@ -4,7 +4,7 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"project/defs"
-	"project/elevAlgo"
+	elevalgo "project/elevAlgo"
 	"project/elevData"
 	"project/tcp"
 	"project/udp"
@@ -37,7 +37,7 @@ func main() {
 
 	// time.Sleep(5 * time.Second)
 
-	go elevAlgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -69,7 +69,7 @@ func main() {
 				}
 			}
 
-			elevAlgo.SetAllLights(elevator.Orders)
+			elevalgo.SetAllLights(elevator.Orders)
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
