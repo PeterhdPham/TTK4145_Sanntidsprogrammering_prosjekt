@@ -109,6 +109,7 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, floor int) (defs
 			SetAllLights(orders)
 		case defs.MOVING, defs.IDLE:
 			elevio.SetDoorOpenLamp(false)
+			status.Doors = false
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
 		}
 
