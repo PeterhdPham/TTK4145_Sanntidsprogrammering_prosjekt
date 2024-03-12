@@ -2,12 +2,14 @@ package tcp
 
 import (
 	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"project/elevData"
-	"strings"
+	"project/utility"
 	"time"
 )
 
@@ -15,8 +17,10 @@ var ServerConnection net.Conn
 var ServerError error
 var ShouldReconnect bool
 var error_buffer = 3
+var UpdateLocal bool = false
 
-func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
+func connectToServer(serverIP string, pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
+
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
@@ -28,6 +32,9 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 	fmt.Println("Connected to server at", serverAddr)
 	connected = true
 	ShouldReconnect = false
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
 
 	// Start a goroutine to listen for messages from the server
 	go func() {
@@ -49,11 +56,29 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 			message := string(buffer[:n])
 			fmt.Printf("Message from server: %s\n", message)
 
-			// TODO: Handle the message and update stored data on the elevator
+			// Overwrite masterElevator with the data from buffer
+			fmt.Println("Old masterElevator:", masterElevator)
+			utility.UnmarshalJson(buffer[:n], &masterElevator)
+
+			fmt.Println("New masterElevator:", masterElevator)
+			// Serialize masterElevator to JSON
+			jsonData := utility.MarshalJson(masterElevator)
+			if err != nil {
+				fmt.Printf("Error occurred during marshaling: %v", err)
+				return
+			}
+
+			// Send jsonData back to the primary
+			err = SendMessage(ServerConnection, jsonData)
+			if err != nil {
+				fmt.Printf("Error sending updated masterElevator: %v", err)
+			}
+
+			UpdateLocal = true
 		}
 	}()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker = time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	// Run a separate goroutine to listen for the exit command
@@ -77,14 +102,15 @@ func connectToServer(serverIP string, pointerElevator *elevData.Elevator) {
 	connected = false
 }
 
-func SendMessage(conn net.Conn, message string) error {
-	fmt.Println("Sending message: ", message)
+func SendMessage(conn net.Conn, message []byte) error {
+	// fmt.Println("Client sending message: ", string(message))
 	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
-	if !strings.HasSuffix(message, "\n") {
-		message += "\n"
+	if !bytes.HasSuffix(message, []byte("\n")) {
+		message = append(message, '\n')
 	}
+
 	for {
-		_, err := conn.Write([]byte(message))
+		_, err := conn.Write(message)
 		if err != nil {
 			fmt.Printf("Error sending message: %s\n", err)
 			if error_buffer == 0 {
@@ -100,6 +126,21 @@ func SendMessage(conn net.Conn, message string) error {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+
+	// Read the response from the server
+	response := make([]byte, 1024)
+	_, err := conn.Read(response)
+	if err != nil {
+		fmt.Printf("Error reading response: %s\n", err)
+		return err
+	}
+
+	// Compare the response with the message that was sent
+	if !bytes.Equal(message, response) {
+		fmt.Println("Server did not receive the correct message")
+		return errors.New("server did not receive the correct message")
+	}
+
 	ShouldReconnect = false
 	return nil
 }

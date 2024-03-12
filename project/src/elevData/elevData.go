@@ -1,28 +1,25 @@
 package elevData
 
-import (
-	"project/light_status"
-)
-
 type MasterList struct {
 	Elevators []Elevator `json:"elevators"`
 }
 
 type Elevator struct {
-	Ip     string                   `json:"ip"`
-	Status ElevStatus               `json:"status"`
-	Lights light_status.LightStatus `json:"lights"`
-	Orders [][]bool                 `json:"orders"`
-	Role   ElevatorRole             `json:"role"`
+	Ip       string       `json:"ip"`
+	Status   ElevStatus   `json:"status"`
+	Orders   [][]bool     `json:"orders"`
+	Role     ElevatorRole `json:"role"`
 }
 
 type ElevStatus struct {
-	Direction   int  `json:"direction"`
-	Floor       int  `json:"floor"`
-	Doors       bool `json:"doors"`
-	Obstructed  bool `json:"obstructed"`
-	Buttonfloor int  `json:"buttonfloor"`
-	Buttontype  int  `json:"buttontype"`
+	Direction   int    `json:"direction"`
+	Floor       int    `json:"floor"`
+	Doors       bool   `json:"doors"`
+	Obstructed  bool   `json:"obstructed"`
+	Buttonfloor int    `json:"buttonfloor"`
+	Buttontype  int    `json:"buttontype"`
+	FSM_State   string `json:"fsm_state"`
+	Operative bool `json:"operative"`
 }
 
 type ElevatorRole int

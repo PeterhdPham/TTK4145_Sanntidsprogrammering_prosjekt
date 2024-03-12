@@ -1,53 +1,104 @@
 package tcp
 
 import (
-	"bufio"
+	"Driver-go/elevio"
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
-	"os"
+	"project/cost"
 	"project/elevData"
 	"project/udp"
-	"sort"
+	"project/utility"
 	"strings"
 	"sync"
 	"time"
 )
 
 var (
-	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs      []string                      //List of active IPs
-	connected      bool                  = false //Client connection state
-	ServerIP       string                        //Server IP
-	lowestIP       string                        //Lowest IP
-	MyIP           string                        //IP address for current computer
+	LivingIPsChan         = make(chan []string)         //Stores living IPs from the Look_for_life function
+	ActiveIPsMutex        sync.Mutex                    //Mutex for protecting active IPs
+	ActiveIPs             []string                      //List of active IPs
+	connected             bool                  = false //Client connection state
+	ServerIP              string                        //Server IP
+	MyIP                  string                        //IP address for current computer
+	ShouldServerReconnect bool                          //Flag to indicate if the server should reconnect
 )
 
-func Config_Roles(pointerElevator *elevData.Elevator) {
+func Config_Roles(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	//Go routines for finding active IPs
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
 	// Initialize a ticker that ticks every 1 seconds.
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			ActiveIPsMutex.Lock()
-			ActiveIPs = livingIPs
-			ActiveIPsMutex.Unlock()
+			if !slicesAreEqual(ActiveIPs, livingIPs) {
+				ActiveIPsMutex.Lock()
+				if pointerElevator.Ip == livingIPs[0] {
+					// If I'm the master i should reassign orders of the dead node
+					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
+					jsonToSend := utility.MarshalJson(masterElevator)
+					BroadcastMessage(nil, jsonToSend)
+				}
+				ActiveIPs = livingIPs
+				ActiveIPsMutex.Unlock()
+				updateRole(pointerElevator, masterElevator)
+			}
 		case <-ticker.C:
 			// Every 1 seconds, check the roles and updates if necessary.
-			updateRole(pointerElevator)
+			// updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
-func updateRole(pointerElevator *elevData.Elevator) {
+
+// Used when the ActiveIPs list is changed
+func ReassignOrders(masterElevator *elevData.MasterList, oldList []string, newList []string) {
+	fmt.Println("Reassigning orders")
+	for _, elevator := range oldList {
+		if !utility.Contains(newList, elevator) {
+			for _, e := range masterElevator.Elevators {
+				if e.Ip == elevator {
+					for floorIndex, floorOrders := range e.Orders {
+						if floorOrders[elevio.BT_HallUp] {
+							floorOrders[elevio.BT_HallUp] = false
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
+						}
+						if floorOrders[elevio.BT_HallDown] {
+							floorOrders[elevio.BT_HallDown] = false
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// Used when elevators still are online, but one or more elevators are inoperative
+func ReassignOrders2(masterList *elevData.MasterList) {
+	operativeElevators := make([]string, 0)
+	livingElevators := make([]string, 0)
+
+	for _, e := range masterList.Elevators {
+		livingElevators = append(livingElevators, e.Ip)
+		if e.Status.Operative && (e.Ip != MyIP) {
+			operativeElevators = append(operativeElevators, e.Ip)
+		}
+	}
+	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
+		ReassignOrders(masterList, livingElevators, operativeElevators)
+	}
+}
+
+func updateRole(pointerElevator *elevData.Elevator, masterElevator *elevData.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
@@ -57,8 +108,6 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		pointerElevator.Role = elevData.Master
 		return
 	}
-
-	sort.Strings(ActiveIPs)
 
 	//Find the IP for the current computer
 	MyIP, err := udp.GetPrimaryIP()
@@ -84,19 +133,19 @@ func updateRole(pointerElevator *elevData.Elevator) {
 		shutdownServer()
 		fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
-		go startServer() // Ensure server starts in a non-blocking manner
+		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = elevData.Master
 	} else if MyIP != lowestIP && serverListening {
 		//Stops the server and switches from master to slave role
 		fmt.Println("This node is no longer the server, transitioning to client...")
-		shutdownServer()                                       // Stop the server
-		go connectToServer(lowestIP+":55555", pointerElevator) // Transition to client
+		shutdownServer()                                                       // Stop the server
+		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = elevData.Slave
 	} else if !serverListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println("This node is a client.")
-			go connectToServer(lowestIP+":55555", pointerElevator)
+			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = elevData.Slave
 		}
 	}
@@ -111,10 +160,14 @@ var (
 	clientMutex       sync.Mutex // Protects access to clientConnections
 )
 
-func startServer() {
+func startServer(masterElevator *elevData.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	clientConnections = make(map[net.Conn]bool)
-
+	_, err := udp.GetPrimaryIP()
+	if err != nil {
+		fmt.Println("Error obtaining the primary IP:", err)
+		return
+	}
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if serverListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
@@ -142,21 +195,28 @@ func startServer() {
 	fmt.Println("Server listening on", listenAddr)
 
 	// Goroutine for server admin to broadcast messages to all clients
-	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			fmt.Print("Enter message to broadcast: ")
-			msg, _ := reader.ReadString('\n')
-			msg = strings.TrimSpace(msg) // Remove newline character
+	// go func() {
+	// 	ticker := time.NewTicker(3 * time.Second)
+	// 	defer ticker.Stop()
 
-			// Broadcast the message to all connected clients
-			BroadcastMessage(msg, nil) // Passing nil as the origin since this message is from the server
-			if connected {
-				break
-			}
-		}
+	// 	for range ticker.C {
+	// 		// Check if the only active IP is the server itself
+	// 		if len(ActiveIPs) == 1 && ActiveIPs[0] == MyIP {
+	// 			continue // Skip broadcasting
+	// 		}
 
-	}()
+	// 		jsonData := utility.MarshalJson(masterElevator)
+	// 		if err != nil {
+	// 			fmt.Printf("Error occurred during marshaling: %v", err)
+	// 			return
+	// 		}
+	// 		// Broadcast the message to all connected clients
+	// 		BroadcastMessage(ServerConnection, []byte(jsonData)) // Passing nil as the origin since this message is from the server
+	// 		if connected {
+	// 			break
+	// 		}
+	// 	}
+	// }()
 
 	// Accept new connections unless server shutdown is requested
 	go func() {
@@ -198,29 +258,95 @@ func closeAllClientConnections() {
 }
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(message string, origin net.Conn) {
+func BroadcastMessage(origin net.Conn, message []byte) error {
+	// fmt.Println("Server sending message: ", string(message))
+	// Ensure the message ends with a newline character, which may be needed depending on the server's reading logic.
+	if !bytes.HasSuffix(message, []byte("\n")) {
+		message = append(message, '\n')
+	}
+
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
 	for conn := range clientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
+			fmt.Println("Skipping connection")
 			continue // Skip sending the message back to the origin client
 		}
-		_, err := conn.Write([]byte(message))
+
+		for {
+			_, err := conn.Write(message)
+			fmt.Println("Error: ", err)
+			if err != nil {
+				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				if error_buffer == 0 {
+					fmt.Println("Too many consecutive errors, stopping...")
+					ShouldServerReconnect = true
+					return err // Stop if there are too many consecutive errors
+				} else {
+					error_buffer--
+				}
+			} else {
+				error_buffer = 3 // Reset the error buffer on successful send
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		// Read the response from the client
+		buffer := make([]byte, 1024)
+		n, err := conn.Read(buffer)
 		if err != nil {
-			fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-			// Handle failed send e.g., by removing the client connection if necessary
+			fmt.Printf("Failed to read response from client %s: %s\n", conn.RemoteAddr(), err)
+			return err
+		}
+
+		// Unmarshal the response into a MasterList
+		var responsemessage elevData.MasterList
+		utility.UnmarshalJson(buffer[:n], &responsemessage)
+
+		// Convert responsemessage to []byte
+		responseBytes := utility.MarshalJson(responsemessage)
+		if err != nil {
+			fmt.Printf("Failed to marshal responsemessage: %s\n", err)
+			return err
+		}
+
+		// Compare the responseBytes with the message that was sent
+		if !CompareMasterLists(message, responseBytes) {
+			fmt.Printf("Client %s did not receive the correct masterList\n", conn.RemoteAddr())
+			return errors.New("client did not receive the correct masterList")
+		} else {
+			fmt.Printf("Client %s received the correct masterList\n", conn.RemoteAddr())
 		}
 	}
+
+	ShouldServerReconnect = false
+	return nil
 }
 
-// Handles individual client connections.
+// Implement or adjust compareMasterLists to be compatible with the above modifications
+func CompareMasterLists(list1, list2 []byte) bool {
+	return bytes.Equal(list1, list2)
+
+} // Handles individual client connections.
 func handleConnection(conn net.Conn) {
+	// addNew := true
+	// for c, _ := range clientConnections {
+	// 	if strings.Split(conn.RemoteAddr().String(), ":")[0] == strings.Split(c.RemoteAddr().String(), ":")[0] {
+	// 		addNew = false
+	// 		clientMutex.Lock()
+	// 		delete(clientConnections, c)
+	// 		clientMutex.Unlock()
+	// 		break
+	// 	}
+	// }
+	// if addNew {
 	clientMutex.Lock()
 	clientConnections[conn] = true
 	clientMutex.Unlock()
-
+	// }
 	defer func() {
 		conn.Close()
 		clientMutex.Lock()
@@ -267,4 +393,16 @@ func shutdownServer() {
 	// Finally, mark the server as not listening
 	serverListening = false
 	fmt.Println("Server has been shut down and all connections are closed.")
+}
+
+func slicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
