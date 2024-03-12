@@ -3,6 +3,7 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/broadcast"
 	"project/defs"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
@@ -72,6 +73,10 @@ func main() {
 		case newLights := <-myLights:
 			elevator.Lights = newLights
 			elevalgo.SetAllLights(newLights)
+			if elevator.Role == defs.MASTER {
+				byteStream := utility.MarshalJson(masterElevator)
+				broadcast.BroadcastMessage(nil, byteStream)
+			}
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
