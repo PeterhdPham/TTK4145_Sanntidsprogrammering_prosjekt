@@ -11,12 +11,13 @@ func InitElevator(NumberOfFloors int) defs.Elevator {
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
-	elevator.Orders = InitOrders(NumberOfFloors)
+	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
+	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
 	elevator.Status.FSM_State = defs.IDLE
 	return elevator
 }
 
-func InitOrders(NumberOfFloors int) [][]bool {
+func InitOrdersAndLights(NumberOfFloors int) [][]bool {
 	orders := make([][]bool, NumberOfFloors)
 	for i := range orders {
 		orders[i] = make([]bool, 3)
