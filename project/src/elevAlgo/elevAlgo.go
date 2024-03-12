@@ -86,7 +86,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			case 0:
 				fmt.Println("DOORS ARE STUCK")
 				myStatus.Operative = false
-				timerChannel <- true
 			case 1:
 				if myStatus.FSM_State != defs.IDLE {
 					fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
@@ -95,7 +94,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				}
 			}
 			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
-				failureTimerStart(failureTimeoutDuration, mode)
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, mode)
 			}
 		}
 		if tcp.UpdateLocal {
