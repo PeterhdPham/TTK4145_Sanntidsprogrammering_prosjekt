@@ -83,7 +83,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
-
 			if (role == defs.MASTER) && (myStatus.Operative) {
 				tcp.ReassignOrders2(masterList)
 				jsonToSend := utility.MarshalJson(masterList)

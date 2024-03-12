@@ -9,14 +9,14 @@ var (
 	timerActive  bool
 	timerChannel chan bool // Channel to signal the timeout event
 
-	failureDeadline time.Time
-	failuretimerActive bool
+	failureDeadline     time.Time
+	failuretimerActive  bool
 	failureTimerChannel chan int
 )
 
 func init() {
 	// Initialize the timerChannel
-	timerChannel = make(chan bool, 1) // Buffered channel to prevent blocking on send
+	timerChannel = make(chan bool, 1)       // Buffered channel to prevent blocking on send
 	failureTimerChannel = make(chan int, 1) // Buffered channel to prevent blocking on send
 }
 
