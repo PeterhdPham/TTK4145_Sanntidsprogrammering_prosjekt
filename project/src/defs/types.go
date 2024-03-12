@@ -13,27 +13,27 @@ type DirnBehaviourPair struct {
 }
 
 type MasterList struct {
-	Elevators []Elevator
+	Elevators []Elevator `json:"elevators"`
 }
 
 type Elevator struct {
-	Ip       string
-	IsOnline bool
-	Status   ElevStatus
-	Orders   [][]bool
-	Lights   [][]bool
-	Role     ElevatorRole
+	Ip       string       `json:"ip"`
+	IsOnline bool         `json:"online"`
+	Status   ElevStatus   `json:"status"`
+	Orders   [][]bool     `json:"orders"`
+	Lights   [][]bool     `json:"lights"`
+	Role     ElevatorRole `json:"role"`
 }
 
 type ElevStatus struct {
-	Direction   int
-	Floor       int
-	Doors       bool
-	Obstructed  bool
-	Buttonfloor int
-	Buttontype  int
-	FSM_State   string
-	Operative   bool
+	Direction   int    `json:"direction"`
+	Floor       int    `json:"floor"`
+	Doors       bool   `json:"doors"`
+	Obstructed  bool   `json:"obstructed"`
+	Buttonfloor int    `json:"buttonfloor"`
+	Buttontype  int    `json:"buttontype"`
+	FSM_State   string `json:"fsm_state"`
+	Operative   bool   `json:"operative"`
 }
 
 type ElevatorRole int
