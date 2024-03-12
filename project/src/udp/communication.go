@@ -124,10 +124,14 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 }
 
 func getLivingIPs(m map[string]time.Time) []string {
-	livingIPs := []string{}
+	myIP, err := GetPrimaryIP()
+	if err != nil {
+		fmt.Println("Error getting my IP: ", err)
+	}
+	livingIPs := []string{myIP}
 	for address, death := range m {
 		address = strings.Split(address, ":")[0]
-		if death.After(time.Now()) {
+		if (death.After(time.Now())) && (address != myIP) {
 			livingIPs = append(livingIPs, address)
 		}
 	}
