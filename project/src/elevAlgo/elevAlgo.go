@@ -17,6 +17,7 @@ var failureTimeoutDuration time.Duration = 7 * time.Second
 func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	var myStatus defs.ElevStatus
 	myOrders := init_order
+	myLights := init_order
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
@@ -37,12 +38,12 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		select {
 		case a := <-drvButtons:
 			if role == defs.MASTER {
-				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), defs.MyIP, role)
+				myStatus, myOrders, myLights = FSM_RequestFloor(masterList, a.Floor, int(a.Button), defs.MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
-			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, a)
+			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, myLights, a)
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1
 			myStatus.Buttontype = -1
@@ -63,17 +64,17 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				timerStart(doorOpenDuration)
 			} else {
 				failureTimerStop()
-				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
+				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, myLights, elevio.GetFloor())
 			}
 		case a := <-defs.ButtonReceived:
 			requestFloor := a.Event.Floor
 			requestButton := int(a.Event.Button)
-			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, defs.MASTER)
+			myStatus, myOrders, myLights = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, defs.MASTER)
 
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 		case <-defs.UpdateLocal:
-			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
+			myStatus, myOrders, myLights = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
 			if (role == defs.MASTER) && (myStatus.Operative) {
@@ -100,7 +101,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		}
 		if tcp.UpdateLocal {
 			tcp.UpdateLocal = false
-			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
+			myStatus, myOrders, myLights = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
 		}
 
 		elevStatus <- myStatus

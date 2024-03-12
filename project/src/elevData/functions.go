@@ -47,3 +47,22 @@ func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip 
 		}
 	}
 }
+
+func UpdateLightsMasterList(masterElevator *defs.MasterList, newLights [][]bool, ip string) {
+	var elevator defs.Elevator
+	var index int
+
+	for eIndex, e := range masterElevator.Elevators {
+		if e.Ip == ip {
+			elevator = e
+			index = eIndex
+		}
+	}
+	for fIndex, floorLights := range elevator.Lights {
+		for lIndex, light := range floorLights {
+			if newLights[fIndex][lIndex] != light {
+				masterElevator.Elevators[index].Lights[fIndex][lIndex] = newLights[fIndex][lIndex]
+			}
+		}
+	}
+}

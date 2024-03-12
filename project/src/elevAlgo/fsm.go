@@ -18,7 +18,7 @@ func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
 	return status
 }
 
-func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) defs.ElevStatus {
+func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) defs.ElevStatus {
 	elevio.SetFloorIndicator(floor)
 	status.Floor = floor
 	status.Buttonfloor = -1
@@ -37,10 +37,10 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) defs
 			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
 
 			//Clears the request at current floor
-			status, orders = requestClearAtFloor(status, orders, floor)
+			status, orders, lights = requestClearAtFloor(status, orders, lights, floor)
 
 			//Sets the lights according to the current orders
-			SetAllLights(orders)
+			SetAllLights(lights)
 		} else {
 			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
 
@@ -51,7 +51,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) defs
 	return status
 }
 
-func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool) {
+func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool,[][]bool) {
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == defs.MASTER {
@@ -64,10 +64,12 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 	//Check orders and starts moving
 	var status defs.ElevStatus
 	var orders [][]bool
+	var lights [][]bool
 	for _, e := range master.Elevators {
 		if e.Ip == defs.MyIP {
 			status = e.Status
 			orders = e.Orders
+			lights = e.Lights
 			fmt.Println(orders)
 		}
 	}
@@ -76,7 +78,8 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 	case defs.DOOR_OPEN:
 		if requestShouldClearImmediately(status, orders, floor, button) {
 			orders[floor][button] = false
-			SetAllLights(orders)
+
+			SetAllLights(lights)
 			timerStop()
 			timerStart(doorOpenDuration)
 			status.FSM_State = defs.DOOR_OPEN
@@ -101,10 +104,10 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 
 	}
 
-	return status, orders
+	return status, orders, lights
 }
 
-func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, floor int) (defs.ElevStatus, [][]bool) {
+func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool) {
 
 	switch status.FSM_State {
 	case defs.DOOR_OPEN:
@@ -115,8 +118,8 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, floor int) (defs
 		switch status.FSM_State {
 		case defs.DOOR_OPEN:
 			timerStart(doorOpenDuration)
-			status, orders = requestClearAtFloor(status, orders, floor)
-			SetAllLights(orders)
+			status, orders, lights = requestClearAtFloor(status, orders, lights, floor)
+			SetAllLights(lights)
 		case defs.MOVING, defs.IDLE:
 			elevio.SetDoorOpenLamp(false)
 			status.Doors = false

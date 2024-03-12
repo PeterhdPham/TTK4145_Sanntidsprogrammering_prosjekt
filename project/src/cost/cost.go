@@ -21,6 +21,9 @@ func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string
 				master.Elevators[elevator].Orders[floor][button] = true
 			}
 		}
+		for elevator := range master.Elevators {
+			master.Elevators[elevator].Lights[floor][button] = true
+		}
 	}
 	fmt.Println(master)
 }

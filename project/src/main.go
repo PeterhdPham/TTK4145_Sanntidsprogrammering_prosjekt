@@ -69,7 +69,7 @@ func main() {
 				}
 			}
 
-			elevalgo.SetAllLights(elevator.Orders)
+			elevalgo.SetAllLights(elevator.Lights)
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
