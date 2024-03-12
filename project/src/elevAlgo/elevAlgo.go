@@ -43,7 +43,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
-			myStatus = FSM_ArrivalAtFloor(myStatus, myOrders, myLights, a)
+			myStatus, myLights = FSM_ArrivalAtFloor(myStatus, myOrders, myLights, a)
+			elevData.UpdateLightsMasterList(masterList, myLights, defs.MyIP)
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1
 			myStatus.Buttontype = -1
@@ -103,7 +104,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			tcp.UpdateLocal = false
 			myStatus, myOrders, myLights = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
 		}
-
 		elevStatus <- myStatus
 		orders <- myOrders
 		lights <- myLights

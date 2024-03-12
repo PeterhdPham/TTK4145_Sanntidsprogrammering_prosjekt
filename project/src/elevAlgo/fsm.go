@@ -19,7 +19,7 @@ func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
 	return status
 }
 
-func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) defs.ElevStatus {
+func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool) {
 	elevio.SetFloorIndicator(floor)
 	status.Floor = floor
 	status.Buttonfloor = -1
@@ -40,7 +40,6 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool
 
 			//Clears the request at current floor
 			status, lights = requestClearAtFloor(status, orders, lights, floor)
-
 			//Sets the lights according to the current orders
 			SetAllLights(lights)
 		} else {
@@ -51,7 +50,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool
 	default:
 		break
 	}
-	return status
+	return status, lights
 }
 
 func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool, [][]bool) {
