@@ -14,7 +14,7 @@ import (
 var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
-func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
+func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, lights chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	var myStatus defs.ElevStatus
 	myOrders := init_order
 	myLights := init_order
@@ -95,8 +95,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				}
 			}
 			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
-			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, mode)
+				failureTimerStop()
+				failureTimerStart(failureTimeoutDuration, mode)
 			}
 		}
 		if tcp.UpdateLocal {
@@ -106,5 +106,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 
 		elevStatus <- myStatus
 		orders <- myOrders
+		lights <- myLights
 	}
 }

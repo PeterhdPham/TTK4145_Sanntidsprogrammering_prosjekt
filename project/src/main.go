@@ -25,6 +25,7 @@ func main() {
 
 	myStatus := make(chan defs.ElevStatus)
 	myOrders := make(chan [][]bool)
+	myLights := make(chan [][]bool)
 	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS)
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
@@ -37,7 +38,7 @@ func main() {
 
 	// time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, myLights, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -68,8 +69,9 @@ func main() {
 					}
 				}
 			}
-
-			elevalgo.SetAllLights(elevator.Lights)
+		case newLights := <-myLights:
+			elevator.Lights = newLights
+			elevalgo.SetAllLights(newLights)
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
