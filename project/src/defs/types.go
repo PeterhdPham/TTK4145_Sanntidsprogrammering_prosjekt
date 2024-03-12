@@ -38,7 +38,7 @@ type ElevStatus struct {
 	Buttonfloor int    `json:"buttonfloor"`
 	Buttontype  int    `json:"buttontype"`
 	FSM_State   string `json:"fsm_state"`
-	Operative   bool   `json:"operative`
+	Operative   bool   `json:"operative"`
 }
 
 type ElevatorRole int
