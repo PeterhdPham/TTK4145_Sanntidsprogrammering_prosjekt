@@ -2,12 +2,10 @@ package cost
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/defs"
 )
 
 func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string) {
-	fmt.Printf("Floor: %d and Button: %d\n", floor, button)
 	bestElevIP := findBestElevIP(master)
 	if button == int(elevio.BT_Cab) {
 		for elevator := range master.Elevators {
@@ -42,11 +40,6 @@ func findBestElevIP(master *defs.MasterList) string {
 		}
 	}
 
-	// Print the number of requests per IP for debugging
-	// for _, ipRequest := range ipRequests {
-	// 	fmt.Printf("Elevator IP: %s, Number of Orders: %d\n", ipRequest.Ip, ipRequest.Requests)
-	// }
-
 	// Find the elevator with the least number of requests
 	bestElevIP := ipRequests[0].Ip
 	bestElevVal := ipRequests[0].Requests
@@ -57,6 +50,5 @@ func findBestElevIP(master *defs.MasterList) string {
 		}
 	}
 
-	fmt.Printf("Best IP: %s with %d orders\n", bestElevIP, bestElevVal)
 	return bestElevIP
 }
