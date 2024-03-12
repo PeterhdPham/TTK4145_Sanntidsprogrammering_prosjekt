@@ -64,7 +64,8 @@ func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, floor int)
 func requestShouldClearImmediately(myStatus defs.ElevStatus, myOrders [][]bool, floor int, btn int) bool {
 	return myStatus.Floor == floor && ((myStatus.Direction == int(elevio.MD_Up) && btn == int(elevio.BT_HallUp)) ||
 		(myStatus.Direction == int(elevio.MD_Down) && btn == int(elevio.BT_HallDown)) ||
-		(myStatus.Direction == int(elevio.MD_Stop) && btn == int(elevio.BT_Cab)))
+		myStatus.Direction == int(elevio.MD_Stop) ||
+		btn == int(elevio.BT_Cab))
 }
 
 func requestsAbove(status defs.ElevStatus, orders [][]bool) bool {

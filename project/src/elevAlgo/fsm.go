@@ -68,7 +68,6 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 		if e.Ip == defs.MyIP {
 			status = e.Status
 			orders = e.Orders
-			fmt.Println(orders)
 		}
 	}
 
