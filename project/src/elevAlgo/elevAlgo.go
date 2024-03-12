@@ -14,9 +14,6 @@ import (
 var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
-
-
-
 func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	var myStatus defs.ElevStatus
 	myOrders := init_order
@@ -89,6 +86,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			case 0:
 				fmt.Println("DOORS ARE STUCK")
 				myStatus.Operative = false
+				timerChannel <- true
 			case 1:
 				if myStatus.FSM_State != defs.IDLE {
 					fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
