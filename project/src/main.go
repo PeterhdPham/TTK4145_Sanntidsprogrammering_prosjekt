@@ -18,24 +18,22 @@ var elevator defs.Elevator
 var masterElevator defs.MasterList
 
 func main() {
-	elevator = elevData.InitElevator(defs.N_FLOORS)
-	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
-
-	myStatus := make(chan defs.ElevStatus)
-	myOrders := make(chan [][]bool)
-	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS)
-
-	go tcp.Config_Roles(&elevator, &masterElevator)
-
-	defs.MyIP, _ = udp.GetPrimaryIP()
-
 	elevio.Init("localhost:15657", defs.N_FLOORS) // connect to elevatorsimulator
+	elevator = elevData.InitElevator(defs.N_FLOORS) // initialize the elevator
+
+	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
+
+	myStatus := make(chan defs.ElevStatus) // channel to receive status updates
+	myOrders := make(chan [][]bool) // channel to receive order updates
+	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
+
+	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
+
+	defs.MyIP, _ = udp.GetPrimaryIP() 
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	// time.Sleep(5 * time.Second)
-
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm 
 
 	for {
 		select {

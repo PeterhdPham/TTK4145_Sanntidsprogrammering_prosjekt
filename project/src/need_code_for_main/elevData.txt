@@ -1,5 +1,0 @@
-	myStatus := make(chan elevData.ElevStatus) // need these for testing
-	myDirection := make(chan elevio.MotorDirection)
-	myDoor := make(chan bool)
-
-    go elevData.UpdateStatus(myStatus, myDirection, myDoor)

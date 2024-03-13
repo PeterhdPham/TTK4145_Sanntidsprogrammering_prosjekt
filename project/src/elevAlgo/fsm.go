@@ -74,7 +74,6 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int
 	case defs.DOOR_OPEN:
 		if requestShouldClearImmediately(status, floor, button) {
 			orders[floor][button] = false
-
 			timerStop()
 			timerStart(doorOpenDuration)
 			status.FSM_State = defs.DOOR_OPEN
@@ -89,6 +88,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int
 		elevio.SetMotorDirection(pair.Dirn)
 		status.FSM_State = pair.Behaviour
 		if pair.Behaviour == defs.DOOR_OPEN {
+			status, orders = requestClearAtFloor(status, orders, floor)
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			timerStart(doorOpenDuration)
