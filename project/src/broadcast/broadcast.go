@@ -12,7 +12,7 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 	defs.ClientMutex.Lock()
 	defer defs.ClientMutex.Unlock()
 
-	message = append(message, '\n')
+	message = append(message, '%')
 
 	for conn := range defs.ClientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip

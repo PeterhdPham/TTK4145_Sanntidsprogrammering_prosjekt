@@ -46,9 +46,9 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
-			messages := strings.Split(string(buffer[:n]), "\n") // Process each newline-separated message
+			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
 			for _, message := range messages {
-				if message == "" {
+				if message == "" || message == " " {
 					continue // Skip empty messages
 				}
 
@@ -93,7 +93,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 }
 
 func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {
-	message = append(message, '\n')
+	message = append(message, '%')
 	for {
 		_, err := conn.Write(message)
 		if err != nil {

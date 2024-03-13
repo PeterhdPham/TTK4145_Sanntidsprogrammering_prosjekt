@@ -244,9 +244,9 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		}
 
 		// Process each newline-separated message
-		messages := strings.Split(string(buffer[:n]), "\n")
+		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
-			if message == "" {
+			if message == "" || message == " " {
 				continue // Skip empty messages
 			}
 
