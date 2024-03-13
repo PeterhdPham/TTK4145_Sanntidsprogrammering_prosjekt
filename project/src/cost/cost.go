@@ -7,6 +7,9 @@ import (
 
 func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string) {
 	for index := range master.Elevators {
+		if button == int(elevio.BT_Cab) {
+			continue
+		}
 		if master.Elevators[index].Orders[floor][button] {
 			return
 		}

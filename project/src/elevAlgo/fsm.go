@@ -59,6 +59,7 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 		fmt.Println("I AM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
+		SetAllLights(*master)
 		jsonToSend := utility.MarshalJson(master)
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
