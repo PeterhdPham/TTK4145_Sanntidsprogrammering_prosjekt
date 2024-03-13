@@ -37,7 +37,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		select {
 		case a := <-drvButtons:
 			if role == defs.MASTER {
-				myStatus, myOrders = FSM_RequestFloor(masterList, a.Floor, int(a.Button), defs.MyIP, role)
+				myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, a.Floor, int(a.Button), defs.MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
@@ -71,12 +71,12 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case a := <-defs.ButtonReceived:
 			requestFloor := a.Event.Floor
 			requestButton := int(a.Event.Button)
-			myStatus, myOrders = FSM_RequestFloor(masterList, requestFloor, requestButton, a.IP, defs.MASTER)
+			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, requestFloor, requestButton, a.IP, defs.MASTER)
 
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 		case <-defs.UpdateLocal:
-			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
+			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, -1, -1, "", defs.SLAVE)
 			SetAllLights(*masterList)
 
 		case mode := <-failureTimerChannel:

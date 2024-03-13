@@ -3,9 +3,11 @@ package elevAlgo
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/broadcast"
 	"project/cost"
 	"project/defs"
 	"project/elevData"
+	"project/utility"
 )
 
 func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
@@ -50,7 +52,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) (def
 	return status, orders
 }
 
-func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool) {
+func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool) {
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == defs.MASTER {
@@ -58,12 +60,11 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		SetAllLights(*master)
-		// jsonToSend := utility.MarshalJson(master)
-		// broadcast.BroadcastMessage(nil, jsonToSend)
+		jsonToSend := utility.MarshalJson(master)
+		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
 
 	//Check orders and starts moving
-	var status defs.ElevStatus
 	var orders [][]bool
 	for _, e := range master.Elevators {
 		if e.Ip == defs.MyIP {

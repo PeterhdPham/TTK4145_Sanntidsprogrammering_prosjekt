@@ -43,18 +43,21 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
-			elevator.Status = newStatus
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
-				fmt.Println("Status: ", newStatus)
-				byteStream := utility.MarshalJson(newStatus)
-				message := []byte(string(byteStream))                                          // Convert message to byte slice
-				err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
-				if err != nil {
-					fmt.Printf("Error sending elevator data: %s\n", err)
+				if !reflect.DeepEqual(elevator.Status, newStatus) {
+					elevator.Status = newStatus
+					fmt.Println("Status: ", newStatus)
+					byteStream := utility.MarshalJson(newStatus)
+					message := []byte(string(byteStream))                                          // Convert message to byte slice
+					err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
+					if err != nil {
+						fmt.Printf("Error sending elevator data: %s\n", err)
+					}
 				}
 			} else if elevator.Role == defs.MASTER {
+				elevator.Status = newStatus
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 				byteStream := utility.MarshalJson(masterElevator)
 				broadcast.BroadcastMessage(nil, byteStream)
