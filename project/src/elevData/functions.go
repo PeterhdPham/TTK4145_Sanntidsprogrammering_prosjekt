@@ -54,9 +54,13 @@ func UpdateLightsMasterList(masterElevator *defs.MasterList, newLights [][]bool,
 		for floorIndex := range newLights {
 			if e.Ip == defs.MyIP {
 				masterElevator.Elevators[index].Lights[floorIndex][2] = newLights[floorIndex][2]
+			} else {
+				masterElevator.Elevators[index].Lights[floorIndex][2] = newLights[floorIndex][2]
+				continue
 			}
 			masterElevator.Elevators[index].Lights[floorIndex][0] = newLights[floorIndex][0]
 			masterElevator.Elevators[index].Lights[floorIndex][1] = newLights[floorIndex][1]
+
 		}
 	}
 }
