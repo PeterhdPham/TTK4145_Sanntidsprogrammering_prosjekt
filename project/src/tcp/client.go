@@ -46,7 +46,6 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
-			fmt.Println("Message from server: ", string(buffer[:n]))
 			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
 			for _, message := range messages {
 				if message == "" || message == " " {
