@@ -75,8 +75,9 @@ func main() {
 			elevalgo.SetAllLights(newLights)
 			if elevator.Role == defs.MASTER {
 				fmt.Println("Setting lights: ", newLights)
+				elevData.UpdateLightsMasterList(&masterElevator, newLights, defs.MyIP)
 				byteStream := utility.MarshalJson(masterElevator)
-				fmt.Println("\n\n",string(byteStream),"\n\n")
+				fmt.Println("\n\n", string(byteStream), "\n\n")
 				broadcast.BroadcastMessage(nil, byteStream)
 			} else {
 				fmt.Println("Update lights: ", newLights)
