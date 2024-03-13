@@ -38,7 +38,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
-			buffer := make([]byte, 1024)            // Create a buffer to store incoming data
+			buffer := make([]byte, 2048)            // Create a buffer to store incoming data
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
 
 			if err != nil {
@@ -46,6 +46,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				return // Exit goroutine if connection is closed or an error occurs
 			}
 
+			fmt.Println("Message from server: ", string(buffer[:n]))
 			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
 			for _, message := range messages {
 				if message == "" || message == " " {
