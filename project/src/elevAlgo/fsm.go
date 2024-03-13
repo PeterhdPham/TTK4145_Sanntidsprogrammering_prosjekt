@@ -3,11 +3,9 @@ package elevAlgo
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"project/broadcast"
 	"project/cost"
 	"project/defs"
 	"project/elevData"
-	"project/utility"
 )
 
 func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
@@ -60,8 +58,8 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		SetAllLights(*master)
-		jsonToSend := utility.MarshalJson(master)
-		broadcast.BroadcastMessage(nil, jsonToSend)
+		// jsonToSend := utility.MarshalJson(master)
+		// broadcast.BroadcastMessage(nil, jsonToSend)
 	}
 
 	//Check orders and starts moving
@@ -69,7 +67,6 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 	var orders [][]bool
 	for _, e := range master.Elevators {
 		if e.Ip == defs.MyIP {
-			status = e.Status
 			orders = e.Orders
 		}
 	}
