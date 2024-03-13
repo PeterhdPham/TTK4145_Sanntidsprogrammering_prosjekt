@@ -42,7 +42,7 @@ func BroadcastLife() {
 			errCount++
 			fmt.Println("Error sending udp-message: ", err)
 			if errCount > 10 {
-				fmt.Println("Too many consecutive errors, Restarting UDP connection")
+				fmt.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
 				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 				if err != nil {

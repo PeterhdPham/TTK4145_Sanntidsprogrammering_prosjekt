@@ -105,7 +105,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 
 	//Sets the role to master if there is not active IPs (Internet turned off while running)
 	if len(ActiveIPs) == 0 {
-		fmt.Println("No active IPs found. Waiting for discovery...")
 		pointerElevator.Role = defs.MASTER
 		return
 	}
@@ -118,7 +117,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
-		fmt.Println("Running on localhost")
 		pointerElevator.Role = defs.MASTER
 		return
 	}
@@ -126,20 +124,17 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
 		shutdownServer()
-		// fmt.Println("This node is the server.")
 		// port := strings.Split(ActiveIPs[0], ":")[1]
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
-		// fmt.Println("This node is no longer the server, transitioning to client...")
 		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			// fmt.Println("This node is a client.")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
@@ -166,7 +161,6 @@ func startServer(masterElevator *defs.MasterList) {
 	defs.ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
-	// fmt.Println("Starting server at: " + listenAddr)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
@@ -175,7 +169,6 @@ func startServer(masterElevator *defs.MasterList) {
 	}
 	defer func() {
 		listener.Close()
-		fmt.Println("Server listener closed.")
 	}()
 	fmt.Println("Server listening on", listenAddr)
 
@@ -186,7 +179,6 @@ func startServer(masterElevator *defs.MasterList) {
 			if err != nil {
 				select {
 				case <-ctx.Done(): // Shutdown was requested
-					fmt.Println("Server shutting down...")
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
 					defs.ServerListening = false
 					return

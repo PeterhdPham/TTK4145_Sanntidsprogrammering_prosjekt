@@ -34,7 +34,6 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 	elevatorJson := utility.MarshalJson(*pointerElevator)
 	SendMessage(ServerConnection, elevatorJson, reflect.TypeOf(*pointerElevator))
-	fmt.Println("Sent elevator")
 
 	// Start a goroutine to listen for messages from the server
 	go func() {
@@ -63,7 +62,6 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				// Now, handle the unmarshaled data based on its type
 				switch msg := genericMessage.(type) {
 				case defs.MasterList:
-					fmt.Println("Received MasterList message")
 					// Process MasterList message
 					*masterElevator = msg
 					jsonData := utility.MarshalJson(msg)

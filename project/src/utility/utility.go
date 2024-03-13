@@ -21,8 +21,6 @@ func UnmarshalJson(data []byte, v interface{}) (reflect.Type, error) {
 	err := json.Unmarshal(data, v)
 	if err != nil {
 		fmt.Println("Error unmarshaling JSON:", err)
-		fmt.Println("Data:", data)
-		fmt.Println("String:", string(data))
 		return nil, err
 	}
 

@@ -2,7 +2,6 @@ package elevAlgo
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/broadcast"
 	"project/cost"
 	"project/defs"
@@ -56,7 +55,6 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == defs.MASTER {
-		fmt.Println("I AM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		SetAllLights(*master)

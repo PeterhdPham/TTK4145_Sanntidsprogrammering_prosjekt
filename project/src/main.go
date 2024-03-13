@@ -18,9 +18,6 @@ var elevator defs.Elevator
 var masterElevator defs.MasterList
 
 func main() {
-
-	fmt.Println("Booting elevator") // just to know we're running
-
 	elevator = elevData.InitElevator(defs.N_FLOORS)
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
 
@@ -48,7 +45,6 @@ func main() {
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
-					fmt.Println("Status: ", newStatus)
 					byteStream := utility.MarshalJson(newStatus)
 					message := []byte(string(byteStream))                                          // Convert message to byte slice
 					err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
