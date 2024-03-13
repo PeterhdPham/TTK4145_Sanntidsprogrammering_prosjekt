@@ -260,14 +260,14 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
 			case defs.MasterList:
-				fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
+				// fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					fmt.Println("Server received the correct masterList")
+					// fmt.Println("Server received the correct masterList")
 				} else {
 					fmt.Println("Server did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:
-				fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
+				// fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
@@ -281,7 +281,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					defs.RemoteStatus = v
 				}
 			case defs.Elevator:
-				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
+				// fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
