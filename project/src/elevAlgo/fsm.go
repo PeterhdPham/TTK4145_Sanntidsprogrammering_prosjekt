@@ -68,38 +68,36 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 			orders = e.Orders
 		}
 	}
-	if floor != -1 && button != -1 {
-		switch status.FSM_State {
-		case defs.DOOR_OPEN:
-			if requestShouldClearImmediately(status, floor, button) {
-				orders[floor][button] = false
-				timerStop()
-				timerStart(doorOpenDuration)
-				status.FSM_State = defs.DOOR_OPEN
-				status.Doors = true
-				failureTimerStop()
-				failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
-
-			}
-		case defs.IDLE:
-			pair := requestsChooseDirection(status, orders)
-			status.Direction = int(pair.Dirn)
-			elevio.SetMotorDirection(pair.Dirn)
-			status.FSM_State = pair.Behaviour
-			if pair.Behaviour == defs.DOOR_OPEN {
-				status, orders = requestClearAtFloor(status, orders, floor)
-				elevio.SetDoorOpenLamp(true)
-				status.Doors = true
-				timerStart(doorOpenDuration)
-				status.FSM_State = defs.DOOR_OPEN
-				failureTimerStop()
-				failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
-			} else {
-				failureTimerStop()
-				failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
-			}
+	switch status.FSM_State {
+	case defs.DOOR_OPEN:
+		if requestShouldClearImmediately(status, floor, button) {
+			orders[floor][button] = false
+			timerStop()
+			timerStart(doorOpenDuration)
+			status.FSM_State = defs.DOOR_OPEN
+			status.Doors = true
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
 
 		}
+	case defs.IDLE:
+		pair := requestsChooseDirection(status, orders)
+		status.Direction = int(pair.Dirn)
+		elevio.SetMotorDirection(pair.Dirn)
+		status.FSM_State = pair.Behaviour
+		if pair.Behaviour == defs.DOOR_OPEN {
+			status, orders = requestClearAtFloor(status, orders, floor)
+			elevio.SetDoorOpenLamp(true)
+			status.Doors = true
+			timerStart(doorOpenDuration)
+			status.FSM_State = defs.DOOR_OPEN
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
+		} else {
+			failureTimerStop()
+			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
+		}
+
 	}
 
 	return status, orders
