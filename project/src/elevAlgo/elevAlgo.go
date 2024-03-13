@@ -44,7 +44,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case a := <-drvFloors:
 			myStatus, myOrders = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 			if role == defs.MASTER {
-				elevData.UpdateLightsMasterList(masterList)
+				elevData.UpdateLightsMasterList(masterList, defs.MyIP)
 			}
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1

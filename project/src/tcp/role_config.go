@@ -295,7 +295,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
 				} else {
 					elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
-					elevData.UpdateLightsMasterList(masterElevator)
+					elevData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 
 				jsonToSend := utility.MarshalJson(masterElevator)

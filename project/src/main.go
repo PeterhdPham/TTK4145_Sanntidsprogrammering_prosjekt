@@ -58,7 +58,7 @@ func main() {
 			}
 		case newOrders := <-myOrders:
 			if elevator.Role == defs.MASTER {
-				elevData.UpdateLightsMasterList(&masterElevator)
+				elevData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
 				elevalgo.SetAllLights(masterElevator)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
