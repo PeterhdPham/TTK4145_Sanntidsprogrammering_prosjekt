@@ -43,8 +43,10 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
-			myStatus, myLights = FSM_ArrivalAtFloor(myStatus, myOrders, myLights, a)
-			elevData.UpdateLightsMasterList(masterList, myLights, defs.MyIP)
+			myStatus, myOrders, myLights = FSM_ArrivalAtFloor(myStatus, myOrders, myLights, a)
+			if role == defs.MASTER {
+				elevData.UpdateLightsMasterList(masterList, myLights, defs.MyIP)
+			}
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1
 			myStatus.Buttontype = -1
@@ -65,7 +67,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				timerStart(doorOpenDuration)
 			} else {
 				failureTimerStop()
-				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, myLights, elevio.GetFloor())
+				myStatus, myOrders, myLights = FSM_onDoorTimeout(myStatus, myOrders, myLights, elevio.GetFloor())
 			}
 		case a := <-defs.ButtonReceived:
 			requestFloor := a.Event.Floor

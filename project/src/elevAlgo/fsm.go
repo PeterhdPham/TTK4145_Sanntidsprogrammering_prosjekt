@@ -19,7 +19,7 @@ func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
 	return status
 }
 
-func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool) {
+func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool, [][]bool) {
 	elevio.SetFloorIndicator(floor)
 	status.Floor = floor
 	status.Buttonfloor = -1
@@ -39,7 +39,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool
 			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
 
 			//Clears the request at current floor
-			status, lights = requestClearAtFloor(status, orders, lights, floor)
+			status, orders, lights = requestClearAtFloor(status, orders, lights, floor)
 			//Sets the lights according to the current orders
 			SetAllLights(lights)
 		} else {
@@ -50,7 +50,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, lights [][]bool
 	default:
 		break
 	}
-	return status, lights
+	return status, orders, lights
 }
 
 func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool, [][]bool) {
@@ -113,7 +113,7 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 	return status, orders, lights
 }
 
-func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool) {
+func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool, [][]bool) {
 
 	switch status.FSM_State {
 	case defs.DOOR_OPEN:
@@ -124,7 +124,7 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, lights [][]bool,
 		switch status.FSM_State {
 		case defs.DOOR_OPEN:
 			timerStart(doorOpenDuration)
-			status, lights = requestClearAtFloor(status, orders, lights, floor)
+			status, orders, lights = requestClearAtFloor(status, orders, lights, floor)
 			SetAllLights(lights)
 		case defs.MOVING, defs.IDLE:
 			elevio.SetDoorOpenLamp(false)
@@ -139,5 +139,5 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, lights [][]bool,
 		// No action for default case
 	}
 
-	return status, orders
+	return status, orders, lights
 }

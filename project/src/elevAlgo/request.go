@@ -38,7 +38,7 @@ func requestShouldStop(status defs.ElevStatus, orders [][]bool, floor int) bool 
 	return false
 }
 
-func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][]bool,floor int) (defs.ElevStatus, [][]bool) {
+func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool, [][]bool) {
 	switch myStatus.Direction {
 	case 1:
 		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][0] {
@@ -65,7 +65,7 @@ func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][
 	myOrders[floor][2] = false
 	lights[floor][2] = false
 
-	return myStatus, lights
+	return myStatus, myOrders, lights
 }
 
 func requestShouldClearImmediately(myStatus defs.ElevStatus, floor int, btn int) bool {
