@@ -48,7 +48,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
 			for _, message := range messages {
-				if message == "" || message == " " {
+				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") {
 					continue // Skip empty messages
 				}
 
