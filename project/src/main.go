@@ -3,6 +3,7 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"project/broadcast"
 	"project/defs"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
@@ -55,7 +56,11 @@ func main() {
 				}
 			} else if elevator.Role == defs.MASTER {
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
+				byteStream := utility.MarshalJson(masterElevator)
+				broadcast.BroadcastMessage(nil, byteStream)
 			}
+			elevalgo.SetAllLights(masterElevator)
+
 		case newOrders := <-myOrders:
 			if elevator.Role == defs.MASTER {
 				elevData.UpdateLightsMasterList(&masterElevator, defs.MyIP)

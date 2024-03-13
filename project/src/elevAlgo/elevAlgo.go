@@ -77,6 +77,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
+			SetAllLights(*masterList)
+
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
 			if (role == defs.MASTER) && (myStatus.Operative) {
