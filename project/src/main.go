@@ -76,6 +76,7 @@ func main() {
 			if elevator.Role == defs.MASTER {
 				fmt.Println("Setting lights: ", newLights)
 				byteStream := utility.MarshalJson(masterElevator)
+				fmt.Println("\n\n",string(byteStream),"\n\n")
 				broadcast.BroadcastMessage(nil, byteStream)
 			} else {
 				fmt.Println("Update lights: ", newLights)
