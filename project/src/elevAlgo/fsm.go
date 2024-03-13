@@ -75,6 +75,8 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 		}
 	}
 
+	fmt.Println("Lights: ", lights)
+
 	switch status.FSM_State {
 	case defs.DOOR_OPEN:
 		if requestShouldClearImmediately(status, floor, button) {

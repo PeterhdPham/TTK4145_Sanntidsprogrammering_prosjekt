@@ -74,8 +74,11 @@ func main() {
 			elevator.Lights = newLights
 			elevalgo.SetAllLights(newLights)
 			if elevator.Role == defs.MASTER {
+				fmt.Println("Setting lights: ", newLights)
 				byteStream := utility.MarshalJson(masterElevator)
 				broadcast.BroadcastMessage(nil, byteStream)
+			} else {
+				fmt.Println("Update lights: ", newLights)
 			}
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)

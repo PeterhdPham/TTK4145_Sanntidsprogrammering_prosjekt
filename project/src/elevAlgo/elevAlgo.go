@@ -100,10 +100,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				failureTimerStart(failureTimeoutDuration, mode)
 			}
 		}
-		if tcp.UpdateLocal {
-			tcp.UpdateLocal = false
-			myStatus, myOrders, myLights = FSM_RequestFloor(masterList, -1, -1, "", defs.SLAVE)
-		}
+
 		elevStatus <- myStatus
 		orders <- myOrders
 		lights <- myLights
