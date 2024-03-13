@@ -16,6 +16,7 @@ func InitElevator(NumberOfFloors int) defs.Elevator {
 	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
 	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
 	elevator.Status.FSM_State = defs.IDLE
+	elevator.Status.Operative = true
 	return elevator
 }
 
