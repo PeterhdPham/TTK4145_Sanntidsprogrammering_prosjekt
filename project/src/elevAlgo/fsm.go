@@ -57,10 +57,10 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int
 	if myRole == defs.MASTER {
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
-		SetAllLights(*master)
 		jsonToSend := utility.MarshalJson(master)
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
+	SetAllLights(*master)
 
 	//Check orders and starts moving
 	var orders [][]bool
