@@ -6,6 +6,7 @@ import (
 	"project/broadcast"
 	"project/cost"
 	"project/defs"
+	"project/elevData"
 	"project/utility"
 )
 
@@ -57,6 +58,7 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 	if myRole == defs.MASTER {
 		fmt.Println("I AM MASTER")
 		cost.FindAndAssign(master, floor, button, fromIP)
+		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		jsonToSend := utility.MarshalJson(master)
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
@@ -70,7 +72,6 @@ func FSM_RequestFloor(master *defs.MasterList, floor int, button int, fromIP str
 			orders = e.Orders
 		}
 	}
-
 
 	switch status.FSM_State {
 	case defs.DOOR_OPEN:

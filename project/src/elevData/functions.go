@@ -1,8 +1,10 @@
 package elevData
 
 import (
+	"fmt"
 	"project/defs"
 	"project/udp"
+	"project/utility"
 )
 
 func InitElevator(NumberOfFloors int) defs.Elevator {
@@ -50,6 +52,9 @@ func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip 
 }
 
 func UpdateLightsMasterList(masterList *defs.MasterList, ip string) {
+	bytes := utility.MarshalJson(masterList)
+	fmt.Println("Master in light update: ", string(bytes))
+
 	for floor := 0; floor < defs.N_FLOORS; floor++ {
 		for btn := 0; btn < 2; btn++ {
 			lightActive := false
@@ -63,13 +68,11 @@ func UpdateLightsMasterList(masterList *defs.MasterList, ip string) {
 				masterList.Elevators[index].Lights[floor][btn] = lightActive
 			}
 		}
-		for index, e := range masterList.Elevators {
-			if ip == e.Ip {
-				if masterList.Elevators[index].Orders[floor][2] {
-					masterList.Elevators[index].Lights[floor][2] = true
-				} else {
-					masterList.Elevators[index].Lights[floor][2] = false
-				}
+		for index := range masterList.Elevators {
+			if masterList.Elevators[index].Orders[floor][2] {
+				masterList.Elevators[index].Lights[floor][2] = true
+			} else {
+				masterList.Elevators[index].Lights[floor][2] = false
 			}
 		}
 	}
