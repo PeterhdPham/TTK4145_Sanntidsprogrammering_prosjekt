@@ -49,16 +49,26 @@ func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip 
 	}
 }
 
-func UpdateLightsMasterList(masterList *defs.MasterList, newLights [][]bool, ip string) {
-	for index, e := range masterList.Elevators {
-		if e.Ip == ip {
-			masterList.Elevators[index].Lights = newLights
-		} else {
-			for floorIndex := range e.Lights {
-				masterList.Elevators[index].Lights[floorIndex][0] = newLights[floorIndex][0]
-				masterList.Elevators[index].Lights[floorIndex][1] = newLights[floorIndex][1]
+func UpdateLightsMasterList(masterList *defs.MasterList) {
+	for floor := 0; floor < defs.N_FLOORS; floor++ {
+		for btn := 0; btn < 2; btn++ {
+			lightActive := false
+			for index := range masterList.Elevators {
+				if masterList.Elevators[index].Orders[floor][btn] {
+					lightActive = true
+					break
+				}
+			}
+			for index := range masterList.Elevators {
+				masterList.Elevators[index].Lights[floor][btn] = lightActive
 			}
 		}
-
+		for index := range masterList.Elevators {
+			if masterList.Elevators[index].Orders[floor][2] {
+				masterList.Elevators[index].Lights[floor][2] = true
+			} else {
+				masterList.Elevators[index].Lights[floor][2] = false
+			}
+		}
 	}
 }

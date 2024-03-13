@@ -38,34 +38,28 @@ func requestShouldStop(status defs.ElevStatus, orders [][]bool, floor int) bool 
 	return false
 }
 
-func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, lights [][]bool, floor int) (defs.ElevStatus, [][]bool, [][]bool) {
+func requestClearAtFloor(myStatus defs.ElevStatus, myOrders [][]bool, floor int) (defs.ElevStatus, [][]bool) {
 	switch myStatus.Direction {
 	case 1:
 		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][0] {
 			myOrders[floor][1] = false
-			lights[floor][1] = false
 		}
 		myOrders[floor][0] = false
-		lights[floor][0] = false
 
 	case -1:
 		if !requestsBelow(myStatus, myOrders) && !myOrders[floor][1] {
 			myOrders[floor][0] = false
-			lights[floor][0] = false
 		}
 		myOrders[floor][1] = false
-		lights[floor][1] = false
 	default:
 		myOrders[floor][0] = false
 		myOrders[floor][1] = false
-		lights[floor][0] = false
-		lights[floor][1] = false
+
 	}
 
 	myOrders[floor][2] = false
-	lights[floor][2] = false
 
-	return myStatus, myOrders, lights
+	return myStatus, myOrders
 }
 
 func requestShouldClearImmediately(myStatus defs.ElevStatus, floor int, btn int) bool {
@@ -106,10 +100,12 @@ func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func SetAllLights(lights [][]bool) {
-	for floor := 0; floor < defs.N_FLOORS; floor++ {
-		for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
-			elevio.SetButtonLamp(btn, floor, lights[floor][btn])
+func SetAllLights(masterList defs.MasterList) {
+	for index := range masterList.Elevators {
+		for floor := 0; floor < defs.N_FLOORS; floor++ {
+			for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
+				elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
+			}
 		}
 	}
 }

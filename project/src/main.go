@@ -3,7 +3,6 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"project/broadcast"
 	"project/defs"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
@@ -26,7 +25,6 @@ func main() {
 
 	myStatus := make(chan defs.ElevStatus)
 	myOrders := make(chan [][]bool)
-	myLights := make(chan [][]bool)
 	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS)
 
 	go tcp.Config_Roles(&elevator, &masterElevator)
@@ -39,7 +37,7 @@ func main() {
 
 	// time.Sleep(5 * time.Second)
 
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, myLights, elevator.Orders, elevator.Role)
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -59,6 +57,10 @@ func main() {
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 			}
 		case newOrders := <-myOrders:
+			if elevator.Role == defs.MASTER {
+				elevData.UpdateLightsMasterList(&masterElevator)
+				elevalgo.SetAllLights(masterElevator)
+			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
@@ -69,18 +71,6 @@ func main() {
 						fmt.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
-			}
-		case newLights := <-myLights:
-			elevator.Lights = newLights
-			elevalgo.SetAllLights(newLights)
-			if elevator.Role == defs.MASTER {
-				fmt.Println("Setting lights: ", newLights)
-				elevData.UpdateLightsMasterList(&masterElevator, newLights, defs.MyIP)
-				byteStream := utility.MarshalJson(masterElevator)
-				fmt.Println("\n\n", string(byteStream), "\n\n")
-				broadcast.BroadcastMessage(nil, byteStream)
-			} else {
-				fmt.Println("Update lights: ", newLights)
 			}
 		case <-ticker.C:
 			// fmt.Println("MasterList: ", masterElevator)
