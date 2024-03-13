@@ -270,7 +270,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					defs.RemoteStatus = v
 				}
 			case defs.Elevator:
-				// fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
+				fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)

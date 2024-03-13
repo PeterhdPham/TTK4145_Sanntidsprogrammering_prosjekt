@@ -76,7 +76,7 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			fmt.Println("MasterList: ", myOrders)
+			fmt.Println("MasterList: ", masterElevator)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
