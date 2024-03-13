@@ -33,10 +33,6 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
-	// Initialize a ticker that ticks every 1 seconds.
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case livingIPs := <-LivingIPsChan:
@@ -53,9 +49,6 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
-		case <-ticker.C:
-			// Every 1 seconds, check the roles and updates if necessary.
-			// updateRole(pointerElevator, masterElevator)
 		}
 	}
 }
