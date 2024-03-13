@@ -143,11 +143,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 func startServer(masterElevator *defs.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	defs.ClientConnections = make(map[net.Conn]bool)
-	_, err := udp.GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error obtaining the primary IP:", err)
-		return
-	}
+
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if defs.ServerListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
@@ -156,7 +152,8 @@ func startServer(masterElevator *defs.MasterList) {
 
 	// Create a new context for this server instance
 	var ctx context.Context
-	ctx, _ = context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	defs.ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
