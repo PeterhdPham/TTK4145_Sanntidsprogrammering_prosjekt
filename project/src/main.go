@@ -18,22 +18,22 @@ var elevator defs.Elevator
 var masterElevator defs.MasterList
 
 func main() {
-	elevio.Init("localhost:15657", defs.N_FLOORS) // connect to elevatorsimulator
+	elevio.Init("localhost:15657", defs.N_FLOORS)   // connect to elevatorsimulator
 	elevator = elevData.InitElevator(defs.N_FLOORS) // initialize the elevator
 
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
 
-	myStatus := make(chan defs.ElevStatus) // channel to receive status updates
-	myOrders := make(chan [][]bool) // channel to receive order updates
+	myStatus := make(chan defs.ElevStatus)              // channel to receive status updates
+	myOrders := make(chan [][]bool)                     // channel to receive order updates
 	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
 
 	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
-	defs.MyIP, _ = udp.GetPrimaryIP() 
+	defs.MyIP, _ = udp.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm 
+	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 
 	for {
 		select {
@@ -65,6 +65,7 @@ func main() {
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
+				fmt.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					byteStream := utility.MarshalJson(elevator)
 					message := []byte(string(byteStream))                                          // Convert message to byte slice
@@ -75,7 +76,7 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			// fmt.Println("MasterList: ", masterElevator)
+			fmt.Println("MasterList: ", myOrders)
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}

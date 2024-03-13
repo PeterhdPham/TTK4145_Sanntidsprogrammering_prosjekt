@@ -51,7 +51,7 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) (def
 	return status, orders
 }
 
-func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool) {
+func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders [][]bool, floor int, button int, fromIP string, myRole defs.ElevatorRole) (defs.ElevStatus, [][]bool) {
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == defs.MASTER {
@@ -63,7 +63,6 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, floor int
 	SetAllLights(*master)
 
 	//Check orders and starts moving
-	var orders [][]bool
 	for _, e := range master.Elevators {
 		if e.Ip == defs.MyIP {
 			orders = e.Orders
