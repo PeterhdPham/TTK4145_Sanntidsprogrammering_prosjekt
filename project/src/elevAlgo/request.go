@@ -101,10 +101,12 @@ func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
 }
 
 func SetAllLights(masterList defs.MasterList) {
-	for index := range masterList.Elevators {
-		for floor := 0; floor < defs.N_FLOORS; floor++ {
-			for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
-				elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
+	for index, e := range masterList.Elevators {
+		if e.Ip == defs.MyIP {
+			for floor := 0; floor < defs.N_FLOORS; floor++ {
+				for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
+					elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
+				}
 			}
 		}
 	}
