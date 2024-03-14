@@ -28,6 +28,7 @@ var (
 	WaitingForConfirmation bool              //
 	ServerActive           = make(chan bool) //Server state
 	ReceivedPrevMasterList bool              // Master list that server receives from client that used to be server
+	ReceivedFirstElevator  bool              // First elevator
 )
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
@@ -277,6 +278,13 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				ReceivedPrevMasterList = false
 			}
 
+			if strings.HasPrefix(message, "init") {
+				message = strings.TrimPrefix(message, "init")
+				ReceivedFirstElevator = true
+			} else {
+				ReceivedFirstElevator = false
+			}
+
 			// Attempt to determine the struct type from the JSON keys
 			genericStruct, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 			if err != nil {
@@ -305,12 +313,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 								if !(utility.IsIPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
 									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
 									fmt.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
-								} else {
-									for index_master := range masterElevator.Elevators {
-										if masterElevator.Elevators[index_master].Ip == v.Elevators[index].Ip {
-											masterElevator.Elevators[index_master].Orders = utility.CombineOrders(masterElevator.Elevators[index_master].Orders, v.Elevators[index].Orders)
-										}
-									}
 								}
 							}
 						}
@@ -344,7 +346,17 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
 				} else {
-					elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+					if ReceivedFirstElevator {
+						for index_master := range masterElevator.Elevators {
+							if masterElevator.Elevators[index_master].Ip == v.Ip {
+								masterElevator.Elevators[index_master].Orders = utility.CombineOrders(masterElevator.Elevators[index_master].Orders, v.Orders)
+							}
+						}
+						ReceivedFirstElevator = false
+					} else {
+						elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+					}
+
 					elevData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 

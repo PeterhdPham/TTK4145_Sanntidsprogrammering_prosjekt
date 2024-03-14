@@ -104,16 +104,17 @@ func Contains(slice []string, str string) bool {
 }
 
 func CombineOrders(a [][]bool, b [][]bool) [][]bool {
-	numRows := len(a)
-	numCols := len(a[0])
-
-	result := make([][]bool, numRows)
-	for i := 0; i < numRows; i++ {
-		result[i] = make([]bool, numCols)
-		for j := 0; j < numCols; j++ {
-			result[i][j] = a[i][j] || b[i][j]
+	fmt.Println("New orders: ", a)
+	fmt.Println("Old orders: ", b)
+	for i, a_row := range a {
+		for j, value := range a_row {
+			if b[i][j] || value {
+				a[i][j] = true
+			}
 		}
 	}
 
-	return result
+
+	return a
+
 }
