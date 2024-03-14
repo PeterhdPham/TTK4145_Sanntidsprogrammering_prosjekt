@@ -267,7 +267,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				continue // Skip empty messages
 			}
 
-
 			// Checks if the message contains a tag for previous master list
 			if strings.HasPrefix(message, "prev") {
 				fmt.Println("The string starts with 'prev'")
@@ -303,6 +302,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						}
 						masterToSend := utility.MarshalJson(*masterElevator)
 						broadcast.BroadcastMessage(nil, masterToSend)
+						ReceivedPrevMasterList = false
 					}
 					fmt.Println("Server did not receive the correct confirmation")
 				}
