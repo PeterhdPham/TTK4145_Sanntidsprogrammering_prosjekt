@@ -9,6 +9,7 @@ import (
 
 func InitElevator(NumberOfFloors int) defs.Elevator {
 	var elevator defs.Elevator
+	elevator.IsOnline = true
 	ip, _ := udp.GetPrimaryIP()
 	elevator.Ip = ip
 	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
