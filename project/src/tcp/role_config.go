@@ -48,6 +48,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
+					elevData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
 					jsonToSend := utility.MarshalJson(masterElevator)
 					broadcast.BroadcastMessage(nil, jsonToSend)
@@ -62,40 +63,45 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 
 // Used when the ActiveIPs list is changed
 func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList []string) {
-	fmt.Println("Reassigning orders")
-	for _, elevator := range oldList {
-		if !utility.Contains(newList, elevator) {
+	var counter int
+	for _, elevIP := range oldList {
+		if !utility.Contains(newList, elevIP) {
 			for _, e := range masterElevator.Elevators {
-				if e.Ip == elevator {
+				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
 						if floorOrders[elevio.BT_HallUp] {
 							floorOrders[elevio.BT_HallUp] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevIP)
+							counter++
 						}
 						if floorOrders[elevio.BT_HallDown] {
 							floorOrders[elevio.BT_HallDown] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevIP)
+							counter++
 						}
 					}
 				}
 			}
 		}
 	}
+	fmt.Println(counter, " orders reassigned")
 }
 
 // Used when elevators still are online, but one or more elevators are inoperative
 func ReassignOrders2(masterList *defs.MasterList) {
 	operativeElevators := make([]string, 0)
-	livingElevators := make([]string, 0)
+	onlineElevators := make([]string, 0)
 
 	for _, e := range masterList.Elevators {
-		livingElevators = append(livingElevators, e.Ip)
-		if e.Status.Operative && (e.Ip != defs.MyIP) {
+		if e.IsOnline {
+			onlineElevators = append(onlineElevators, e.Ip)
+		}
+		if e.Status.Operative {
 			operativeElevators = append(operativeElevators, e.Ip)
 		}
 	}
-	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
-		ReassignOrders(masterList, livingElevators, operativeElevators)
+	if (len(onlineElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
+		ReassignOrders(masterList, onlineElevators, operativeElevators)
 	}
 }
 
@@ -136,7 +142,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		fmt.Println("!defs.ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			fmt.Println(connected, " is connected")
 			fmt.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
@@ -314,6 +319,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					}
 				} else {
 					defs.RemoteStatus = v
+					defs.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
 			case defs.Elevator:
 				// fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
