@@ -29,7 +29,7 @@ func main() {
 
 	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
-	defs.MyIP, _ = udp.GetPrimaryIP()
+	defs.MyIP, defs.MyPort, _ = udp.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
 
