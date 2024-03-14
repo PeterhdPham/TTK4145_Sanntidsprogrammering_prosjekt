@@ -57,12 +57,12 @@ func main() {
 				byteStream := utility.MarshalJson(masterElevator)
 				broadcast.BroadcastMessage(nil, byteStream)
 			}
-			elevalgo.SetAllLights(masterElevator)
+			elevData.SetAllLights(masterElevator)
 
 		case newOrders := <-myOrders:
 			if elevator.Role == defs.MASTER {
 				elevData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
-				elevalgo.SetAllLights(masterElevator)
+				elevData.SetAllLights(masterElevator)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders

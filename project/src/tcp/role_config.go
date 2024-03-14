@@ -304,8 +304,12 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 								}
 							}
 						}
+
 						masterToSend := utility.MarshalJson(*masterElevator)
+						fmt.Println("Master to send: ", string(masterToSend))
 						broadcast.BroadcastMessage(nil, masterToSend)
+						elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+						elevData.SetAllLights(*masterElevator)
 						ReceivedPrevMasterList = false
 					}
 					fmt.Println("Server did not receive the correct confirmation")

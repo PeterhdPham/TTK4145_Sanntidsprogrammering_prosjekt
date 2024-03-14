@@ -60,7 +60,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 		jsonToSend := utility.MarshalJson(master)
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
-	SetAllLights(*master)
+	elevData.SetAllLights(*master)
 
 	//Check orders and starts moving
 	for _, e := range master.Elevators {
