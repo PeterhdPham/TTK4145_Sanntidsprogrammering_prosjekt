@@ -7,7 +7,7 @@ import (
 
 func InitElevator(NumberOfFloors int) defs.Elevator {
 	var elevator defs.Elevator
-	ip, _ := udp.GetPrimaryIP()
+	ip, _, _ := udp.GetPrimaryIP()
 	elevator.Status.Buttonfloor = -1
 	elevator.Status.Buttontype = -1
 	elevator.Ip = ip

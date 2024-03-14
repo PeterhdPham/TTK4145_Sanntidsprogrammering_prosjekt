@@ -81,6 +81,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 
 		}
 	case defs.IDLE:
+		floor = elevio.GetFloor()
 		pair := requestsChooseDirection(status, orders)
 		status.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
