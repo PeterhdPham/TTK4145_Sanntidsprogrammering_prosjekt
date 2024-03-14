@@ -5,15 +5,14 @@ import (
 	"net"
 	"project/defs"
 	"project/utility"
-	"reflect"
 	"strings"
 	"time"
+	"project/communication"
 )
 
 var ServerConnection net.Conn
 var ServerError error
 var ShouldReconnect bool
-var error_buffer = 3
 var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
@@ -32,8 +31,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
-	elevatorJson := utility.MarshalJson(*pointerElevator)
-	SendMessage(ServerConnection, elevatorJson, reflect.TypeOf(*pointerElevator))
+	communication.SendMessage(ServerConnection, *pointerElevator)
 
 	// Start a goroutine to listen for messages from the server
 	go func() {
@@ -64,8 +62,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				case defs.MasterList:
 					// Process MasterList message
 					*masterElevator = msg
-					jsonData := utility.MarshalJson(msg)
-					SendMessage(ServerConnection, jsonData, reflect.TypeOf(msg))
+					communication.SendMessage(ServerConnection, msg)
 					defs.UpdateLocal <- "true" // Assuming this triggers some update logic
 				case defs.Elevator:
 					fmt.Println("Received Elevator message")
@@ -89,28 +86,4 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	connected = false
 	fmt.Println("Shutting down client connection...")
 	ServerConnection.Close() // Explicitly close the connection
-}
-
-func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {
-	message = append(message, '%')
-	for {
-		_, err := conn.Write(message)
-		if err != nil {
-			fmt.Printf("Error sending message: %s\n", err)
-			if error_buffer == 0 {
-				fmt.Println("Too many consecutive errors, stopping...")
-				ShouldReconnect = true
-				return err // Stop if there are too many consecutive errors
-			} else {
-				error_buffer--
-			}
-		} else {
-			error_buffer = 3 // Reset the error buffer on successful send
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	ShouldReconnect = false
-	return nil
 }

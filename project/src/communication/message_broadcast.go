@@ -1,14 +1,21 @@
-package broadcast
+package communication
 
 import (
 	"fmt"
 	"net"
 	"project/defs"
+	"project/utility"
 	"time"
 )
 
+var error_buffer = 3
+var ShouldReconnect bool
+
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(origin net.Conn, message []byte) error {
+func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
+
+	message := utility.MarshalJson(masterElevator)
+
 	defs.ClientMutex.Lock()
 	defer defs.ClientMutex.Unlock()
 
@@ -40,5 +47,32 @@ func BroadcastMessage(origin net.Conn, message []byte) error {
 		}
 	}
 	defs.ShouldServerReconnect = false
+	return nil
+}
+
+func SendMessage(conn net.Conn, message interface{}) error {
+	// Marshal the message into JSON
+	messageJson := utility.MarshalJson(message)
+
+	messageJson = append(messageJson, '%')
+	for {
+		_, err := conn.Write(messageJson)
+		if err != nil {
+			fmt.Printf("Error sending message: %s\n", err)
+			if error_buffer == 0 {
+				fmt.Println("Too many consecutive errors, stopping...")
+				ShouldReconnect = true
+				return err // Stop if there are too many consecutive errors
+			} else {
+				error_buffer--
+			}
+		} else {
+			error_buffer = 3 // Reset the error buffer on successful send
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	ShouldReconnect = false
 	return nil
 }
