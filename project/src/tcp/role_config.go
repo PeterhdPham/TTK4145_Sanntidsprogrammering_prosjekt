@@ -144,7 +144,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println(connected, " is connected")
-			fmt.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
