@@ -50,6 +50,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 					// If I'm the master i should reassign orders of the dead node
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
 					jsonToSend := utility.MarshalJson(masterElevator)
+					fmt.Print("broadcast from config roles")
 					broadcast.BroadcastMessage(nil, jsonToSend)
 				}
 				ActiveIPs = livingIPs
@@ -318,6 +319,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				}
 
 				jsonToSend := utility.MarshalJson(masterElevator)
+				fmt.Print("Broadcast from handleconn")
 				broadcast.BroadcastMessage(nil, jsonToSend)
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
