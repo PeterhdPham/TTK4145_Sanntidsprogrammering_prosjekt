@@ -263,7 +263,8 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		// Process each newline-separated message
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
-			if message == "" || message == " " {
+			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevator":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`)) {
+				fmt.Println("Skipped message: ", message)
 				continue // Skip empty messages
 			}
 
@@ -272,7 +273,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				fmt.Println("The string starts with 'prev'")
 				message = strings.TrimPrefix(message, "prev")
 				ReceivedPrevMasterList = true
-
 			} else {
 				fmt.Println("The string does not start with 'prev'")
 				ReceivedPrevMasterList = false

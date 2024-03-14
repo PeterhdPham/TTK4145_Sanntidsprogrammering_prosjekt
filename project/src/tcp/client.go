@@ -53,9 +53,10 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
 			for _, message := range messages {
-				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") {
+				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") || !strings.HasPrefix(message, `{"elevators":`) {
 					continue // Skip empty messages
 				}
+				fmt.Println("Message: ", message)
 
 				// Determine the struct type and unmarshal based on JSON content
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
