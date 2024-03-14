@@ -90,12 +90,12 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			switch mode {
 			case 0:
 				fmt.Println("DOORS ARE STUCK")
-				// myStatus.Operative = false
+				myStatus.Operative = false
 			case 1:
 				if myStatus.FSM_State != defs.IDLE {
 					fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
 					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
-					// myStatus.Operative = false
+					myStatus.Operative = false
 				}
 			}
 			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
