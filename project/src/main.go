@@ -53,7 +53,7 @@ func main() {
 			} else if elevator.Role == defs.MASTER {
 				elevator.Status = newStatus
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
-				communication.BroadcastMessage(nil, *masterElevator)
+				communication.BroadcastMessage(nil, &masterElevator)
 			}
 			elevalgo.SetAllLights(masterElevator)
 
@@ -66,7 +66,7 @@ func main() {
 				elevator.Orders = newOrders
 				fmt.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
-                                    // Convert message to byte slice
+					// Convert message to byte slice
 					err := communication.SendMessage(tcp.ServerConnection, elevator) // Assign the error value to "err"
 					if err != nil {
 						fmt.Printf("Error sending elevator data: %s\n", err)
