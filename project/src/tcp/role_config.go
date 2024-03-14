@@ -257,9 +257,9 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 			case defs.MasterList:
 				// fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					// fmt.Println("Server received the correct masterList")
+					fmt.Println("client received the correct masterList")
 				} else {
-					fmt.Println("Server did not receive the correct confirmation")
+					fmt.Println("Client did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:
 				// fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
