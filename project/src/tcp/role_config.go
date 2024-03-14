@@ -290,7 +290,15 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				} else {
 					if ReceivedPrevMasterList {
 						fmt.Println("Server received masterList from previous server")
-						*masterElevator = v
+						if utility.IsIPInMasterList(defs.MyIP, v) {
+							*masterElevator = v
+							fmt.Println("Overwriting existing masterList")
+						} else {
+							masterElevator.Elevators = append(masterElevator.Elevators, v.Elevators...)
+							fmt.Println("Adding prev list to current masterList")
+						}
+						masterToSend := utility.MarshalJson(*masterElevator)
+						broadcast.BroadcastMessage(nil, masterToSend)
 					}
 					fmt.Println("Server did not receive the correct confirmation")
 				}
