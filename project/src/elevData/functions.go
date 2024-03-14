@@ -1,21 +1,34 @@
 package elevData
 
 import (
+	"Driver-go/elevio"
 	"project/defs"
 	"project/udp"
+	"project/utility"
 )
 
 func InitElevator(NumberOfFloors int) defs.Elevator {
 	var elevator defs.Elevator
+	elevator.IsOnline = true
 	ip, _, _ := udp.GetPrimaryIP()
-	elevator.Status.Buttonfloor = -1
-	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
 	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
-	elevator.Status.FSM_State = defs.IDLE
-	elevator.Status.Operative = true
+	elevator.Status = InitStatus()
 	return elevator
+}
+
+func InitStatus() defs.ElevStatus {
+	var status defs.ElevStatus
+	status.Direction = elevio.MD_Stop
+	status.Floor = -1
+	status.Doors = false
+	status.Obstructed = false
+	status.Buttonfloor = -1
+	status.Buttontype = -1
+	status.FSM_State = defs.IDLE
+	status.Operative = true
+	return status
 }
 
 func InitOrdersAndLights(NumberOfFloors int) [][]bool {
@@ -73,3 +86,26 @@ func UpdateLightsMasterList(masterList *defs.MasterList, ip string) {
 		}
 	}
 }
+
+func UpdateIsOnline(masterElevator *defs.MasterList, oldList []string, newList []string) {
+	for _, elevIP := range oldList {
+		if !utility.Contains(newList, elevIP) {
+			for indx, e := range masterElevator.Elevators {
+				if e.Ip == elevIP {
+					masterElevator.Elevators[indx].IsOnline = false
+				}
+			}
+		}
+	}
+	for _, elevIP := range newList {
+		if !utility.Contains(oldList, elevIP) {
+			for indx, e := range masterElevator.Elevators {
+				if e.Ip == elevIP {
+					masterElevator.Elevators[indx].IsOnline = true
+				}
+			}
+		}
+	}
+}
+
+//also add online true !!!!

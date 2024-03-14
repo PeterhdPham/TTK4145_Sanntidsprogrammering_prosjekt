@@ -15,7 +15,7 @@ var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
 func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
-	var myStatus defs.ElevStatus
+	myStatus := elevData.InitStatus()
 	myOrders := init_order
 
 	drvButtons := make(chan elevio.ButtonEvent)
@@ -75,6 +75,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
+			tcp.ReassignOrders2(masterList)
+			broadcast.BroadcastMessage(nil,utility.MarshalJson(masterList))
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
 			SetAllLights(*masterList)
