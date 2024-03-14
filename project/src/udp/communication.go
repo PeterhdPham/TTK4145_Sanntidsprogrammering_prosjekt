@@ -74,7 +74,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	defer pc.Close()
 
 	// Create a buffer to store received messages.
-	buffer := make([]byte, 4096)
+	buffer := make([]byte, 8192)
 
 	for {
 
