@@ -97,4 +97,15 @@ func UpdateIsOnline(masterElevator *defs.MasterList, oldList []string, newList [
 			}
 		}
 	}
+	for _, elevIP := range newList {
+		if !utility.Contains(oldList, elevIP) {
+			for indx, e := range masterElevator.Elevators {
+				if e.Ip == elevIP {
+					masterElevator.Elevators[indx].IsOnline = true
+				}
+			}
+		}
+	}
 }
+
+//also add online true !!!!
