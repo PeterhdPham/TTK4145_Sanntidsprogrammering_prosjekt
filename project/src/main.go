@@ -54,7 +54,6 @@ func main() {
 				elevator.Status = newStatus
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 				byteStream := utility.MarshalJson(masterElevator)
-				fmt.Println("MasterList in main.go 57: ", masterElevator)
 				broadcast.BroadcastMessage(nil, byteStream)
 			}
 			elevalgo.SetAllLights(masterElevator)

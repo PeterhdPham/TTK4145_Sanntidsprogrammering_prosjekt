@@ -84,7 +84,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			if (role == defs.MASTER) && (myStatus.Operative) {
 				tcp.ReassignOrders2(masterList)
 				jsonToSend := utility.MarshalJson(masterList)
-				fmt.Println("Broadcasting masterlist from algorithm.go 87:")
 				broadcast.BroadcastMessage(nil, jsonToSend)
 			}
 

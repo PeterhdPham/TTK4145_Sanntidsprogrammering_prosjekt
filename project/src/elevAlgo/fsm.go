@@ -2,7 +2,6 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"project/broadcast"
 	"project/cost"
 	"project/defs"
@@ -59,7 +58,6 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		jsonToSend := utility.MarshalJson(master)
-		fmt.Println("MasterList in FSM_RequestFloor: ", master)
 		broadcast.BroadcastMessage(nil, jsonToSend)
 	}
 	SetAllLights(*master)
