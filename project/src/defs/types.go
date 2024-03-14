@@ -41,6 +41,7 @@ type ElevatorRole int
 type IpRequestCount struct {
 	Ip       string
 	Requests int
+	Operative bool
 }
 
 type FailureMode int

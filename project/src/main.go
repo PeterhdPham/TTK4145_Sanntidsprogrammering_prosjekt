@@ -38,6 +38,7 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
+			// fmt.Println("status update: ", string(utility.MarshalJson(newStatus)))
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
@@ -76,7 +77,8 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			// fmt.Println("MasterList: ", masterElevator)
+			bytes := utility.MarshalJson(masterElevator)
+			fmt.Println("MasterList: ", string(bytes))
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}

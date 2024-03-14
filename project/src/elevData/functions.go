@@ -1,6 +1,7 @@
 package elevData
 
 import (
+	"Driver-go/elevio"
 	"project/defs"
 	"project/udp"
 )
@@ -8,14 +9,24 @@ import (
 func InitElevator(NumberOfFloors int) defs.Elevator {
 	var elevator defs.Elevator
 	ip, _ := udp.GetPrimaryIP()
-	elevator.Status.Buttonfloor = -1
-	elevator.Status.Buttontype = -1
 	elevator.Ip = ip
 	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
 	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
-	elevator.Status.FSM_State = defs.IDLE
-	elevator.Status.Operative = true
+	elevator.Status = InitStatus()
 	return elevator
+}
+
+func InitStatus() defs.ElevStatus {
+	var status defs.ElevStatus
+	status.Direction = elevio.MD_Stop
+	status.Floor = -1
+	status.Doors = false
+	status.Obstructed = false
+    status.Buttonfloor = -1
+    status.Buttontype = -1
+    status.FSM_State = defs.IDLE
+    status.Operative = true
+    return status
 }
 
 func InitOrdersAndLights(NumberOfFloors int) [][]bool {

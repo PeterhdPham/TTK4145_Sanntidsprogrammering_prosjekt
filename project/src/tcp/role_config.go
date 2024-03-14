@@ -60,25 +60,28 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 
 // Used when the ActiveIPs list is changed
 func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList []string) {
-	fmt.Println("Reassigning orders")
-	for _, elevator := range oldList {
-		if !utility.Contains(newList, elevator) {
+	var counter int
+	for _, elevIP := range oldList {
+		if !utility.Contains(newList, elevIP) {
 			for _, e := range masterElevator.Elevators {
-				if e.Ip == elevator {
+				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
 						if floorOrders[elevio.BT_HallUp] {
 							floorOrders[elevio.BT_HallUp] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevator)
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevIP)
+							counter++
 						}
 						if floorOrders[elevio.BT_HallDown] {
 							floorOrders[elevio.BT_HallDown] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevator)
+							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevIP)
+							counter++
 						}
 					}
 				}
 			}
 		}
 	}
+	fmt.Println(counter, " orders reassigned")
 }
 
 // Used when elevators still are online, but one or more elevators are inoperative
