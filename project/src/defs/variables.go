@@ -18,6 +18,7 @@ var (
 var (
 	ServerIP string //Server IP
 	MyIP     string //IP address for current computer
+	MyPort   int    //Port for current computer
 )
 
 // Channels used
