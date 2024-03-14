@@ -1,4 +1,4 @@
-package elevAlgo
+package elevalgo
 
 import (
 	"Driver-go/elevio"

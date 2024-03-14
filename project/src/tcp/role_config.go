@@ -26,6 +26,7 @@ var (
 	connected      bool                  = false //Client connection state
 
 	WaitingForConfirmation bool //
+	ReceivedPrevMasterList bool // Master list that server receives from client that used to be server
 )
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
@@ -250,6 +251,17 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				continue // Skip empty messages
 			}
 
+			// Checks if the message contains a tag for previous master list
+			if strings.HasPrefix(message, "prev") {
+				fmt.Println("The string starts with 'prev'")
+				message = strings.TrimPrefix(message, "prev")
+				ReceivedPrevMasterList = true
+
+			} else {
+				fmt.Println("The string does not start with 'prev'")
+				ReceivedPrevMasterList = false
+			}
+
 			// Attempt to determine the struct type from the JSON keys
 			genericStruct, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 			if err != nil {
@@ -264,6 +276,10 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				if reflect.DeepEqual(v, *masterElevator) {
 					// fmt.Println("Server received the correct masterList")
 				} else {
+					if ReceivedPrevMasterList {
+						fmt.Println("Server received masterList from previous server")
+						*masterElevator = v
+					}
 					fmt.Println("Server did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:

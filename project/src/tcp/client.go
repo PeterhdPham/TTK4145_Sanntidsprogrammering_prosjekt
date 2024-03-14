@@ -35,6 +35,11 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	elevatorJson := utility.MarshalJson(*pointerElevator)
 	SendMessage(ServerConnection, elevatorJson, reflect.TypeOf(*pointerElevator))
 
+	// Sends previous master list
+	masterJson := utility.MarshalJson(*masterElevator)
+	masterJson = append([]byte("prev"), masterJson...)
+	SendMessage(ServerConnection, masterJson, reflect.TypeOf(*masterElevator))
+
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
