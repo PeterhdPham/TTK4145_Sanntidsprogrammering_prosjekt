@@ -263,15 +263,10 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		// Process each newline-separated message
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
-			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevator":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`)) {
-				fmt.Println("Skipped message: ", message)
+			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`)) {
 				continue // Skip empty messages
 			}
 
-			fmt.Println("Elevator prefix: ", strings.HasPrefix(message, ` {"elevator":`))
-			fmt.Println("IP prefix: ", strings.HasPrefix(message, ` {"ip":`))
-            fmt.Println("Direction prefix: ", strings.HasPrefix(message, ` {"direction":`))
-            fmt.Println("Prev prefix: ", strings.HasPrefix(message, `prev`))
 
 			// Checks if the message contains a tag for previous master list
 			if strings.HasPrefix(message, "prev") {
