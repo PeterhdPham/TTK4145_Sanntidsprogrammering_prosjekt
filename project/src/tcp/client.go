@@ -80,9 +80,6 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 		}
 	}()
 
-	ticker = time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
 	for {
 		if ShouldReconnect {
 			break
@@ -90,6 +87,8 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	}
 
 	connected = false
+	fmt.Println("Shutting down client connection...")
+	ServerConnection.Close() // Explicitly close the connection
 }
 
 func SendMessage(conn net.Conn, message []byte, responseType reflect.Type) error {

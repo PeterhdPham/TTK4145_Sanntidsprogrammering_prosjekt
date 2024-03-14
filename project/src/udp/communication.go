@@ -57,7 +57,7 @@ func BroadcastLife() {
 
 func LookForLife(livingIPsChan chan<- []string) {
 
-	myIP, err := GetPrimaryIP()
+	myIP, _, err := GetPrimaryIP()
 	if err != nil {
 		fmt.Println("Error obtaining the primary IP:", err)
 		return

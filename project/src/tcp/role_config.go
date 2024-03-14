@@ -25,7 +25,8 @@ var (
 	ActiveIPs      []string                      //List of active IPs
 	connected      bool                  = false //Client connection state
 
-	WaitingForConfirmation bool //
+	WaitingForConfirmation bool              //
+	ServerActive           = make(chan bool) //Server state
 )
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
@@ -123,21 +124,22 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 
 	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
-		fmt.Print("defs.MyIP == lowestIP && !defs.ServerListening")
+		fmt.Println("defs.MyIP == lowestIP && !defs.ServerListening")
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
-		fmt.Print("defs.MyIP != lowestIP && defs.ServerListening")
-		shutdownServer()                                                       // Stop the server
+		fmt.Println("defs.MyIP != lowestIP && defs.ServerListening")
+		shutdownServer()
+		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {
-		fmt.Print("!defs.ServerListenings")
+		fmt.Println("!defs.ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			fmt.Print(connected, " is connected\n")
+			fmt.Println(connected, " is connected\n")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
@@ -147,6 +149,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 func startServer(masterElevator *defs.MasterList) {
 	// Initialize the map to track client connections at the correct scope
 	defs.ClientConnections = make(map[net.Conn]bool)
+	ShouldReconnect = true
 
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if defs.ServerListening {
@@ -168,8 +171,12 @@ func startServer(masterElevator *defs.MasterList) {
 		return
 	}
 	defer func() {
+		fmt.Println("Server shutting down")
 		listener.Close()
+		defs.ServerListening = false
+		fmt.Println("Server shutdown completed.")
 	}()
+
 	fmt.Println("Server listening on", listenAddr)
 
 	// Accept new connections unless server shutdown is requested
@@ -181,6 +188,7 @@ func startServer(masterElevator *defs.MasterList) {
 				case <-ctx.Done(): // Shutdown was requested
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
 					defs.ServerListening = false
+					listener.Close()
 					return
 				default:
 					fmt.Printf("Failed to accept connection: %s\n", err)
@@ -192,8 +200,14 @@ func startServer(masterElevator *defs.MasterList) {
 	}()
 
 	// Wait for the shutdown signal to clean up and exit the function
-	<-ctx.Done()
-	fmt.Println("Server shutdown completed.")
+	// <-ctx.Done()
+	select {
+	case <-ServerActive:
+		closeAllClientConnections() // Ensure all client connections are gracefully closed
+		defs.ServerListening = false
+		listener.Close()
+		return
+	}
 }
 
 // Ensure this function exists and is correctly implemented to close all client connections
