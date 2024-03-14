@@ -305,6 +305,12 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 								if !(utility.IsIPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
 									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
 									fmt.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
+								} else {
+									for index_master := range masterElevator.Elevators {
+										if masterElevator.Elevators[index_master].Ip == v.Elevators[index].Ip {
+											masterElevator.Elevators[index_master].Orders = utility.CombineOrders(masterElevator.Elevators[index_master].Orders, v.Elevators[index].Orders)
+										}
+									}
 								}
 							}
 						}

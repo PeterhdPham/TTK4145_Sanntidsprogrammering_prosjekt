@@ -102,3 +102,18 @@ func Contains(slice []string, str string) bool {
 	}
 	return false
 }
+
+func CombineOrders(a [][]bool, b [][]bool) [][]bool {
+	numRows := len(a)
+	numCols := len(a[0])
+
+	result := make([][]bool, numRows)
+	for i := 0; i < numRows; i++ {
+		result[i] = make([]bool, numCols)
+		for j := 0; j < numCols; j++ {
+			result[i][j] = a[i][j] || b[i][j]
+		}
+	}
+
+	return result
+}
