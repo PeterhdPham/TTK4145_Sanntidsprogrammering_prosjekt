@@ -38,11 +38,12 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
+
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
-					livingIPs = append(livingIPs, "127.0.0.1")
+					ActiveIPs = append(livingIPs, "127.0.0.1")
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
@@ -118,9 +119,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		pointerElevator.Role = defs.MASTER
 		return
 	}
-	fmt.Print(defs.MyIP, " is the my IP\n")
-	fmt.Print(lowestIP, " is the lowest IP\n")
-	fmt.Print(defs.ServerListening, " is the server listening\n")
 
 	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
@@ -139,6 +137,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		fmt.Println("!defs.ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
+			fmt.Println(connected, " is connected")
 			fmt.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
@@ -276,9 +275,9 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 			case defs.MasterList:
 				// fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					// fmt.Println("Server received the correct masterList")
+					fmt.Println("client received the correct masterList")
 				} else {
-					fmt.Println("Server did not receive the correct confirmation")
+					fmt.Println("Client did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:
 				// fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
