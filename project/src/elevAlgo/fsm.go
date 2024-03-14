@@ -2,11 +2,10 @@ package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"project/broadcast"
+	"project/communication"
 	"project/cost"
 	"project/defs"
 	"project/elevData"
-	"project/utility"
 )
 
 func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
@@ -57,8 +56,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 	if myRole == defs.MASTER {
 		cost.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
-		jsonToSend := utility.MarshalJson(master)
-		broadcast.BroadcastMessage(nil, jsonToSend)
+		communication.BroadcastMessage(nil, master)
 	}
 	elevData.SetAllLights(*master)
 
