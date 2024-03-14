@@ -35,6 +35,8 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
+	time.Sleep(3 * time.Second)
+
 	for {
 		select {
 		case livingIPs := <-LivingIPsChan:
@@ -269,11 +271,9 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 
 			// Checks if the message contains a tag for previous master list
 			if strings.HasPrefix(message, "prev") {
-				fmt.Println("The string starts with 'prev'")
 				message = strings.TrimPrefix(message, "prev")
 				ReceivedPrevMasterList = true
 			} else {
-				fmt.Println("The string does not start with 'prev'")
 				ReceivedPrevMasterList = false
 			}
 
@@ -292,9 +292,13 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					fmt.Println("client received the correct masterList")
 				} else {
 					if ReceivedPrevMasterList {
-						fmt.Println("Server received masterList from previous server")
 						if utility.IsIPInMasterList(defs.MyIP, v) {
 							*masterElevator = v
+							for index := range masterElevator.Elevators {
+								if masterElevator.Elevators[index].Ip == defs.MyIP {
+									masterElevator.Elevators[index].IsOnline = true
+								}
+							}
 							fmt.Println("Overwriting existing masterList")
 						} else {
 							for index := range v.Elevators {
@@ -306,10 +310,9 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						}
 
 						masterToSend := utility.MarshalJson(*masterElevator)
-						fmt.Println("Master to send: ", string(masterToSend))
 						broadcast.BroadcastMessage(nil, masterToSend)
 						elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
-						elevData.SetAllLights(*masterElevator)
+						defs.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
 					}
 					fmt.Println("Server did not receive the correct confirmation")
