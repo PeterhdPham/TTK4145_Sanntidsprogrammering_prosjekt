@@ -297,8 +297,12 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 							*masterElevator = v
 							fmt.Println("Overwriting existing masterList")
 						} else {
-							masterElevator.Elevators = append(masterElevator.Elevators, v.Elevators...)
-							fmt.Println("Adding prev list to current masterList")
+							for index := range v.Elevators {
+								if !(utility.IsIPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
+									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
+									fmt.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
+								}
+							}
 						}
 						masterToSend := utility.MarshalJson(*masterElevator)
 						broadcast.BroadcastMessage(nil, masterToSend)
