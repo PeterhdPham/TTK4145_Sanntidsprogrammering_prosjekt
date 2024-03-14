@@ -123,13 +123,11 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 
 	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
-		fmt.Println("defs.MyIP == lowestIP && !defs.ServerListening")
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
-		fmt.Println("defs.MyIP != lowestIP && defs.ServerListening")
 		shutdownServer()
 		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
