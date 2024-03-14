@@ -75,6 +75,8 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
+			tcp.ReassignOrders2(masterList)
+			broadcast.BroadcastMessage(nil,utility.MarshalJson(masterList))
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
 			SetAllLights(*masterList)

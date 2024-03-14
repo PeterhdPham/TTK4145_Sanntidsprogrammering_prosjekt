@@ -89,16 +89,18 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 // Used when elevators still are online, but one or more elevators are inoperative
 func ReassignOrders2(masterList *defs.MasterList) {
 	operativeElevators := make([]string, 0)
-	livingElevators := make([]string, 0)
+	onlineElevators := make([]string, 0)
 
 	for _, e := range masterList.Elevators {
-		livingElevators = append(livingElevators, e.Ip)
-		if e.Status.Operative && (e.Ip != defs.MyIP) {
+		if e.IsOnline {
+			onlineElevators = append(onlineElevators, e.Ip)
+		}
+		if e.Status.Operative {
 			operativeElevators = append(operativeElevators, e.Ip)
 		}
 	}
-	if (len(livingElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
-		ReassignOrders(masterList, livingElevators, operativeElevators)
+	if (len(onlineElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
+		ReassignOrders(masterList, onlineElevators, operativeElevators)
 	}
 }
 
