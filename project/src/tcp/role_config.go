@@ -37,11 +37,12 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
+
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
-					livingIPs = append(livingIPs, "127.0.0.1")
+					ActiveIPs = append(livingIPs, "127.0.0.1")
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
@@ -117,27 +118,27 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		pointerElevator.Role = defs.MASTER
 		return
 	}
-	fmt.Print(defs.MyIP, " is the my IP\n")
-	fmt.Print(lowestIP, " is the lowest IP\n")
-	fmt.Print(defs.ServerListening, " is the server listening\n")
+	fmt.Println(defs.MyIP, " is the my IP")
+	fmt.Println(lowestIP, " is the lowest IP")
+	fmt.Println(defs.ServerListening, " is the server listening")
 
 	if defs.MyIP == lowestIP && !defs.ServerListening {
 		//Set role to master and starts a new server on
-		fmt.Print("defs.MyIP == lowestIP && !defs.ServerListening")
+		fmt.Println("defs.MyIP == lowestIP && !defs.ServerListening")
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
-		fmt.Print("defs.MyIP != lowestIP && defs.ServerListening")
+		fmt.Println("defs.MyIP != lowestIP && defs.ServerListening")
 		shutdownServer()                                                       // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {
-		fmt.Print("!defs.ServerListenings")
+		fmt.Println("!defs.ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			fmt.Print(connected, " is connected\n")
+			fmt.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
