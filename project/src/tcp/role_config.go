@@ -268,6 +268,11 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				continue // Skip empty messages
 			}
 
+			fmt.Println("Elevator prefix: ", strings.HasPrefix(message, ` {"elevator":`))
+			fmt.Println("IP prefix: ", strings.HasPrefix(message, ` {"ip":`))
+            fmt.Println("Direction prefix: ", strings.HasPrefix(message, ` {"direction":`))
+            fmt.Println("Prev prefix: ", strings.HasPrefix(message, `prev`))
+
 			// Checks if the message contains a tag for previous master list
 			if strings.HasPrefix(message, "prev") {
 				fmt.Println("The string starts with 'prev'")
