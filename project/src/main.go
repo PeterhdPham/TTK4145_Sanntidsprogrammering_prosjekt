@@ -3,7 +3,7 @@ package main
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"project/broadcast"
+	"project/communication"
 	"project/defs"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
@@ -44,9 +44,8 @@ func main() {
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
-					byteStream := utility.MarshalJson(newStatus)
-					message := []byte(string(byteStream))                                          // Convert message to byte slice
-					err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
+					// Convert message to byte slice
+					err := communication.SendMessage(tcp.ServerConnection, newStatus) // Assign the error value to "err"
 					if err != nil {
 						fmt.Printf("Error sending elevator data: %s\n", err)
 					}
@@ -54,7 +53,7 @@ func main() {
 			} else if elevator.Role == defs.MASTER {
 				elevator.Status = newStatus
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
-				broadcast.BroadcastMessage(nil, &masterElevator)
+				communication.BroadcastMessage(nil, *masterElevator)
 			}
 			elevalgo.SetAllLights(masterElevator)
 
@@ -67,9 +66,8 @@ func main() {
 				elevator.Orders = newOrders
 				fmt.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
-					byteStream := utility.MarshalJson(elevator)
-					message := []byte(string(byteStream))                                          // Convert message to byte slice
-					err := tcp.SendMessage(tcp.ServerConnection, message, reflect.TypeOf(message)) // Assign the error value to "err"
+                                    // Convert message to byte slice
+					err := communication.SendMessage(tcp.ServerConnection, elevator) // Assign the error value to "err"
 					if err != nil {
 						fmt.Printf("Error sending elevator data: %s\n", err)
 					}
