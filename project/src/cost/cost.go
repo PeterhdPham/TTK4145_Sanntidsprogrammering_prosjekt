@@ -38,7 +38,7 @@ func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string
 func findBestElevIP(master *defs.MasterList) string {
 	var ipRequests []defs.IpRequestCount
 	for _, elevator := range master.Elevators {
-		ipRequests = append(ipRequests, defs.IpRequestCount{Ip: elevator.Ip, Requests: 0, Operative: elevator.Status.Operative})
+		ipRequests = append(ipRequests, defs.IpRequestCount{Ip: elevator.Ip, Requests: 0, Operative: elevator.Status.Operative, Online: elevator.IsOnline})
 	}
 
 	// Count requests for each elevator
@@ -56,7 +56,7 @@ func findBestElevIP(master *defs.MasterList) string {
 	bestElevIP := ipRequests[0].Ip
 	bestElevVal := ipRequests[0].Requests
 	for _, ipRequest := range ipRequests {
-		if (ipRequest.Requests < bestElevVal) && ipRequest.Operative {
+		if (ipRequest.Requests < bestElevVal) && ipRequest.Operative && ipRequest.Online {
 			bestElevVal = ipRequest.Requests
 			bestElevIP = ipRequest.Ip
 		}

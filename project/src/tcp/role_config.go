@@ -46,6 +46,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
+					elevData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
 					jsonToSend := utility.MarshalJson(masterElevator)
 					broadcast.BroadcastMessage(nil, jsonToSend)
