@@ -54,8 +54,7 @@ func main() {
 			} else if elevator.Role == defs.MASTER {
 				elevator.Status = newStatus
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
-				byteStream := utility.MarshalJson(masterElevator)
-				broadcast.BroadcastMessage(nil, byteStream)
+				broadcast.BroadcastMessage(nil, &masterElevator)
 			}
 			elevalgo.SetAllLights(masterElevator)
 

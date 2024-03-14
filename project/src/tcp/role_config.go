@@ -49,8 +49,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 					// If I'm the master i should reassign orders of the dead node
 					elevData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
-					jsonToSend := utility.MarshalJson(masterElevator)
-					broadcast.BroadcastMessage(nil, jsonToSend)
+					broadcast.BroadcastMessage(nil, masterElevator)
 				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
@@ -309,8 +308,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					elevData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 
-				jsonToSend := utility.MarshalJson(masterElevator)
-				broadcast.BroadcastMessage(nil, jsonToSend)
+				broadcast.BroadcastMessage(nil, masterElevator)
 			default:
 				fmt.Printf("Received unknown type from client %s\n", clientAddr)
 			}

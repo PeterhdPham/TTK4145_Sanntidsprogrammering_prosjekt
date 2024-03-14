@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"net"
 	"project/defs"
+	"project/utility"
 	"time"
 )
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(origin net.Conn, message []byte) error {
+func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
+
+	message := utility.MarshalJson(masterElevator)
+
 	defs.ClientMutex.Lock()
 	defer defs.ClientMutex.Unlock()
 

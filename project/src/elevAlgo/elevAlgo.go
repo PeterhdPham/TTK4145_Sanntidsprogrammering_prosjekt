@@ -7,7 +7,6 @@ import (
 	"project/defs"
 	"project/elevData"
 	"project/tcp"
-	"project/utility"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 			tcp.ReassignOrders2(masterList)
-			broadcast.BroadcastMessage(nil,utility.MarshalJson(masterList))
+			broadcast.BroadcastMessage(nil, masterList)
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
 			SetAllLights(*masterList)
@@ -85,8 +84,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			failureTimerStop()
 			if (role == defs.MASTER) && (myStatus.Operative) {
 				tcp.ReassignOrders2(masterList)
-				jsonToSend := utility.MarshalJson(masterList)
-				broadcast.BroadcastMessage(nil, jsonToSend)
+				broadcast.BroadcastMessage(nil, masterList)
 			}
 
 			switch mode {
