@@ -181,7 +181,7 @@ func startServer(masterElevator *defs.MasterList) {
 	go func() {
 		for {
 			conn, err := listener.Accept()
-			if err != nil {
+			if err != nil && listener != nil {
 				select {
 				case <-ctx.Done(): // Shutdown was requested
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
