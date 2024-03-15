@@ -1,7 +1,6 @@
 package udp
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -97,10 +96,10 @@ func LookForLife(livingIPsChan chan<- []string) {
 			addrString = ""
 		}
 
-		if addrString == "10.100.23.34" {
-			fmt.Println("Received Message from kristian")
-			fmt.Println(IPLifetimes)
-		}
+		// if addrString == "10.100.23.34" {
+		// 	fmt.Println("Received Message from kristian")
+		// 	fmt.Println(IPLifetimes)
+		// }
 
 		if err != nil {
 			if os.IsTimeout(err) {
@@ -138,7 +137,9 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 			}
 			IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
 		} else {
-			IPLifetimes[newAddr] = IPLifetimes[newAddr].Add(NODE_LIFE)
+			if myIP != newAddr {
+				IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
+			}
 		}
 	}
 	return IPLifetimes
