@@ -1,6 +1,7 @@
 package udp
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -89,6 +90,10 @@ func LookForLife(livingIPsChan chan<- []string) {
 			addrString = strings.Split(addr.String(), ":")[0]
 		} else {
 			addrString = ""
+		}
+
+		if addrString == "10.100.23.34" {
+			fmt.Println("Received Message from kristian")
 		}
 
 		if err != nil {
