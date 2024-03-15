@@ -8,7 +8,7 @@ import (
 
 const N_BUTTONS = 3
 
-func areAllOrdersFalse(orders [][]bool) bool {
+func allOrdersFalse(orders [][]bool) bool {
 	for _, floor := range orders {
 		for _, order := range floor {
 			if order {
@@ -22,7 +22,7 @@ func areAllOrdersFalse(orders [][]bool) bool {
 }
 
 func requestShouldStop(status types.ElevStatus, orders [][]bool, floor int) bool {
-	if areAllOrdersFalse(orders) {
+	if allOrdersFalse(orders) {
 		return true
 	}
 	switch status.Direction {

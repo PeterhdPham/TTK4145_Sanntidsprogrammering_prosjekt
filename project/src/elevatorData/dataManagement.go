@@ -13,8 +13,8 @@ func InitElevator() types.Elevator {
 	var elevator types.Elevator
 	elevator.IsOnline = true
 	elevator.Ip = aliveMessages.GetPrimaryIP()
-	elevator.Orders = InitOrdersAndLights()
-	elevator.Lights = InitOrdersAndLights()
+	elevator.Orders = initOrdersAndLights()
+	elevator.Lights = initOrdersAndLights()
 	elevator.Status = InitStatus()
 	return elevator
 }
@@ -32,7 +32,7 @@ func InitStatus() types.ElevStatus {
 	return status
 }
 
-func InitOrdersAndLights() [][]bool {
+func initOrdersAndLights() [][]bool {
 	orders := make([][]bool, constants.N_FLOORS)
 	for i := range orders {
 		orders[i] = make([]bool, 3)

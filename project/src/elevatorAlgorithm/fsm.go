@@ -13,7 +13,7 @@ import (
 const DOOR_STUCK types.FailureMode = 0
 const MOTOR_FAIL types.FailureMode = 1
 
-func FSM_InitBetweenFloors(status types.ElevStatus) types.ElevStatus {
+func initBetweenFloors(status types.ElevStatus) types.ElevStatus {
 	elevio.SetMotorDirection(-1)
 	status.FSM_State = constants.MOVING
 	failureTimerStop()
@@ -23,7 +23,7 @@ func FSM_InitBetweenFloors(status types.ElevStatus) types.ElevStatus {
 	return status
 }
 
-func FSM_ArrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
+func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
 	elevio.SetFloorIndicator(floor)
 	status.Floor = floor
 	status.Buttonfloor = -1
@@ -55,13 +55,13 @@ func FSM_ArrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (ty
 	return status, orders
 }
 
-func FSM_RequestFloor(master *types.MasterList, status types.ElevStatus, orders [][]bool, floor int, button int, fromIP string, myRole types.ElevatorRole) (types.ElevStatus, [][]bool) {
+func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]bool, floor int, button int, fromIP string, myRole types.ElevatorRole) (types.ElevStatus, [][]bool) {
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == constants.MASTER {
 		orderAssignment.FindAndAssign(master, floor, button, fromIP)
 		elevatorData.UpdateLightsMasterList(master, variables.MyIP)
-		communication.BroadcastMessage(nil, master)
+		communication.BroadcastMessage(master)
 	}
 	elevatorData.SetAllLights(*master)
 
@@ -107,7 +107,7 @@ func FSM_RequestFloor(master *types.MasterList, status types.ElevStatus, orders 
 	return status, orders
 }
 
-func FSM_onDoorTimeout(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
+func onDoorTimeout(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
 
 	switch status.FSM_State {
 	case constants.DOOR_OPEN:

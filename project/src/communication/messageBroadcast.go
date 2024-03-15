@@ -13,7 +13,7 @@ var errorBuffer = 3
 var ShouldReconnect bool
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
-func BroadcastMessage(origin net.Conn, masterElevator *types.MasterList) error {
+func BroadcastMessage(masterElevator *types.MasterList) error {
 
 	message := utility.MarshalJson(masterElevator)
 
@@ -23,11 +23,6 @@ func BroadcastMessage(origin net.Conn, masterElevator *types.MasterList) error {
 	message = append(message, '%')
 
 	for conn := range variables.ClientConnections {
-		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
-		if origin != nil && conn == origin {
-			log.Println("Skipping connection")
-			continue // Skip sending the message back to the origin client
-		}
 
 		for {
 			_, err := conn.Write(message)

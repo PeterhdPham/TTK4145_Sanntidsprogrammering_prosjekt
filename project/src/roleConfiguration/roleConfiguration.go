@@ -18,7 +18,7 @@ import (
 var ServerListening bool = false // Flag to indicate if server is listening for new connections
 var ServerIP string              //Server IP
 
-func Config_Roles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
+func ConfigureRoles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
 	//Go routines for finding active IPs
 	go aliveMessages.BroadcastLife()
 	go aliveMessages.LookForLife(LivingIPsChan)
@@ -39,11 +39,11 @@ func Config_Roles(pointerElevator *types.Elevator, masterElevator *types.MasterL
 					// If I'm the master i should reassign orders of the dead node
 					elevatorData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
-					communication.BroadcastMessage(nil, masterElevator)
+					communication.BroadcastMessage(masterElevator)
 				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
-				updateRole(pointerElevator, masterElevator)
+				updateRoles(pointerElevator, masterElevator)
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func ReassignOrders(masterElevator *types.MasterList, oldList []string, newList 
 }
 
 // Used when elevators still are online, but one or more elevators are inoperative
-func ReassignOrders2(masterList *types.MasterList) {
+func ReassignOrdersIfInoperative(masterList *types.MasterList) {
 	operativeElevators := make([]string, 0)
 	onlineElevators := make([]string, 0)
 
@@ -95,7 +95,7 @@ func ReassignOrders2(masterList *types.MasterList) {
 	}
 }
 
-func updateRole(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
+func updateRoles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 

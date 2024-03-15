@@ -33,7 +33,7 @@ func main() {
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	go roleConfiguration.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
+	go roleConfiguration.ConfigureRoles(&elevator, &masterElevator) // initialize the server and client connections
 
 	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 
@@ -55,7 +55,7 @@ func main() {
 			} else if elevator.Role == constants.MASTER {
 				elevator.Status = newStatus
 				elevatorData.UpdateStatusMasterList(&masterElevator, elevator.Status, variables.MyIP)
-				communication.BroadcastMessage(nil, &masterElevator)
+				communication.BroadcastMessage(&masterElevator)
 			}
 			elevatorData.SetAllLights(masterElevator)
 

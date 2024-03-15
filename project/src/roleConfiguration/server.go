@@ -77,7 +77,7 @@ func startServer(masterElevator *types.MasterList) {
 					continue
 				}
 			}
-			go handleConnection(conn, masterElevator)
+			go handleClientMessages(conn, masterElevator)
 		}
 	}()
 
@@ -108,7 +108,7 @@ func closeAllClientConnections() {
 }
 
 // Handles individual client connections.
-func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
+func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 	variables.ClientMutex.Lock()
 	variables.ClientConnections[conn] = true
 	variables.ClientMutex.Unlock()
@@ -171,7 +171,7 @@ func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
 					continue
 				} else {
 					if ReceivedPrevMasterList {
-						if utility.IsIPInMasterList(variables.MyIP, v) {
+						if utility.IPInMasterList(variables.MyIP, v) {
 							for index := range masterElevator.Elevators {
 
 								for v_index := range v.Elevators {
@@ -189,14 +189,14 @@ func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
 							log.Println("Overwriting existing masterList")
 						} else {
 							for index := range v.Elevators {
-								if !(utility.IsIPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
+								if !(utility.IPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
 									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
 									log.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
 								}
 							}
 						}
 
-						communication.BroadcastMessage(nil, masterElevator)
+						communication.BroadcastMessage(masterElevator)
 						elevatorData.UpdateLightsMasterList(masterElevator, variables.MyIP)
 						variables.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
@@ -218,7 +218,7 @@ func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
 				}
 			case types.Elevator:
 				// Handle Elevator-specific logic here
-				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
+				if !utility.IPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
 				} else {
 					if ReceivedFirstElevator {
@@ -235,7 +235,7 @@ func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
 					elevatorData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 
-				communication.BroadcastMessage(nil, masterElevator)
+				communication.BroadcastMessage(masterElevator)
 			default:
 				log.Printf("Received unknown type from client %s\n", clientAddr)
 			}

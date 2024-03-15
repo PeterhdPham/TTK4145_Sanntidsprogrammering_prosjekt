@@ -98,7 +98,7 @@ func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 	return nil, fmt.Errorf("unable to determine struct type from JSON keys")
 }
 
-func IsIPInMasterList(ip string, masterList types.MasterList) bool {
+func IPInMasterList(ip string, masterList types.MasterList) bool {
 	for _, elevator := range masterList.Elevators {
 		if elevator.Ip == ip {
 			return true // IP found in the list
