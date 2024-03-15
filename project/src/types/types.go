@@ -1,4 +1,4 @@
-package defs
+package types
 
 import "Driver-go/elevio"
 
@@ -39,10 +39,10 @@ type ElevStatus struct {
 type ElevatorRole int
 
 type IpRequestCount struct {
-	Ip       string
-	Requests int
+	Ip        string
+	Requests  int
 	Operative bool
-	Online bool
+	Online    bool
 }
 
 type FailureMode int

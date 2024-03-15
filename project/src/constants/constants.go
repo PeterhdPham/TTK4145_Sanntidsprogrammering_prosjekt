@@ -1,4 +1,4 @@
-package defs
+package constants
 
 const N_FLOORS = 4
 

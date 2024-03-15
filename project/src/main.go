@@ -23,9 +23,9 @@ func main() {
 
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
 
-	myStatus := make(chan defs.ElevStatus) // channel to receive status updates
-	myOrders := make(chan [][]bool)        // channel to receive order updates
-	go elevatorData.InitOrdersChan(myOrders)  // initialize the orders channel
+	myStatus := make(chan defs.ElevStatus)   // channel to receive status updates
+	myOrders := make(chan [][]bool)          // channel to receive order updates
+	go elevatorData.InitOrdersChan(myOrders) // initialize the orders channel
 
 	defs.MyIP = aliveMessages.GetPrimaryIP()
 
