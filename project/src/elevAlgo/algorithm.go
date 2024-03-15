@@ -82,10 +82,6 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
-			if (role == defs.MASTER) && (myStatus.Operative) {
-				tcp.ReassignOrders2(masterList)
-				communication.BroadcastMessage(nil, masterList)
-			}
 
 			switch mode {
 			case 0:
@@ -101,6 +97,11 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
 				failureTimerStop()
 				failureTimerStart(failureTimeoutDuration, mode)
+			}
+			if (role == defs.MASTER) && !(myStatus.Operative) {
+				elevData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
+				tcp.ReassignOrders2(masterList)
+				communication.BroadcastMessage(nil, masterList)
 			}
 		}
 

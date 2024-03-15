@@ -18,6 +18,7 @@ const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcas
 const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
 const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
 const NODE_LIFE = 5 * time.Second                // Time added to node-lifetime when msg is received
+const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutive udp error
 
 func BroadcastLife() {
 
@@ -41,8 +42,8 @@ func BroadcastLife() {
 		_, err := conn.Write([]byte(message))
 		if err != nil {
 			errCount++
-			log.Println("Error sending udp-message: ", err)
-			if errCount > 10 {
+			// log.Println("Error sending udp-message: ", err)
+			if errCount > ALLOWED_CONSECUTIVE_ERRORS {
 				log.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
 				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4

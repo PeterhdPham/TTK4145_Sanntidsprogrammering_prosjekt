@@ -102,6 +102,10 @@ func ReassignOrders2(masterList *defs.MasterList) {
 			operativeElevators = append(operativeElevators, e.Ip)
 		}
 	}
+	
+	log.Println("Online elevators:", onlineElevators)
+	log.Println("Operative elevators:", operativeElevators)
+
 	if (len(onlineElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
 		ReassignOrders(masterList, onlineElevators, operativeElevators)
 	}
@@ -137,7 +141,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
 		shutdownServer()
-		ServerActive <- false // Stop the server
+		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {
