@@ -43,7 +43,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
-			buffer := make([]byte, 8192)            // Create a buffer to store incoming data
+			buffer := make([]byte, 32768)           // Create a buffer to store incoming data
 			n, err := ServerConnection.Read(buffer) // Read data into buffer
 
 			if err != nil {

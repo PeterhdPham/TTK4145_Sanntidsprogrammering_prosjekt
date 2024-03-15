@@ -250,7 +250,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 	log.Printf("Client connected: %s\n", clientAddr)
 
 	for {
-		buffer := make([]byte, 8192)
+		buffer := make([]byte, 32768)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {
@@ -299,6 +299,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					if ReceivedPrevMasterList {
 						if utility.IsIPInMasterList(defs.MyIP, v) {
 							for index := range masterElevator.Elevators {
+
 								for v_index := range v.Elevators {
 									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
 										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
