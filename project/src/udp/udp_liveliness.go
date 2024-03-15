@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"project/defs"
 	"sort"
 	"strconv"
 	"strings"
@@ -57,13 +58,10 @@ func BroadcastLife() {
 
 func LookForLife(livingIPsChan chan<- []string) {
 
-	myIP, _, err := GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error obtaining the primary IP:", err)
-		return
-	}
+	myIP := defs.MyIP
 
 	IPLifetimes := make(map[string]time.Time)
+	IPLifetimes[defs.MyIP] = time.Now().Add(time.Hour)
 
 	// Create a UDP socket and listen on the port.
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
@@ -118,7 +116,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 				fmt.Println("This is my IP: ", myIP)
 			}
 		}
-		IPLifetimes[newAddr.String()] = time.Now().Add(NODE_LIFE)
+		IPLifetimes[strings.Split(newAddr.String(),":")[0]] = time.Now().Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }
@@ -126,7 +124,6 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 func getLivingIPs(m map[string]time.Time) []string {
 	livingIPs := []string{}
 	for address, death := range m {
-		address = strings.Split(address, ":")[0]
 		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
