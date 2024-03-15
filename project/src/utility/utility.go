@@ -57,6 +57,18 @@ func SlicesAreEqual(a, b interface{}) bool {
 	return true
 }
 
+func StringSlicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 	var tempMap map[string]interface{}
 	if err := json.Unmarshal(data, &tempMap); err != nil {
