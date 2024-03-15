@@ -138,7 +138,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		//Stops the server and switches from master to slave role
 		shutdownServer()
 		ServerActive <- false // Stop the server
-		time.Sleep(time.Second)
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {

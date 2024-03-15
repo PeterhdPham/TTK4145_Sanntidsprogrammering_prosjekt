@@ -16,6 +16,7 @@ var ShouldReconnect bool
 var UpdateLocal bool = false
 
 func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
+	time.Sleep(4 * time.Second)
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
