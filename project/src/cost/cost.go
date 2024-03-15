@@ -2,7 +2,6 @@ package cost
 
 import (
 	"Driver-go/elevio"
-	"log"
 	"project/defs"
 )
 
@@ -28,7 +27,6 @@ func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string
 		for elevator := range master.Elevators {
 			if master.Elevators[elevator].Ip == bestElevIP {
 				master.Elevators[elevator].Orders[floor][button] = true
-				log.Printf("Order %d at floor %d assigned to ip %s", floor, button, bestElevIP)
 			}
 		}
 		for elevator := range master.Elevators {
