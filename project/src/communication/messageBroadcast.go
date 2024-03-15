@@ -15,9 +15,9 @@ const MAX_ALLOWED_CONSECUTIVE_ERRORS = 3
 var errorBuffer = 0
 var ShouldReconnect bool
 
-func BroadcastMessage(masterElevator *types.MasterList) error {
+func BroadcastMessage(masterList *types.MasterList) error {
 
-	message := utility.MarshalJson(masterElevator)
+	message := utility.MarshalJson(masterList)
 
 	variables.ClientMutex.Lock()
 	defer variables.ClientMutex.Unlock()

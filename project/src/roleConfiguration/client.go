@@ -17,7 +17,7 @@ var ServerError error
 var ShouldReconnect bool
 var UpdateLocal bool = false
 
-func connectToServer(serverIP string, pointerElevator *types.Elevator, masterElevator *types.MasterList) {
+func connectToServer(serverIP string, pointerElevator *types.Elevator, masterList *types.MasterList) {
 	serverAddr := serverIP
 	for {
 		ServerConnection, ServerError = net.Dial("tcp", serverAddr)
@@ -35,7 +35,7 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 
 	communication.SendMessage(ServerConnection, *pointerElevator, "init")
 
-	communication.SendMessage(ServerConnection, *masterElevator, "prev")
+	communication.SendMessage(ServerConnection, *masterList, "prev")
 
 	go func() {
 		for {
@@ -61,7 +61,7 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 				switch msg := genericMessage.(type) {
 				case types.MasterList:
 
-					*masterElevator = msg
+					*masterList = msg
 					communication.SendMessage(ServerConnection, msg, "")
 					variables.UpdateLocal <- "true"
 				default:

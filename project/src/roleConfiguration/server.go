@@ -28,7 +28,7 @@ var (
 	ReceivedFirstElevator  bool
 )
 
-func startServer(masterElevator *types.MasterList) {
+func startServer(masterList *types.MasterList) {
 
 	variables.ClientConnections = make(map[net.Conn]bool)
 	ShouldReconnect = true
@@ -67,7 +67,7 @@ func startServer(masterElevator *types.MasterList) {
 					continue
 				}
 			}
-			go handleClientMessages(conn, masterElevator)
+			go handleClientMessages(conn, masterList)
 		}
 	}()
 
@@ -94,7 +94,7 @@ func closeAllClientConnections() {
 	}
 }
 
-func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
+func handleClientMessages(conn net.Conn, masterList *types.MasterList) {
 	variables.ClientMutex.Lock()
 	variables.ClientConnections[conn] = true
 	variables.ClientMutex.Unlock()
@@ -147,35 +147,35 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 
 			switch v := genericStruct.(type) {
 			case types.MasterList:
-				if reflect.DeepEqual(v, *masterElevator) {
+				if reflect.DeepEqual(v, *masterList) {
 					continue
 				} else {
 					if ReceivedPrevMasterList {
 						if utility.IPInMasterList(variables.MyIP, v) {
-							for index := range masterElevator.Elevators {
+							for index := range masterList.Elevators {
 
 								for v_index := range v.Elevators {
-									if masterElevator.Elevators[index].Ip == v.Elevators[v_index].Ip {
-										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
-										elevatorData.UpdateLightsMasterList(masterElevator, variables.MyIP)
-										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
-										masterElevator.Elevators[index].Orders = combinedOrders
+									if masterList.Elevators[index].Ip == v.Elevators[v_index].Ip {
+										combinedOrders := utility.CombineOrders(masterList.Elevators[index].Orders, v.Elevators[v_index].Orders)
+										elevatorData.UpdateLightsMasterList(masterList, variables.MyIP)
+										masterList.Elevators[index].Status = v.Elevators[v_index].Status
+										masterList.Elevators[index].Orders = combinedOrders
 									}
 								}
-								if masterElevator.Elevators[index].Ip == variables.MyIP {
-									masterElevator.Elevators[index].IsOnline = true
+								if masterList.Elevators[index].Ip == variables.MyIP {
+									masterList.Elevators[index].IsOnline = true
 								}
 							}
 						} else {
 							for index := range v.Elevators {
-								if !(utility.IPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
-									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
+								if !(utility.IPInMasterList(v.Elevators[index].Ip, *masterList)) {
+									(*masterList).Elevators = append((*masterList).Elevators, v.Elevators[index])
 								}
 							}
 						}
 
-						communication.BroadcastMessage(masterElevator)
-						elevatorData.UpdateLightsMasterList(masterElevator, variables.MyIP)
+						communication.BroadcastMessage(masterList)
+						elevatorData.UpdateLightsMasterList(masterList, variables.MyIP)
 						variables.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
 					}
@@ -196,24 +196,24 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 				}
 			case types.Elevator:
 
-				if !utility.IPInMasterList(v.Ip, *masterElevator) {
-					masterElevator.Elevators = append(masterElevator.Elevators, v)
+				if !utility.IPInMasterList(v.Ip, *masterList) {
+					masterList.Elevators = append(masterList.Elevators, v)
 				} else {
 					if ReceivedFirstElevator {
-						for index_master := range masterElevator.Elevators {
-							if masterElevator.Elevators[index_master].Ip == v.Ip {
-								masterElevator.Elevators[index_master].Orders = utility.CombineOrders(masterElevator.Elevators[index_master].Orders, v.Orders)
+						for index_master := range masterList.Elevators {
+							if masterList.Elevators[index_master].Ip == v.Ip {
+								masterList.Elevators[index_master].Orders = utility.CombineOrders(masterList.Elevators[index_master].Orders, v.Orders)
 							}
 						}
 						ReceivedFirstElevator = false
 					} else {
-						elevatorData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+						elevatorData.UpdateOrdersMasterList(masterList, v.Orders, v.Ip)
 					}
 
-					elevatorData.UpdateLightsMasterList(masterElevator, v.Ip)
+					elevatorData.UpdateLightsMasterList(masterList, v.Ip)
 				}
 
-				communication.BroadcastMessage(masterElevator)
+				communication.BroadcastMessage(masterList)
 			default:
 				log.Printf("Received unknown type from client %s\n", clientAddr)
 			}

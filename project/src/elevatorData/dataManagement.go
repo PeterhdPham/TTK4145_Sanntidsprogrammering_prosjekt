@@ -87,21 +87,21 @@ func UpdateLightsMasterList(masterList *types.MasterList, ip string) {
 	}
 }
 
-func UpdateIsOnline(masterElevator *types.MasterList, oldList []string, newList []string) {
+func UpdateIsOnline(masterList *types.MasterList, oldList []string, newList []string) {
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
-			for indx, e := range masterElevator.Elevators {
+			for indx, e := range masterList.Elevators {
 				if e.Ip == elevIP {
-					masterElevator.Elevators[indx].IsOnline = false
+					masterList.Elevators[indx].IsOnline = false
 				}
 			}
 		}
 	}
 	for _, elevIP := range newList {
 		if !utility.Contains(oldList, elevIP) {
-			for indx, e := range masterElevator.Elevators {
+			for indx, e := range masterList.Elevators {
 				if e.Ip == elevIP {
-					masterElevator.Elevators[indx].IsOnline = true
+					masterList.Elevators[indx].IsOnline = true
 				}
 			}
 		}
