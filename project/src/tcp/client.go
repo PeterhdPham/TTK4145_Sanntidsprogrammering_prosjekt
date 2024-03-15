@@ -20,12 +20,10 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	for {
 		ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 		if ServerError != nil {
-			log.Printf("Failed to connect to server with ip %s: %s\n", serverAddr, ServerError)
 			connected = false
 		} else {
 			break
 		}
-		log.Printf("Active IP 0:", ActiveIPs[0])
 		if ActiveIPs[0] != strings.Split(serverAddr, ":")[0] {
 			return
 		}
