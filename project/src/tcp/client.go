@@ -1,7 +1,7 @@
 package tcp
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"project/communication"
 	"project/defs"
@@ -19,12 +19,12 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	serverAddr := serverIP
 	ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 	if ServerError != nil {
-		fmt.Printf("Failed to connect to server: %s\n", ServerError)
+		log.Printf("Failed to connect to server: %s\n", ServerError)
 		connected = false
 		return
 	}
 	defer ServerConnection.Close()
-	fmt.Println("Connected to server at", serverAddr)
+	log.Println("Connected to server at", serverAddr)
 	connected = true
 	ShouldReconnect = false
 
@@ -52,12 +52,12 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") || !strings.HasPrefix(message, `{"elevators":`) {
 					continue // Skip empty messages
 				}
-				fmt.Println("Message: ", message)
+				log.Println("Message: ", message)
 
 				// Determine the struct type and unmarshal based on JSON content
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
-					fmt.Printf("Error determining struct type or unmarshaling message: %v\n", err)
+					log.Printf("Error determining struct type or unmarshaling message: %v\n", err)
 					continue
 				}
 
@@ -69,12 +69,12 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 					communication.SendMessage(ServerConnection, msg, "")
 					defs.UpdateLocal <- "true" // Assuming this triggers some update logic
 				case defs.Elevator:
-					fmt.Println("Received Elevator message")
+					log.Println("Received Elevator message")
 					// Process Elevator message
 				case defs.ElevStatus:
-					fmt.Println("Received ElevStatus message")
+					log.Println("Received ElevStatus message")
 				default:
-					fmt.Println("Received an unknown type of message")
+					log.Println("Received an unknown type of message")
 				}
 
 			}
@@ -88,6 +88,6 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	}
 
 	connected = false
-	fmt.Println("Shutting down client connection...")
+	log.Println("Shutting down client connection...")
 	ServerConnection.Close() // Explicitly close the connection
 }

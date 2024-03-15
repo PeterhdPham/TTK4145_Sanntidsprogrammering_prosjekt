@@ -2,7 +2,7 @@ package main
 
 import (
 	"Driver-go/elevio"
-	"fmt"
+	"log"
 	"project/communication"
 	"project/defs"
 	elevalgo "project/elevAlgo"
@@ -38,7 +38,7 @@ func main() {
 	for {
 		select {
 		case newStatus := <-myStatus:
-			// fmt.Println("status update: ", string(utility.MarshalJson(newStatus)))
+			// log.Println("status update: ", string(utility.MarshalJson(newStatus)))
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
@@ -47,7 +47,7 @@ func main() {
 					// Convert message to byte slice
 					err := communication.SendMessage(tcp.ServerConnection, newStatus, "") // Assign the error value to "err"
 					if err != nil {
-						fmt.Printf("Error sending elevator data: %s\n", err)
+						log.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
 			} else if elevator.Role == defs.MASTER {
@@ -64,20 +64,20 @@ func main() {
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				fmt.Println("Orders: ", newOrders)
+				log.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					// Convert message to byte slice
 					err := communication.SendMessage(tcp.ServerConnection, elevator, "") // Assign the error value to "err"
 					if err != nil {
-						fmt.Printf("Error sending elevator data: %s\n", err)
+						log.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
 			}
 		case <-ticker.C:
 			bytes := utility.MarshalJson(masterElevator)
-			fmt.Println("")
-			fmt.Println("MasterList: ", string(bytes))
-			// fmt.Println("Active ips: ", tcp.ActiveIPs)
+			log.Println("")
+			log.Println("MasterList: ", string(bytes))
+			// log.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
 	}
