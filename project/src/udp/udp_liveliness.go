@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"project/defs"
 	"sort"
 	"strconv"
 	"strings"
@@ -57,13 +58,10 @@ func BroadcastLife() {
 
 func LookForLife(livingIPsChan chan<- []string) {
 
-	myIP, _, err := GetPrimaryIP()
-	if err != nil {
-		fmt.Println("Error obtaining the primary IP:", err)
-		return
-	}
+	myIP := defs.MyIP
 
 	IPLifetimes := make(map[string]time.Time)
+	IPLifetimes[defs.MyIP] = time.Now().Add(time.Hour)
 
 	// Create a UDP socket and listen on the port.
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
@@ -86,9 +84,12 @@ func LookForLife(livingIPsChan chan<- []string) {
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
 
+		addrString := strings.Split(addr.String(),":")[0]
+
+
 		if err != nil {
 			if os.IsTimeout(err) {
-				IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
+				IPLifetimes = updateLivingIPs(IPLifetimes, "", myIP)
 				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue
 			} else {
@@ -97,28 +98,29 @@ func LookForLife(livingIPsChan chan<- []string) {
 			}
 		} else {
 			// Handle the received message.
-			IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
+			IPLifetimes = updateLivingIPs(IPLifetimes, addrString, myIP)
 			livingIPsChan <- getLivingIPs(IPLifetimes)
 		}
 	}
 }
 
-func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP string) map[string]time.Time {
+func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP string) map[string]time.Time {
 
-	if newAddr == nil {
+	if newAddr == "" {
 		for addrInList := range IPLifetimes {
 			IPLifetimes[addrInList] = time.Now()
 		}
 	} else {
-		_, ok := IPLifetimes[newAddr.String()]
+		_, ok := IPLifetimes[newAddr]
 		if !ok {
-			if strings.Split(newAddr.String(), ":")[0] != myIP {
-				fmt.Println("New node discovered: ", newAddr.String())
+			if newAddr != myIP {
+				fmt.Println("New node discovered: ", newAddr)
 			} else {
+				fmt.Println()
 				fmt.Println("This is my IP: ", myIP)
 			}
 		}
-		IPLifetimes[newAddr.String()] = time.Now().Add(NODE_LIFE)
+		IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }
@@ -126,7 +128,6 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 func getLivingIPs(m map[string]time.Time) []string {
 	livingIPs := []string{}
 	for address, death := range m {
-		address = strings.Split(address, ":")[0]
 		if death.After(time.Now()) {
 			livingIPs = append(livingIPs, address)
 		}
