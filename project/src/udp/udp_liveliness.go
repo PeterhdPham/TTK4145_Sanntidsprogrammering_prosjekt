@@ -17,10 +17,12 @@ const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm al
 const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
 const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
 const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
-const NODE_LIFE = 5 * time.Second                // Time added to node-lifetime when msg is received
+const NODE_LIFE = 3 * time.Second                // Time added to node-lifetime when msg is received
 const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutive udp error
 
 func BroadcastLife() {
+
+	myIP := defs.MyIP
 
 	// Dial the UDP connection using the IPv4 broadcast address
 	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
@@ -46,12 +48,26 @@ func BroadcastLife() {
 			if errCount > ALLOWED_CONSECUTIVE_ERRORS {
 				log.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
-				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
-				if err != nil {
-					log.Println(err)
-					return
+				for {
+					conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+					if err != nil {
+						log.Println(err)
+						time.Sleep(time.Second)
+					} else {
+						break
+					}
 				}
+
 				errCount = 0
+			}
+		}
+		if defs.MyIP != myIP {
+			myIP = defs.MyIP
+			log.Println("Changed IP, Restarting UDP connection")
+			conn.Close()
+			conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+			if err != nil {
+				log.Println(err)
 			}
 		}
 	}
@@ -62,7 +78,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	myIP := defs.MyIP
 
 	IPLifetimes := make(map[string]time.Time)
-	IPLifetimes[defs.MyIP] = time.Now().Add(time.Hour)
+	IPLifetimes[myIP] = time.Now().Add(time.Hour)
 
 	// Create a UDP socket and listen on the port.
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
@@ -76,6 +92,11 @@ func LookForLife(livingIPsChan chan<- []string) {
 	buffer := make([]byte, 8192)
 
 	for {
+		if defs.MyIP != myIP {
+			IPLifetimes[myIP] = time.Now()
+			myIP = defs.MyIP
+			IPLifetimes[myIP] = time.Now().Add(time.Hour)
+		}
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {
@@ -84,8 +105,17 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
+		var addrString string
+		if addr != nil {
+			addrString = strings.Split(addr.String(), ":")[0]
+		} else {
+			addrString = ""
+		}
 
-		addrString := strings.Split(addr.String(), ":")[0]
+		// if addrString == "10.100.23.34" {
+		// 	fmt.Println("Received Message from kristian")
+		// 	fmt.Println(IPLifetimes)
+		// }
 
 		if err != nil {
 			if os.IsTimeout(err) {
@@ -108,7 +138,9 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 
 	if newAddr == "" {
 		for addrInList := range IPLifetimes {
-			IPLifetimes[addrInList] = time.Now()
+			if addrInList != myIP {
+				IPLifetimes[addrInList] = time.Now()
+			}
 		}
 	} else {
 		_, ok := IPLifetimes[newAddr]
@@ -119,8 +151,12 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 				log.Println()
 				log.Println("This is my IP: ", myIP)
 			}
+			IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
+		} else {
+			if myIP != newAddr {
+				IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
+			}
 		}
-		IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }

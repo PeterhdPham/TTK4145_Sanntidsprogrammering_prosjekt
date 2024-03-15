@@ -74,10 +74,18 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			bytes := utility.MarshalJson(masterElevator)
-			log.Println("")
-			log.Println("MasterList: ", string(bytes))
-			// log.Println("Active ips: ", tcp.ActiveIPs)
+			// bytes := utility.MarshalJson(masterElevator)
+			// log.Println("")
+			// log.Println("MasterList: ", string(bytes))
+			log.Println("\nActive ips: ", tcp.ActiveIPs)
+			currentIP, _, _ := udp.GetPrimaryIP()
+			if defs.MyIP != currentIP && currentIP != ""{
+				defs.MyIP = currentIP
+				log.Println("Switching ips: ", defs.MyIP)
+				for index := range masterElevator.Elevators {
+					masterElevator.Elevators[index].Ip = defs.MyIP
+				}
+			}
 			continue
 		}
 	}

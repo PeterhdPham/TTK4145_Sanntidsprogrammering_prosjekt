@@ -43,10 +43,11 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
+				log.Println("Updating roles")
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
-					ActiveIPs = append(livingIPs, "127.0.0.1")
+					livingIPs = append(livingIPs, "127.0.0.1")
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
@@ -127,6 +128,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	if defs.ServerIP != lowestIP {
 		connected = false
 		defs.ServerIP = lowestIP
+		log.Println("This is master: ", defs.ServerIP)
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
@@ -200,6 +202,7 @@ func startServer(masterElevator *defs.MasterList) {
 					return
 				default:
 					log.Printf("Failed to accept connection: %s\n", err)
+					time.Sleep(time.Second)
 					continue
 				}
 			}
