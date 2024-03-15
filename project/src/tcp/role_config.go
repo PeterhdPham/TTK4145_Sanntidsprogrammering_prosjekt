@@ -312,6 +312,11 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 								if masterElevator.Elevators[index].Ip == defs.MyIP {
 									masterElevator.Elevators[index].IsOnline = true
 								}
+								for v_index := range v.Elevators {
+									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
+										masterElevator.Elevators[index].Orders = utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
+									}
+								}
 							}
 							log.Println("Overwriting existing masterList")
 						} else {
