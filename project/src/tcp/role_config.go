@@ -299,12 +299,14 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					if ReceivedPrevMasterList {
 						if utility.IsIPInMasterList(defs.MyIP, v) {
 							for index := range masterElevator.Elevators {
+
 								for v_index := range v.Elevators {
 									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
 										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
 										elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
 										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
 										masterElevator.Elevators[index].Orders = combinedOrders
+										masterElevator.Elevators[index].IsOnline = v.Elevators[v_index].IsOnline
 									}
 								}
 								if masterElevator.Elevators[index].Ip == defs.MyIP {
