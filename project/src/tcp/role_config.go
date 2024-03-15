@@ -202,6 +202,7 @@ func startServer(masterElevator *defs.MasterList) {
 					return
 				default:
 					log.Printf("Failed to accept connection: %s\n", err)
+					time.Sleep(time.Second)
 					continue
 				}
 			}

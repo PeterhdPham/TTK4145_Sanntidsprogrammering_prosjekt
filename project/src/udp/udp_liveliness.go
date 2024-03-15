@@ -48,11 +48,16 @@ func BroadcastLife() {
 			if errCount > ALLOWED_CONSECUTIVE_ERRORS {
 				log.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
-				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
-				if err != nil {
-					log.Println(err)
-					return
+				for {
+					conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+					if err != nil {
+						log.Println(err)
+						time.Sleep(time.Second)
+					} else {
+						break
+					}
 				}
+
 				errCount = 0
 			}
 		}
@@ -63,7 +68,6 @@ func BroadcastLife() {
 			conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 			if err != nil {
 				log.Println(err)
-				return
 			}
 		}
 	}
