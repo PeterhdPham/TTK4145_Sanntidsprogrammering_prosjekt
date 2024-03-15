@@ -126,7 +126,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 				log.Println("This is my IP: ", myIP)
 			}
 		}
-		IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
+		IPLifetimes[newAddr] = IPLifetimes[newAddr].Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }
