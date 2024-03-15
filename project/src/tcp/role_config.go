@@ -306,7 +306,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 										elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
 										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
 										masterElevator.Elevators[index].Orders = combinedOrders
-										masterElevator.Elevators[index].IsOnline = v.Elevators[v_index].IsOnline
 									}
 								}
 								if masterElevator.Elevators[index].Ip == defs.MyIP {
