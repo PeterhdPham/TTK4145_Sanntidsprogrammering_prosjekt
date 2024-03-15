@@ -22,7 +22,8 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 		if ServerError != nil {
 			log.Printf("Failed to connect to server: %s\n", ServerError)
 			connected = false
-		} else if ActiveIPs[0] != serverIP || ServerError == nil {
+		} 
+		if ActiveIPs[0] != serverIP || ServerError == nil {
 			break
 		}
 	}
