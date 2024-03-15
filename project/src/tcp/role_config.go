@@ -14,7 +14,6 @@ import (
 	"project/udp"
 	"project/utility"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -43,10 +42,6 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-			if !utility.Contains(livingIPs, defs.MyIP) {
-				livingIPs = append(livingIPs, defs.MyIP)
-				sort.Strings(livingIPs)
-			}
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
