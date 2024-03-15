@@ -85,7 +85,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
 		var addrString string
-		if (addr != nil) {
+		if addr != nil {
 			addrString = strings.Split(addr.String(), ":")[0]
 		} else {
 			addrString = ""
@@ -112,7 +112,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 
 	if newAddr == "" {
 		for addrInList := range IPLifetimes {
-			if addrInList != myIP{
+			if addrInList != myIP {
 				IPLifetimes[addrInList] = time.Now()
 			}
 		}
@@ -125,8 +125,10 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 				log.Println()
 				log.Println("This is my IP: ", myIP)
 			}
+			IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
+		} else {
+			IPLifetimes[newAddr] = IPLifetimes[newAddr].Add(NODE_LIFE)
 		}
-		IPLifetimes[newAddr] = IPLifetimes[newAddr].Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }
