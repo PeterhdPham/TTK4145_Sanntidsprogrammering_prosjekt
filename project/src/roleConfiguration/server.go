@@ -301,7 +301,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 							for index := range masterElevator.Elevators {
 
 								for v_index := range v.Elevators {
-									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
+									if masterElevator.Elevators[index].Ip == v.Elevators[v_index].Ip {
 										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
 										elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
 										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
