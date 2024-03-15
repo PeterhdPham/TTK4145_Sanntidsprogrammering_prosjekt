@@ -113,6 +113,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 			if strings.Split(newAddr.String(), ":")[0] != myIP {
 				fmt.Println("New node discovered: ", newAddr.String())
 			} else {
+				fmt.Print(strings.Split(newAddr.String(), ":")[0], "!=", myIP)
 				fmt.Println("This is my IP: ", myIP)
 			}
 		}
