@@ -1,17 +1,16 @@
-package elevData
+package elevatorData
 
 import (
 	"Driver-go/elevio"
+	"project/aliveMessages"
 	"project/defs"
-	"project/udp"
 	"project/utility"
 )
 
 func InitElevator(NumberOfFloors int) defs.Elevator {
 	var elevator defs.Elevator
 	elevator.IsOnline = true
-	ip, _, _ := udp.GetPrimaryIP()
-	elevator.Ip = ip
+	elevator.Ip = aliveMessages.GetPrimaryIP()
 	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
 	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
 	elevator.Status = InitStatus()

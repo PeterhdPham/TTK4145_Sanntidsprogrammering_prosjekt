@@ -1,11 +1,11 @@
-package elevalgo
+package elevatorAlgorithm
 
 import (
 	"Driver-go/elevio"
 	"log"
 	"project/communication"
 	"project/defs"
-	"project/elevData"
+	"project/elevatorData"
 	"project/roleConfiguration"
 	"time"
 )
@@ -13,8 +13,8 @@ import (
 var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
-func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
-	myStatus := elevData.InitStatus()
+func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
+	myStatus := elevatorData.InitStatus()
 	myOrders := init_order
 
 	drvButtons := make(chan elevio.ButtonEvent)
@@ -43,7 +43,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case a := <-drvFloors:
 			myStatus, myOrders = FSM_ArrivalAtFloor(myStatus, myOrders, a)
 			if role == defs.MASTER {
-				elevData.UpdateLightsMasterList(masterList, defs.MyIP)
+				elevatorData.UpdateLightsMasterList(masterList, defs.MyIP)
 			}
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1
@@ -73,14 +73,14 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, requestFloor, requestButton, a.IP, defs.MASTER)
 
 		case ipAddress := <-defs.StatusReceived:
-			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
+			elevatorData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 			if defs.RemoteStatus.Operative {
 				roleConfiguration.ReassignOrders2(masterList)
 			}
 			communication.BroadcastMessage(nil, masterList)
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
-			elevData.SetAllLights(*masterList)
+			elevatorData.SetAllLights(*masterList)
 
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
@@ -101,13 +101,13 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				failureTimerStart(failureTimeoutDuration, mode)
 			}
 			if (role == defs.MASTER) && !(myStatus.Operative) {
-				elevData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
+				elevatorData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
 				roleConfiguration.ReassignOrders2(masterList)
 				communication.BroadcastMessage(nil, masterList)
 			}
 		}
 
-		elevData.SetAllLights(*masterList)
+		elevatorData.SetAllLights(*masterList)
 
 		elevStatus <- myStatus
 		orders <- myOrders

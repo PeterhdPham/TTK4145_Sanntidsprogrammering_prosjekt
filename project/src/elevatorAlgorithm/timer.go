@@ -1,4 +1,4 @@
-package elevalgo
+package elevatorAlgorithm
 
 import (
 	"time"

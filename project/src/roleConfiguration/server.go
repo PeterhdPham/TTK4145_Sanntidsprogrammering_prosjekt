@@ -8,7 +8,7 @@ import (
 	"net"
 	"project/communication"
 	"project/defs"
-	"project/elevData"
+	"project/elevatorData"
 	"project/utility"
 	"reflect"
 	"strings"
@@ -176,7 +176,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 								for v_index := range v.Elevators {
 									if masterElevator.Elevators[index].Ip == v.Elevators[v_index].Ip {
 										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
-										elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+										elevatorData.UpdateLightsMasterList(masterElevator, defs.MyIP)
 										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
 										masterElevator.Elevators[index].Orders = combinedOrders
 									}
@@ -196,7 +196,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						}
 
 						communication.BroadcastMessage(nil, masterElevator)
-						elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+						elevatorData.UpdateLightsMasterList(masterElevator, defs.MyIP)
 						defs.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
 					}
@@ -228,10 +228,10 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						}
 						ReceivedFirstElevator = false
 					} else {
-						elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+						elevatorData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
 					}
 
-					elevData.UpdateLightsMasterList(masterElevator, v.Ip)
+					elevatorData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 
 				communication.BroadcastMessage(nil, masterElevator)

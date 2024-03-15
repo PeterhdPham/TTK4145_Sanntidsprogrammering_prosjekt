@@ -3,14 +3,13 @@ package main
 import (
 	"Driver-go/elevio"
 	"log"
+	"project/aliveMessages"
 	"project/communication"
 	"project/defs"
-	elevalgo "project/elevAlgo"
-	"project/elevData"
+	"project/elevatorAlgorithm"
+	"project/elevatorData"
 	"project/roleConfiguration"
-	"project/udp"
 	"project/utility"
-
 	"reflect"
 	"time"
 )
@@ -19,22 +18,22 @@ var elevator defs.Elevator
 var masterElevator defs.MasterList
 
 func main() {
-	elevio.Init("localhost:15657", defs.N_FLOORS)   // connect to elevatorsimulator
-	elevator = elevData.InitElevator(defs.N_FLOORS) // initialize the elevator
+	elevio.Init("localhost:15657", defs.N_FLOORS)       // connect to elevatorsimulator
+	elevator = elevatorData.InitElevator(defs.N_FLOORS) // initialize the elevator
 
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
 
-	myStatus := make(chan defs.ElevStatus)              // channel to receive status updates
-	myOrders := make(chan [][]bool)                     // channel to receive order updates
-	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
+	myStatus := make(chan defs.ElevStatus)                  // channel to receive status updates
+	myOrders := make(chan [][]bool)                         // channel to receive order updates
+	go elevatorData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
 
-	defs.MyIP, defs.MyPort, _ = udp.GetPrimaryIP()
+	defs.MyIP = aliveMessages.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
 
 	go roleConfiguration.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
-	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
+	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 
 	for {
 		select {
@@ -53,15 +52,15 @@ func main() {
 				}
 			} else if elevator.Role == defs.MASTER {
 				elevator.Status = newStatus
-				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
+				elevatorData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 				communication.BroadcastMessage(nil, &masterElevator)
 			}
-			elevData.SetAllLights(masterElevator)
+			elevatorData.SetAllLights(masterElevator)
 
 		case newOrders := <-myOrders:
 			if elevator.Role == defs.MASTER {
-				elevData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
-				elevData.SetAllLights(masterElevator)
+				elevatorData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
+				elevatorData.SetAllLights(masterElevator)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
@@ -78,7 +77,7 @@ func main() {
 			log.Println("")
 			log.Println("MasterList: ", string(bytes))
 			log.Println("\nActive ips: ", roleConfiguration.ActiveIPs)
-			currentIP, _, _ := udp.GetPrimaryIP()
+			currentIP := aliveMessages.GetPrimaryIP()
 			if defs.MyIP != currentIP && currentIP != "" {
 				defs.MyIP = currentIP
 				for index := range masterElevator.Elevators {

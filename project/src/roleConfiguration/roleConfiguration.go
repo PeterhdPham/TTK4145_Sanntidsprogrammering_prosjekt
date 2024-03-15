@@ -3,11 +3,11 @@ package roleConfiguration
 import (
 	"Driver-go/elevio"
 	"log"
+	"project/aliveMessages"
 	"project/communication"
 	"project/defs"
-	"project/elevData"
+	"project/elevatorData"
 	"project/orderAssignment"
-	"project/udp"
 	"project/utility"
 	"strings"
 	"time"
@@ -15,8 +15,8 @@ import (
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	//Go routines for finding active IPs
-	go udp.BroadcastLife()
-	go udp.LookForLife(LivingIPsChan)
+	go aliveMessages.BroadcastLife()
+	go aliveMessages.LookForLife(LivingIPsChan)
 
 	time.Sleep(3 * time.Second)
 
@@ -32,7 +32,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
-					elevData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
+					elevatorData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
 					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
 					communication.BroadcastMessage(nil, masterElevator)
 				}

@@ -1,4 +1,4 @@
-package udp
+package aliveMessages
 
 import (
 	"log"
@@ -112,11 +112,6 @@ func LookForLife(livingIPsChan chan<- []string) {
 			addrString = ""
 		}
 
-		// if addrString == "10.100.23.34" {
-		// 	fmt.Println("Received Message from kristian")
-		// 	fmt.Println(IPLifetimes)
-		// }
-
 		if err != nil {
 			if os.IsTimeout(err) {
 				IPLifetimes = updateLivingIPs(IPLifetimes, "", myIP)
@@ -190,4 +185,18 @@ func ipSorter(ipStrings []string) []string {
 		}
 	}
 	return ipStringsNew
+}
+
+func GetPrimaryIP() string {
+	var primaryIP string
+	conn, err := net.Dial("udp", "8.8.8.8:80") // Using an external server to determine the preferred outbound IP.
+	if err != nil {
+		log.Println("Error at GetPrimaryIP(): ", err)
+		return ""
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	primaryIP = localAddr.IP.String()
+	return primaryIP
 }
