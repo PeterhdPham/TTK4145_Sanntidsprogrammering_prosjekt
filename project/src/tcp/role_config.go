@@ -43,7 +43,6 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
-				log.Println("Updating roles")
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
@@ -56,7 +55,6 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 					communication.BroadcastMessage(nil, masterElevator)
 				}
 				ActiveIPs = livingIPs
-				log.Println("ActiveIPs: ", ActiveIPs)
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
@@ -105,9 +103,6 @@ func ReassignOrders2(masterList *defs.MasterList) {
 		}
 	}
 
-	log.Println("Online elevators:", onlineElevators)
-	log.Println("Operative elevators:", operativeElevators)
-
 	if (len(onlineElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
 		ReassignOrders(masterList, onlineElevators, operativeElevators)
 	}
@@ -122,13 +117,11 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		pointerElevator.Role = defs.MASTER
 		return
 	}
-	log.Println("Active IPs inside: ", ActiveIPs)
 	//Finds the lowestIP and sets the ServerIP equal to it
 	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
 	if defs.ServerIP != lowestIP {
 		connected = false
 		defs.ServerIP = lowestIP
-		log.Println("This is master: ", defs.ServerIP)
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
@@ -150,7 +143,6 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	} else if !defs.ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			log.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
@@ -301,14 +293,20 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
 			case defs.MasterList:
-				// log.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					// log.Println("client received the correct masterList")
+					continue
 				} else {
 					if ReceivedPrevMasterList {
 						if utility.IsIPInMasterList(defs.MyIP, v) {
-							*masterElevator = v
 							for index := range masterElevator.Elevators {
+								for v_index := range v.Elevators {
+									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
+										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
+										elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
+										masterElevator.Elevators[index].Orders = combinedOrders
+									}
+								}
 								if masterElevator.Elevators[index].Ip == defs.MyIP {
 									masterElevator.Elevators[index].IsOnline = true
 								}
@@ -328,10 +326,8 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						defs.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
 					}
-					log.Println("Server did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:
-				// log.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
@@ -346,7 +342,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					defs.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
 			case defs.Elevator:
-				// log.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)

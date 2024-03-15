@@ -64,7 +64,6 @@ func main() {
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				log.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					// Convert message to byte slice
 					err := communication.SendMessage(tcp.ServerConnection, elevator, "") // Assign the error value to "err"
@@ -74,14 +73,13 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			// bytes := utility.MarshalJson(masterElevator)
-			// log.Println("")
-			// log.Println("MasterList: ", string(bytes))
+			bytes := utility.MarshalJson(masterElevator)
+			log.Println("")
+			log.Println("MasterList: ", string(bytes))
 			log.Println("\nActive ips: ", tcp.ActiveIPs)
 			currentIP, _, _ := udp.GetPrimaryIP()
-			if defs.MyIP != currentIP && currentIP != ""{
+			if defs.MyIP != currentIP && currentIP != "" {
 				defs.MyIP = currentIP
-				log.Println("Switching ips: ", defs.MyIP)
 				for index := range masterElevator.Elevators {
 					masterElevator.Elevators[index].Ip = defs.MyIP
 				}

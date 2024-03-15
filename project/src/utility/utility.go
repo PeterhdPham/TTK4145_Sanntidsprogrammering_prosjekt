@@ -105,8 +105,6 @@ func Contains(slice []string, str string) bool {
 }
 
 func CombineOrders(a [][]bool, b [][]bool) [][]bool {
-	log.Println("New orders: ", a)
-	log.Println("Old orders: ", b)
 	for i, a_row := range a {
 		for j, value := range a_row {
 			if b[i][j] || value {
