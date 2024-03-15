@@ -63,7 +63,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	myIP := defs.MyIP
 
 	IPLifetimes := make(map[string]time.Time)
-	IPLifetimes[defs.MyIP] = time.Now().Add(time.Hour)
+	IPLifetimes[myIP] = time.Now().Add(time.Hour)
 
 	// Create a UDP socket and listen on the port.
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
@@ -77,6 +77,11 @@ func LookForLife(livingIPsChan chan<- []string) {
 	buffer := make([]byte, 8192)
 
 	for {
+		if defs.MyIP != myIP {
+			IPLifetimes[myIP] = time.Now()
+			myIP = defs.MyIP
+			IPLifetimes[myIP] = time.Now().Add(time.Hour)
+		}
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {

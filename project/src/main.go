@@ -78,6 +78,14 @@ func main() {
 			log.Println("")
 			log.Println("MasterList: ", string(bytes))
 			// log.Println("Active ips: ", tcp.ActiveIPs)
+			currentIP, _, _ := udp.GetPrimaryIP()
+			if defs.MyIP != currentIP && currentIP != ""{
+				defs.MyIP = currentIP
+				log.Println("Switching ips: ", defs.MyIP)
+				for index := range masterElevator.Elevators {
+					masterElevator.Elevators[index].Ip = defs.MyIP
+				}
+			}
 			continue
 		}
 	}
