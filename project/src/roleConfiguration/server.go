@@ -7,9 +7,10 @@ import (
 	"log"
 	"net"
 	"project/communication"
-	"project/defs"
 	"project/elevatorData"
+	"project/types"
 	"project/utility"
+	"project/variables"
 	"reflect"
 	"strings"
 	"sync"
@@ -27,9 +28,9 @@ var (
 	ReceivedFirstElevator  bool                          // First elevator
 )
 
-func startServer(masterElevator *defs.MasterList) {
+func startServer(masterElevator *types.MasterList) {
 	// Initialize the map to track client connections at the correct scope
-	defs.ClientConnections = make(map[net.Conn]bool)
+	variables.ClientConnections = make(map[net.Conn]bool)
 	ShouldReconnect = true
 
 	// Check if the server is already running, and if so, initiate shutdown for role switch
@@ -94,29 +95,29 @@ func startServer(masterElevator *defs.MasterList) {
 
 // Ensure this function exists and is correctly implemented to close all client connections
 func closeAllClientConnections() {
-	defs.ClientMutex.Lock()
-	defer defs.ClientMutex.Unlock()
+	variables.ClientMutex.Lock()
+	defer variables.ClientMutex.Unlock()
 
-	for conn := range defs.ClientConnections {
+	for conn := range variables.ClientConnections {
 		err := conn.Close()
 		if err != nil {
 			log.Printf("Error closing connection: %s\n", err)
 		}
-		delete(defs.ClientConnections, conn)
+		delete(variables.ClientConnections, conn)
 	}
 }
 
 // Handles individual client connections.
-func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
-	defs.ClientMutex.Lock()
-	defs.ClientConnections[conn] = true
-	defs.ClientMutex.Unlock()
+func handleConnection(conn net.Conn, masterElevator *types.MasterList) {
+	variables.ClientMutex.Lock()
+	variables.ClientConnections[conn] = true
+	variables.ClientMutex.Unlock()
 
 	defer func() {
 		conn.Close()
-		defs.ClientMutex.Lock()
-		delete(defs.ClientConnections, conn)
-		defs.ClientMutex.Unlock()
+		variables.ClientMutex.Lock()
+		delete(variables.ClientConnections, conn)
+		variables.ClientMutex.Unlock()
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
@@ -165,23 +166,23 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
-			case defs.MasterList:
+			case types.MasterList:
 				if reflect.DeepEqual(v, *masterElevator) {
 					continue
 				} else {
 					if ReceivedPrevMasterList {
-						if utility.IsIPInMasterList(defs.MyIP, v) {
+						if utility.IsIPInMasterList(variables.MyIP, v) {
 							for index := range masterElevator.Elevators {
 
 								for v_index := range v.Elevators {
 									if masterElevator.Elevators[index].Ip == v.Elevators[v_index].Ip {
 										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
-										elevatorData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+										elevatorData.UpdateLightsMasterList(masterElevator, variables.MyIP)
 										masterElevator.Elevators[index].Status = v.Elevators[v_index].Status
 										masterElevator.Elevators[index].Orders = combinedOrders
 									}
 								}
-								if masterElevator.Elevators[index].Ip == defs.MyIP {
+								if masterElevator.Elevators[index].Ip == variables.MyIP {
 									masterElevator.Elevators[index].IsOnline = true
 								}
 							}
@@ -196,26 +197,26 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 						}
 
 						communication.BroadcastMessage(nil, masterElevator)
-						elevatorData.UpdateLightsMasterList(masterElevator, defs.MyIP)
-						defs.UpdateLocal <- "true"
+						elevatorData.UpdateLightsMasterList(masterElevator, variables.MyIP)
+						variables.UpdateLocal <- "true"
 						ReceivedPrevMasterList = false
 					}
 				}
-			case defs.ElevStatus:
+			case types.ElevStatus:
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
 				if requestButton != -1 || requestFloor != -1 {
-					defs.RemoteStatus = v
-					defs.ButtonReceived <- defs.ButtonEventWithIP{
+					variables.RemoteStatus = v
+					variables.ButtonReceived <- types.ButtonEventWithIP{
 						Event: elevio.ButtonEvent{Floor: v.Buttonfloor, Button: elevio.ButtonType(v.Buttontype)},
 						IP:    strings.Split(clientAddr, ":")[0],
 					}
 				} else {
-					defs.RemoteStatus = v
-					defs.StatusReceived <- strings.Split(clientAddr, ":")[0]
+					variables.RemoteStatus = v
+					variables.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
-			case defs.Elevator:
+			case types.Elevator:
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
@@ -245,15 +246,15 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 func shutdownServer() {
 
 	// Close all active client connections
-	defs.ClientMutex.Lock()
-	for conn := range defs.ClientConnections {
+	variables.ClientMutex.Lock()
+	for conn := range variables.ClientConnections {
 		err := conn.Close()
 		if err != nil {
 			log.Printf("Error closing connection: %s\n", err)
 		}
-		delete(defs.ClientConnections, conn)
+		delete(variables.ClientConnections, conn)
 	}
-	defs.ClientMutex.Unlock()
+	variables.ClientMutex.Unlock()
 
 	// Finally, mark the server as not listening
 	ServerListening = false

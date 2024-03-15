@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"project/defs"
+	"project/variables"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,7 +21,7 @@ const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutiv
 
 func BroadcastLife() {
 
-	myIP := defs.MyIP
+	myIP := variables.MyIP
 
 	// Dial the UDP connection using the IPv4 broadcast address
 	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
@@ -60,8 +60,8 @@ func BroadcastLife() {
 				errCount = 0
 			}
 		}
-		if defs.MyIP != myIP {
-			myIP = defs.MyIP
+		if variables.MyIP != myIP {
+			myIP = variables.MyIP
 			log.Println("Changed IP, Restarting UDP connection")
 			conn.Close()
 			conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
@@ -74,7 +74,7 @@ func BroadcastLife() {
 
 func LookForLife(livingIPsChan chan<- []string) {
 
-	myIP := defs.MyIP
+	myIP := variables.MyIP
 
 	IPLifetimes := make(map[string]time.Time)
 	IPLifetimes[myIP] = time.Now().Add(time.Hour)
@@ -91,9 +91,9 @@ func LookForLife(livingIPsChan chan<- []string) {
 	buffer := make([]byte, 32768)
 
 	for {
-		if defs.MyIP != myIP {
+		if variables.MyIP != myIP {
 			IPLifetimes[myIP] = time.Now()
-			myIP = defs.MyIP
+			myIP = variables.MyIP
 			IPLifetimes[myIP] = time.Now().Add(time.Hour)
 		}
 

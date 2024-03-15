@@ -5,10 +5,12 @@ import (
 	"log"
 	"project/aliveMessages"
 	"project/communication"
-	"project/defs"
+	"project/constants"
 	"project/elevatorData"
 	"project/orderAssignment"
+	"project/types"
 	"project/utility"
+	"project/variables"
 	"strings"
 	"time"
 )
@@ -16,7 +18,7 @@ import (
 var ServerListening bool = false // Flag to indicate if server is listening for new connections
 var ServerIP string              //Server IP
 
-func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
+func Config_Roles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
 	//Go routines for finding active IPs
 	go aliveMessages.BroadcastLife()
 	go aliveMessages.LookForLife(LivingIPsChan)
@@ -48,7 +50,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 }
 
 // Used when the ActiveIPs list is changed
-func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList []string) {
+func ReassignOrders(masterElevator *types.MasterList, oldList []string, newList []string) {
 	var counter int
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
@@ -75,7 +77,7 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 }
 
 // Used when elevators still are online, but one or more elevators are inoperative
-func ReassignOrders2(masterList *defs.MasterList) {
+func ReassignOrders2(masterList *types.MasterList) {
 	operativeElevators := make([]string, 0)
 	onlineElevators := make([]string, 0)
 
@@ -93,13 +95,13 @@ func ReassignOrders2(masterList *defs.MasterList) {
 	}
 }
 
-func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
+func updateRole(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
 	//Sets the role to master if there is not active IPs (Internet turned off while running)
 	if len(ActiveIPs) == 0 {
-		pointerElevator.Role = defs.MASTER
+		pointerElevator.Role = constants.MASTER
 		return
 	}
 	//Finds the lowestIP and sets the ServerIP equal to it
@@ -110,26 +112,26 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
-		pointerElevator.Role = defs.MASTER
+		pointerElevator.Role = constants.MASTER
 		return
 	}
 
-	if defs.MyIP == lowestIP && !ServerListening {
+	if variables.MyIP == lowestIP && !ServerListening {
 		//Set role to master and starts a new server
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
-		pointerElevator.Role = defs.MASTER
-	} else if defs.MyIP != lowestIP && ServerListening {
+		pointerElevator.Role = constants.MASTER
+	} else if variables.MyIP != lowestIP && ServerListening {
 		//Stops the server and switches from master to slave role
 		shutdownServer()
 		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
-		pointerElevator.Role = defs.SLAVE
+		pointerElevator.Role = constants.SLAVE
 	} else if !ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
-			pointerElevator.Role = defs.SLAVE
+			pointerElevator.Role = constants.SLAVE
 		}
 	}
 }

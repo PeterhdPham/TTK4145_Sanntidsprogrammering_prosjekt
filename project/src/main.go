@@ -5,29 +5,31 @@ import (
 	"log"
 	"project/aliveMessages"
 	"project/communication"
-	"project/defs"
+	"project/constants"
 	"project/elevatorAlgorithm"
 	"project/elevatorData"
 	"project/roleConfiguration"
+	"project/types"
 	"project/utility"
+	"project/variables"
 	"reflect"
 	"time"
 )
 
-var elevator defs.Elevator
-var masterElevator defs.MasterList
+var elevator types.Elevator
+var masterElevator types.MasterList
 
 func main() {
-	elevio.Init("localhost:15657", defs.N_FLOORS) // connect to elevatorsimulator
-	elevator = elevatorData.InitElevator()        // initialize the elevator
+	elevio.Init("localhost:15657", constants.N_FLOORS) // connect to elevatorsimulator
+	elevator = elevatorData.InitElevator()             // initialize the elevator
 
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
 
-	myStatus := make(chan defs.ElevStatus)   // channel to receive status updates
+	myStatus := make(chan types.ElevStatus)  // channel to receive status updates
 	myOrders := make(chan [][]bool)          // channel to receive order updates
 	go elevatorData.InitOrdersChan(myOrders) // initialize the orders channel
 
-	defs.MyIP = aliveMessages.GetPrimaryIP()
+	variables.MyIP = aliveMessages.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
 
@@ -41,7 +43,7 @@ func main() {
 			// log.Println("status update: ", string(utility.MarshalJson(newStatus)))
 
 			//Sends message to server
-			if roleConfiguration.ServerConnection != nil && elevator.Role == defs.SLAVE {
+			if roleConfiguration.ServerConnection != nil && elevator.Role == constants.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
 					// Convert message to byte slice
@@ -50,21 +52,21 @@ func main() {
 						log.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
-			} else if elevator.Role == defs.MASTER {
+			} else if elevator.Role == constants.MASTER {
 				elevator.Status = newStatus
-				elevatorData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
+				elevatorData.UpdateStatusMasterList(&masterElevator, elevator.Status, variables.MyIP)
 				communication.BroadcastMessage(nil, &masterElevator)
 			}
 			elevatorData.SetAllLights(masterElevator)
 
 		case newOrders := <-myOrders:
-			if elevator.Role == defs.MASTER {
-				elevatorData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
+			if elevator.Role == constants.MASTER {
+				elevatorData.UpdateLightsMasterList(&masterElevator, variables.MyIP)
 				elevatorData.SetAllLights(masterElevator)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				if roleConfiguration.ServerConnection != nil && elevator.Role == defs.SLAVE {
+				if roleConfiguration.ServerConnection != nil && elevator.Role == constants.SLAVE {
 					// Convert message to byte slice
 					err := communication.SendMessage(roleConfiguration.ServerConnection, elevator, "") // Assign the error value to "err"
 					if err != nil {
@@ -78,10 +80,10 @@ func main() {
 			log.Println("MasterList: ", string(bytes))
 			log.Println("\nActive ips: ", roleConfiguration.ActiveIPs)
 			currentIP := aliveMessages.GetPrimaryIP()
-			if defs.MyIP != currentIP && currentIP != "" {
-				defs.MyIP = currentIP
+			if variables.MyIP != currentIP && currentIP != "" {
+				variables.MyIP = currentIP
 				for index := range masterElevator.Elevators {
-					masterElevator.Elevators[index].Ip = defs.MyIP
+					masterElevator.Elevators[index].Ip = variables.MyIP
 				}
 			}
 			continue

@@ -4,7 +4,9 @@ import (
 	"log"
 	"net"
 	"project/communication"
-	"project/defs"
+	"project/types"
+	"project/variables"
+
 	"project/utility"
 	"strings"
 	"time"
@@ -15,7 +17,7 @@ var ServerError error
 var ShouldReconnect bool
 var UpdateLocal bool = false
 
-func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
+func connectToServer(serverIP string, pointerElevator *types.Elevator, masterElevator *types.MasterList) {
 	serverAddr := serverIP
 	for {
 		ServerConnection, ServerError = net.Dial("tcp", serverAddr)
@@ -66,15 +68,15 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 				// Now, handle the unmarshaled data based on its type
 				switch msg := genericMessage.(type) {
-				case defs.MasterList:
+				case types.MasterList:
 					// Process MasterList message
 					*masterElevator = msg
 					communication.SendMessage(ServerConnection, msg, "")
-					defs.UpdateLocal <- "true" // Assuming this triggers some update logic
-				case defs.Elevator:
+					variables.UpdateLocal <- "true" // Assuming this triggers some update logic
+				case types.Elevator:
 					log.Println("Received Elevator message")
 					// Process Elevator message
-				case defs.ElevStatus:
+				case types.ElevStatus:
 					log.Println("Received ElevStatus message")
 				default:
 					log.Println("Received an unknown type of message")

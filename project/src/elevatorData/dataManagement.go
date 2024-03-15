@@ -3,12 +3,14 @@ package elevatorData
 import (
 	"Driver-go/elevio"
 	"project/aliveMessages"
-	"project/defs"
+	"project/constants"
+	"project/types"
 	"project/utility"
+	"project/variables"
 )
 
-func InitElevator() defs.Elevator {
-	var elevator defs.Elevator
+func InitElevator() types.Elevator {
+	var elevator types.Elevator
 	elevator.IsOnline = true
 	elevator.Ip = aliveMessages.GetPrimaryIP()
 	elevator.Orders = InitOrdersAndLights()
@@ -17,21 +19,21 @@ func InitElevator() defs.Elevator {
 	return elevator
 }
 
-func InitStatus() defs.ElevStatus {
-	var status defs.ElevStatus
+func InitStatus() types.ElevStatus {
+	var status types.ElevStatus
 	status.Direction = elevio.MD_Stop
 	status.Floor = -1
 	status.Doors = false
 	status.Obstructed = false
 	status.Buttonfloor = -1
 	status.Buttontype = -1
-	status.FSM_State = defs.IDLE
+	status.FSM_State = constants.IDLE
 	status.Operative = true
 	return status
 }
 
 func InitOrdersAndLights() [][]bool {
-	orders := make([][]bool, defs.N_FLOORS)
+	orders := make([][]bool, constants.N_FLOORS)
 	for i := range orders {
 		orders[i] = make([]bool, 3)
 	}
@@ -39,22 +41,22 @@ func InitOrdersAndLights() [][]bool {
 }
 
 func InitOrdersChan(orders chan [][]bool) {
-	o := make([][]bool, defs.N_FLOORS)
-	for i := 0; i < defs.N_FLOORS; i++ {
+	o := make([][]bool, constants.N_FLOORS)
+	for i := 0; i < constants.N_FLOORS; i++ {
 		o[i] = make([]bool, 3) // Assuming 3 buttons per floor.
 	}
 	// Send the initialized slice of slices through the channel.
 	orders <- o
 }
 
-func UpdateStatusMasterList(masterList *defs.MasterList, newStatus defs.ElevStatus, ip string) {
+func UpdateStatusMasterList(masterList *types.MasterList, newStatus types.ElevStatus, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Status = newStatus
 		}
 	}
 }
-func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip string) {
+func UpdateOrdersMasterList(masterList *types.MasterList, newOrders [][]bool, ip string) {
 	for i := 0; i < len(masterList.Elevators); i++ {
 		if masterList.Elevators[i].Ip == ip {
 			masterList.Elevators[i].Orders = newOrders
@@ -62,8 +64,8 @@ func UpdateOrdersMasterList(masterList *defs.MasterList, newOrders [][]bool, ip 
 	}
 }
 
-func UpdateLightsMasterList(masterList *defs.MasterList, ip string) {
-	for floor := 0; floor < defs.N_FLOORS; floor++ {
+func UpdateLightsMasterList(masterList *types.MasterList, ip string) {
+	for floor := 0; floor < constants.N_FLOORS; floor++ {
 		for btn := 0; btn < 2; btn++ {
 			lightActive := false
 			for index := range masterList.Elevators {
@@ -86,7 +88,7 @@ func UpdateLightsMasterList(masterList *defs.MasterList, ip string) {
 	}
 }
 
-func UpdateIsOnline(masterElevator *defs.MasterList, oldList []string, newList []string) {
+func UpdateIsOnline(masterElevator *types.MasterList, oldList []string, newList []string) {
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
 			for indx, e := range masterElevator.Elevators {
@@ -107,10 +109,10 @@ func UpdateIsOnline(masterElevator *defs.MasterList, oldList []string, newList [
 	}
 }
 
-func SetAllLights(masterList defs.MasterList) {
+func SetAllLights(masterList types.MasterList) {
 	for index, e := range masterList.Elevators {
-		if e.Ip == defs.MyIP {
-			for floor := 0; floor < defs.N_FLOORS; floor++ {
+		if e.Ip == variables.MyIP {
+			for floor := 0; floor < constants.N_FLOORS; floor++ {
 				for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
 					elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
 				}

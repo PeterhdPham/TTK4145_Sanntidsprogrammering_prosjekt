@@ -2,10 +2,10 @@ package orderAssignment
 
 import (
 	"Driver-go/elevio"
-	"project/defs"
+	"project/types"
 )
 
-func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string) {
+func FindAndAssign(master *types.MasterList, floor int, button int, fromIP string) {
 	for index := range master.Elevators {
 		if button == int(elevio.BT_Cab) {
 			continue
@@ -35,10 +35,10 @@ func FindAndAssign(master *defs.MasterList, floor int, button int, fromIP string
 	}
 }
 
-func findBestElevIP(master *defs.MasterList) string {
-	var ipRequests []defs.IpRequestCount
+func findBestElevIP(master *types.MasterList) string {
+	var ipRequests []types.IpRequestCount
 	for _, elevator := range master.Elevators {
-		ipRequests = append(ipRequests, defs.IpRequestCount{Ip: elevator.Ip, Requests: 0, Operative: elevator.Status.Operative, Online: elevator.IsOnline})
+		ipRequests = append(ipRequests, types.IpRequestCount{Ip: elevator.Ip, Requests: 0, Operative: elevator.Status.Operative, Online: elevator.IsOnline})
 	}
 
 	// Count requests for each elevator

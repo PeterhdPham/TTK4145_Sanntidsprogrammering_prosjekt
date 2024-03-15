@@ -4,16 +4,19 @@ import (
 	"Driver-go/elevio"
 	"log"
 	"project/communication"
-	"project/defs"
+	"project/constants"
 	"project/elevatorData"
 	"project/roleConfiguration"
+	"project/types"
+	"project/variables"
+
 	"time"
 )
 
 var doorOpenDuration time.Duration = 3 * time.Second
 var failureTimeoutDuration time.Duration = 7 * time.Second
 
-func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
+func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.ElevStatus, orders chan [][]bool, init_order [][]bool, role types.ElevatorRole) {
 	myStatus := elevatorData.InitStatus()
 	myOrders := init_order
 
@@ -29,28 +32,28 @@ func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevS
 	if elevio.GetFloor() == -1 {
 		myStatus = FSM_InitBetweenFloors(myStatus)
 	} else {
-		myStatus.FSM_State = defs.IDLE
+		myStatus.FSM_State = constants.IDLE
 	}
 
 	for {
 		select {
 		case a := <-drvButtons:
-			if role == defs.MASTER {
-				myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, a.Floor, int(a.Button), defs.MyIP, role)
+			if role == constants.MASTER {
+				myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, a.Floor, int(a.Button), variables.MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
 		case a := <-drvFloors:
 			myStatus, myOrders = FSM_ArrivalAtFloor(myStatus, myOrders, a)
-			if role == defs.MASTER {
-				elevatorData.UpdateLightsMasterList(masterList, defs.MyIP)
+			if role == constants.MASTER {
+				elevatorData.UpdateLightsMasterList(masterList, variables.MyIP)
 			}
 		case a := <-drvObstr:
 			myStatus.Buttonfloor = -1
 			myStatus.Buttontype = -1
 			if a {
 				myStatus.Obstructed = true
-				if !(myStatus.FSM_State == defs.MOVING) {
+				if !(myStatus.FSM_State == constants.MOVING) {
 					elevio.SetMotorDirection(elevio.MD_Stop)
 				}
 			} else {
@@ -67,19 +70,19 @@ func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevS
 				failureTimerStop()
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
 			}
-		case a := <-defs.ButtonReceived:
+		case a := <-variables.ButtonReceived:
 			requestFloor := a.Event.Floor
 			requestButton := int(a.Event.Button)
-			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, requestFloor, requestButton, a.IP, defs.MASTER)
+			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, requestFloor, requestButton, a.IP, constants.MASTER)
 
-		case ipAddress := <-defs.StatusReceived:
-			elevatorData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
-			if defs.RemoteStatus.Operative {
+		case ipAddress := <-variables.StatusReceived:
+			elevatorData.UpdateStatusMasterList(masterList, variables.RemoteStatus, ipAddress)
+			if variables.RemoteStatus.Operative {
 				roleConfiguration.ReassignOrders2(masterList)
 			}
 			communication.BroadcastMessage(nil, masterList)
-		case <-defs.UpdateLocal:
-			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
+		case <-variables.UpdateLocal:
+			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", constants.SLAVE)
 			elevatorData.SetAllLights(*masterList)
 
 		case mode := <-failureTimerChannel:
@@ -90,18 +93,18 @@ func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevS
 				log.Println("DOORS ARE STUCK")
 				myStatus.Operative = false
 			case 1:
-				if myStatus.FSM_State != defs.IDLE {
+				if myStatus.FSM_State != constants.IDLE {
 					log.Println("MOTOR HAS FAILED. TRYING AGAIN")
 					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
 					myStatus.Operative = false
 				}
 			}
-			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
+			if myStatus.Doors || myStatus.FSM_State != constants.IDLE {
 				failureTimerStop()
 				failureTimerStart(failureTimeoutDuration, mode)
 			}
-			if (role == defs.MASTER) && !(myStatus.Operative) {
-				elevatorData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
+			if (role == constants.MASTER) && !(myStatus.Operative) {
+				elevatorData.UpdateStatusMasterList(masterList, myStatus, variables.MyIP)
 				roleConfiguration.ReassignOrders2(masterList)
 				communication.BroadcastMessage(nil, masterList)
 			}
