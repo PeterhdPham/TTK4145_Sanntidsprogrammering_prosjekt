@@ -16,7 +16,7 @@
   - [ ] Client beholder cabcalls ved disconnect og connect på nettverk
   - [ ] Client beholder cabcalls ved disconnect og connect på kill
 - [ ] Maintain functionality during network disconnections and recover quickly from failures.
-- [ ],,,,,,,
+- [ ]
 
 ### Functionality
 - [ ] Hall call buttons must summon an elevator correctly.
