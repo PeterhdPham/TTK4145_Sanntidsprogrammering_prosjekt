@@ -56,8 +56,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") || !strings.HasPrefix(message, `{"elevators":`) {
 					continue // Skip empty messages
 				}
-				log.Println("Message: ", message)
-
+				
 				// Determine the struct type and unmarshal based on JSON content
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
