@@ -188,6 +188,11 @@ func startServer(masterElevator *defs.MasterList) {
 					defs.ServerListening = false
 					listener.Close()
 					return
+				case <-ServerActive:
+					closeAllClientConnections() // Ensure all client connections are gracefully closed
+					defs.ServerListening = false
+					listener.Close()
+					return
 				default:
 					fmt.Printf("Failed to accept connection: %s\n", err)
 					continue
@@ -199,13 +204,8 @@ func startServer(masterElevator *defs.MasterList) {
 
 	// Wait for the shutdown signal to clean up and exit the function
 	// <-ctx.Done()
-	select {
-	case <-ServerActive:
-		closeAllClientConnections() // Ensure all client connections are gracefully closed
-		defs.ServerListening = false
-		listener.Close()
-		return
-	}
+	<-ServerActive
+
 }
 
 // Ensure this function exists and is correctly implemented to close all client connections
@@ -258,7 +258,8 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		// Process each newline-separated message
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
-			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`)) {
+			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`) && !strings.HasPrefix(message, `init`)) {
+				fmt.Println("Skipped: ", message, "\n")
 				continue // Skip empty messages
 			}
 
