@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+var ServerListening bool = false // Flag to indicate if server is listening for new connections
+var ServerIP string              //Server IP
+
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	//Go routines for finding active IPs
 	go aliveMessages.BroadcastLife()
@@ -101,9 +104,9 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	}
 	//Finds the lowestIP and sets the ServerIP equal to it
 	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
-	if defs.ServerIP != lowestIP {
+	if ServerIP != lowestIP {
 		connected = false
-		defs.ServerIP = lowestIP
+		ServerIP = lowestIP
 	}
 	//Sets role to master if lowestIP is localhost
 	if lowestIP == "127.0.0.1" {
@@ -111,18 +114,18 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		return
 	}
 
-	if defs.MyIP == lowestIP && !defs.ServerListening {
+	if defs.MyIP == lowestIP && !ServerListening {
 		//Set role to master and starts a new server
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
-	} else if defs.MyIP != lowestIP && defs.ServerListening {
+	} else if defs.MyIP != lowestIP && ServerListening {
 		//Stops the server and switches from master to slave role
 		shutdownServer()
 		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
-	} else if !defs.ServerListening {
+	} else if !ServerListening {
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)

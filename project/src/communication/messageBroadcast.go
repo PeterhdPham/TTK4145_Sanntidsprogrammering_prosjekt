@@ -32,21 +32,19 @@ func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
 			_, err := conn.Write(message)
 			if err != nil {
 				log.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-				if defs.ErrorBuffer == 0 {
+				if errorBuffer == 0 {
 					log.Println("Too many consecutive errors, stopping...")
-					defs.ShouldServerReconnect = true
 					return err // Stop if there are too many consecutive errors
 				} else {
-					defs.ErrorBuffer--
+					errorBuffer--
 				}
 			} else {
-				defs.ErrorBuffer = 3 // Reset the error buffer on successful send
+				errorBuffer = 3 // Reset the error buffer on successful send
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	defs.ShouldServerReconnect = false
 	return nil
 }
 

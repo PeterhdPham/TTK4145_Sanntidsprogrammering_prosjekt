@@ -18,14 +18,14 @@ var elevator defs.Elevator
 var masterElevator defs.MasterList
 
 func main() {
-	elevio.Init("localhost:15657", defs.N_FLOORS)       // connect to elevatorsimulator
-	elevator = elevatorData.InitElevator(defs.N_FLOORS) // initialize the elevator
+	elevio.Init("localhost:15657", defs.N_FLOORS) // connect to elevatorsimulator
+	elevator = elevatorData.InitElevator()        // initialize the elevator
 
 	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
 
-	myStatus := make(chan defs.ElevStatus)                  // channel to receive status updates
-	myOrders := make(chan [][]bool)                         // channel to receive order updates
-	go elevatorData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
+	myStatus := make(chan defs.ElevStatus) // channel to receive status updates
+	myOrders := make(chan [][]bool)        // channel to receive order updates
+	elevatorData.InitOrdersChan(myOrders)  // initialize the orders channel
 
 	defs.MyIP = aliveMessages.GetPrimaryIP()
 

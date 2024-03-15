@@ -11,8 +11,7 @@ import (
 	"time"
 )
 
-const PORT = "9999" // Port used to broadcast and listen to "I'm alive"-messages
-
+const PORT = "9999"                              // Port used to broadcast and listen to "I'm alive"-messages
 const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm alive"-msg
 const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
 const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg

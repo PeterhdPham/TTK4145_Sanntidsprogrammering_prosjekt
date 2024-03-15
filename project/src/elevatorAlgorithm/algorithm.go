@@ -59,10 +59,10 @@ func ElevatorControlLoop(masterList *defs.MasterList, elevStatus chan defs.ElevS
 				failureTimerStop()
 			}
 
-		case <-timerChannel:
-			timerStop()
+		case <-doorTimerChannel:
+			doorTimerStop()
 			if myStatus.Obstructed {
-				timerStart(doorOpenDuration)
+				doorTimerStart(doorOpenDuration)
 			} else {
 				failureTimerStop()
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())

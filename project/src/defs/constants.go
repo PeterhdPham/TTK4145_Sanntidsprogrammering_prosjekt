@@ -1,20 +1,10 @@
 package defs
 
-var N_FLOORS = 4
+const N_FLOORS = 4
 
-const (
-	IDLE      = "EB_Idle"
-	MOVING    = "EB_Moving"
-	DOOR_OPEN = "EB_DoorOpen"
-)
+const IDLE = "EB_Idle"
+const MOVING = "EB_Moving"
+const DOOR_OPEN = "EB_DoorOpen"
 
-const (
-	UNDEFINED ElevatorRole = -1
-	MASTER    ElevatorRole = 0
-	SLAVE     ElevatorRole = 1
-)
-
-const (
-	DOOR_STUCK FailureMode = 0
-	MOTOR_FAIL FailureMode = 1
-)
+const MASTER ElevatorRole = 0
+const SLAVE ElevatorRole = 1

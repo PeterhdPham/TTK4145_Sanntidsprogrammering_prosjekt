@@ -5,55 +5,55 @@ import (
 )
 
 var (
-	timerEndTime time.Time
-	timerActive  bool
-	timerChannel chan bool // Channel to signal the timeout event
+	doorTimerEndTime time.Time
+	doorTimerActive  bool
+	doorTimerChannel chan bool // Channel to signal the timeout event
 
 	failureDeadline     time.Time
-	failuretimerActive  bool
+	failureTimerActive  bool
 	failureTimerChannel chan int
 )
 
 func init() {
-	// Initialize the timerChannel
-	timerChannel = make(chan bool, 1)       // Buffered channel to prevent blocking on send
+	// Initialize the doorTimerChannel
+	doorTimerChannel = make(chan bool, 1)   // Buffered channel to prevent blocking on send
 	failureTimerChannel = make(chan int, 1) // Buffered channel to prevent blocking on send
 }
 
-// timerStart starts the timer with a specified duration in seconds.
-func timerStart(duration time.Duration) {
-	timerEndTime = time.Now().Add(duration)
-	timerActive = true
+// DoorTimerStart starts the timer with a specified duration in seconds.
+func doorTimerStart(duration time.Duration) {
+	doorTimerEndTime = time.Now().Add(duration)
+	doorTimerActive = true
 	go func() {
 		time.Sleep(duration)
-		if timerActive && time.Now().After(timerEndTime) {
-			timerChannel <- true // Signal that the timer has expired
+		if doorTimerActive && time.Now().After(doorTimerEndTime) {
+			doorTimerChannel <- true // Signal that the timer has expired
 		}
 	}()
 }
 
 func failureTimerStart(duration time.Duration, mode int) {
 	failureDeadline = time.Now().Add(duration)
-	failuretimerActive = true
+	failureTimerActive = true
 	go func() {
 		time.Sleep(duration)
-		if failuretimerActive && time.Now().After(failureDeadline) {
+		if failureTimerActive && time.Now().After(failureDeadline) {
 			failureTimerChannel <- mode // Signal that the timer has expired
 		}
 	}()
 }
 
-func timerStop() {
-	timerActive = false
+func doorTimerStop() {
+	doorTimerActive = false
 	// Optionally, clear the channel if stopping prematurely
 	select {
-	case <-timerChannel:
+	case <-doorTimerChannel:
 	default:
 	}
 }
 
 func failureTimerStop() {
-	failuretimerActive = false
+	failureTimerActive = false
 	// Optionally, clear the channel if stopping prematurely
 	select {
 	case <-failureTimerChannel:

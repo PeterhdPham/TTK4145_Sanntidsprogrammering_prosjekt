@@ -5,7 +5,7 @@ import (
 	"project/defs"
 )
 
-var N_BUTTONS = 3
+const N_BUTTONS = 3
 
 func areAllOrdersFalse(orders [][]bool) bool {
 	for _, floor := range orders {

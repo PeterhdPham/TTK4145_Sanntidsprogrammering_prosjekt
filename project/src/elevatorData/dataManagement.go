@@ -7,12 +7,12 @@ import (
 	"project/utility"
 )
 
-func InitElevator(NumberOfFloors int) defs.Elevator {
+func InitElevator() defs.Elevator {
 	var elevator defs.Elevator
 	elevator.IsOnline = true
 	elevator.Ip = aliveMessages.GetPrimaryIP()
-	elevator.Orders = InitOrdersAndLights(NumberOfFloors)
-	elevator.Lights = InitOrdersAndLights(NumberOfFloors)
+	elevator.Orders = InitOrdersAndLights()
+	elevator.Lights = InitOrdersAndLights()
 	elevator.Status = InitStatus()
 	return elevator
 }
@@ -30,17 +30,17 @@ func InitStatus() defs.ElevStatus {
 	return status
 }
 
-func InitOrdersAndLights(NumberOfFloors int) [][]bool {
-	orders := make([][]bool, NumberOfFloors)
+func InitOrdersAndLights() [][]bool {
+	orders := make([][]bool, defs.N_FLOORS)
 	for i := range orders {
 		orders[i] = make([]bool, 3)
 	}
 	return orders
 }
 
-func InitOrdersChan(orders chan [][]bool, numOfFloors int) {
-	o := make([][]bool, numOfFloors)
-	for i := 0; i < numOfFloors; i++ {
+func InitOrdersChan(orders chan [][]bool) {
+	o := make([][]bool, defs.N_FLOORS)
+	for i := 0; i < defs.N_FLOORS; i++ {
 		o[i] = make([]bool, 3) // Assuming 3 buttons per floor.
 	}
 	// Send the initialized slice of slices through the channel.

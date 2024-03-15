@@ -33,7 +33,7 @@ func startServer(masterElevator *defs.MasterList) {
 	ShouldReconnect = true
 
 	// Check if the server is already running, and if so, initiate shutdown for role switch
-	if defs.ServerListening {
+	if ServerListening {
 		log.Println("Server is already running, attempting to shut down for role switch...")
 		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
@@ -42,13 +42,13 @@ func startServer(masterElevator *defs.MasterList) {
 	var ctx context.Context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	defs.ServerListening = true
+	ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		log.Printf("Failed to start server: %s\n", err)
-		defs.ServerListening = false // Ensure the state reflects that the server didn't start
+		ServerListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
 
@@ -62,12 +62,12 @@ func startServer(masterElevator *defs.MasterList) {
 				select {
 				case <-ctx.Done(): // Shutdown was requested
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
-					defs.ServerListening = false
+					ServerListening = false
 					listener.Close()
 					return
 				case <-ServerActive:
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
-					defs.ServerListening = false
+					ServerListening = false
 					listener.Close()
 					return
 				default:
@@ -85,7 +85,7 @@ func startServer(masterElevator *defs.MasterList) {
 	select {
 	case <-ServerActive:
 		closeAllClientConnections() // Ensure all client connections are gracefully closed
-		defs.ServerListening = false
+		ServerListening = false
 		listener.Close()
 		return
 	}
@@ -256,6 +256,6 @@ func shutdownServer() {
 	defs.ClientMutex.Unlock()
 
 	// Finally, mark the server as not listening
-	defs.ServerListening = false
+	ServerListening = false
 	log.Println("Server has been shut down and all connections are closed.")
 }
