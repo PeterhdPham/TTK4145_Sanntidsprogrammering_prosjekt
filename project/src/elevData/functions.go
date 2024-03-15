@@ -108,4 +108,14 @@ func UpdateIsOnline(masterElevator *defs.MasterList, oldList []string, newList [
 	}
 }
 
-//also add online true !!!!
+func SetAllLights(masterList defs.MasterList) {
+	for index, e := range masterList.Elevators {
+		if e.Ip == defs.MyIP {
+			for floor := 0; floor < defs.N_FLOORS; floor++ {
+				for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
+					elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
+				}
+			}
+		}
+	}
+}

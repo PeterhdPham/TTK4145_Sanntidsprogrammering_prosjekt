@@ -1,7 +1,7 @@
 package udp
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"os"
 	"project/defs"
@@ -18,13 +18,14 @@ const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcas
 const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
 const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
 const NODE_LIFE = 5 * time.Second                // Time added to node-lifetime when msg is received
+const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutive udp error
 
 func BroadcastLife() {
 
 	// Dial the UDP connection using the IPv4 broadcast address
 	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer conn.Close()
@@ -41,13 +42,13 @@ func BroadcastLife() {
 		_, err := conn.Write([]byte(message))
 		if err != nil {
 			errCount++
-			fmt.Println("Error sending udp-message: ", err)
-			if errCount > 10 {
-				fmt.Println("Too many consecutive udp errors, Restarting UDP connection")
+			// log.Println("Error sending udp-message: ", err)
+			if errCount > ALLOWED_CONSECUTIVE_ERRORS {
+				log.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
 				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 				errCount = 0
@@ -66,26 +67,25 @@ func LookForLife(livingIPsChan chan<- []string) {
 	// Create a UDP socket and listen on the port.
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer pc.Close()
 
 	// Create a buffer to store received messages.
-	buffer := make([]byte, 4096)
+	buffer := make([]byte, 8192)
 
 	for {
 
 		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
 		if err != nil {
-			fmt.Println("Failed to set a deadline for the read operation:", err)
+			log.Println("Failed to set a deadline for the read operation:", err)
 		}
 
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
 
-		addrString := strings.Split(addr.String(),":")[0]
-
+		addrString := strings.Split(addr.String(), ":")[0]
 
 		if err != nil {
 			if os.IsTimeout(err) {
@@ -93,7 +93,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue
 			} else {
-				fmt.Println("Read error:", err)
+				log.Println("Read error:", err)
 				continue
 			}
 		} else {
@@ -114,10 +114,10 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 		_, ok := IPLifetimes[newAddr]
 		if !ok {
 			if newAddr != myIP {
-				fmt.Println("New node discovered: ", newAddr)
+				log.Println("New node discovered: ", newAddr)
 			} else {
-				fmt.Println()
-				fmt.Println("This is my IP: ", myIP)
+				log.Println()
+				log.Println("This is my IP: ", myIP)
 			}
 		}
 		IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)

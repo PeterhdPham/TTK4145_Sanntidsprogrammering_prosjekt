@@ -1,7 +1,7 @@
 package communication
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"project/defs"
 	"project/utility"
@@ -24,16 +24,16 @@ func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
 	for conn := range defs.ClientConnections {
 		// Check if the message is not from the server (origin != nil) and conn is the origin, then skip
 		if origin != nil && conn == origin {
-			fmt.Println("Skipping connection")
+			log.Println("Skipping connection")
 			continue // Skip sending the message back to the origin client
 		}
 
 		for {
 			_, err := conn.Write(message)
 			if err != nil {
-				fmt.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
+				log.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
 				if defs.ErrorBuffer == 0 {
-					fmt.Println("Too many consecutive errors, stopping...")
+					log.Println("Too many consecutive errors, stopping...")
 					defs.ShouldServerReconnect = true
 					return err // Stop if there are too many consecutive errors
 				} else {
@@ -50,17 +50,21 @@ func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
 	return nil
 }
 
-func SendMessage(conn net.Conn, message interface{}) error {
+func SendMessage(conn net.Conn, message interface{}, prefix string) error {
 	// Marshal the message into JSON
 	messageJson := utility.MarshalJson(message)
+
+	if prefix != "" {
+		messageJson = append([]byte(prefix), messageJson...)
+	}
 
 	messageJson = append(messageJson, '%')
 	for {
 		_, err := conn.Write(messageJson)
 		if err != nil {
-			fmt.Printf("Error sending message: %s\n", err)
+			log.Printf("Error sending message: %s\n", err)
 			if error_buffer == 0 {
-				fmt.Println("Too many consecutive errors, stopping...")
+				log.Println("Too many consecutive errors, stopping...")
 				ShouldReconnect = true
 				return err // Stop if there are too many consecutive errors
 			} else {

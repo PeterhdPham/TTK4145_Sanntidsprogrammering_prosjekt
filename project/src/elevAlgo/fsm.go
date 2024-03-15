@@ -1,4 +1,4 @@
-package elevAlgo
+package elevalgo
 
 import (
 	"Driver-go/elevio"
@@ -58,7 +58,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		communication.BroadcastMessage(nil, master)
 	}
-	SetAllLights(*master)
+	elevData.SetAllLights(*master)
 
 	//Check orders and starts moving
 	for _, e := range master.Elevators {

@@ -1,7 +1,7 @@
 package elevio
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -37,7 +37,7 @@ type ButtonEvent struct {
 
 func Init(addr string, numFloors int) {
 	if _initialized {
-		fmt.Println("Driver already initialized!")
+		log.Println("Driver already initialized!")
 		return
 	}
 	_numFloors = numFloors

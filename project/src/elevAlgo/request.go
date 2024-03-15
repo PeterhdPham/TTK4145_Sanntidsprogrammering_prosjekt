@@ -1,4 +1,4 @@
-package elevAlgo
+package elevalgo
 
 import (
 	"Driver-go/elevio"
@@ -98,18 +98,6 @@ func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
 		}
 	}
 	return false
-}
-
-func SetAllLights(masterList defs.MasterList) {
-	for index, e := range masterList.Elevators {
-		if e.Ip == defs.MyIP {
-			for floor := 0; floor < defs.N_FLOORS; floor++ {
-				for btn := elevio.BT_HallUp; btn <= elevio.BT_Cab; btn++ {
-					elevio.SetButtonLamp(btn, floor, masterList.Elevators[index].Lights[floor][btn])
-				}
-			}
-		}
-	}
 }
 
 func requestsChooseDirection(status defs.ElevStatus, orders [][]bool) defs.DirnBehaviourPair {

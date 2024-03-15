@@ -3,6 +3,7 @@ package utility
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"project/defs"
 	"reflect"
@@ -11,7 +12,7 @@ import (
 func MarshalJson(data interface{}) []byte {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
+		log.Println("Error marshaling JSON:", err)
 		os.Exit(1)
 	}
 	return jsonData
@@ -20,7 +21,7 @@ func MarshalJson(data interface{}) []byte {
 func UnmarshalJson(data []byte, v interface{}) (reflect.Type, error) {
 	err := json.Unmarshal(data, v)
 	if err != nil {
-		fmt.Println("Error unmarshaling JSON:", err)
+		log.Println("Error unmarshaling JSON:", err)
 		return nil, err
 	}
 
@@ -103,3 +104,17 @@ func Contains(slice []string, str string) bool {
 	return false
 }
 
+func CombineOrders(a [][]bool, b [][]bool) [][]bool {
+	log.Println("New orders: ", a)
+	log.Println("Old orders: ", b)
+	for i, a_row := range a {
+		for j, value := range a_row {
+			if b[i][j] || value {
+				a[i][j] = true
+			}
+		}
+	}
+
+	return a
+
+}

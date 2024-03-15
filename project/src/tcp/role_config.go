@@ -4,8 +4,8 @@ import (
 	"Driver-go/elevio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"net"
 	"project/communication"
 	"project/cost"
@@ -27,6 +27,8 @@ var (
 
 	WaitingForConfirmation bool              //
 	ServerActive           = make(chan bool) //Server state
+	ReceivedPrevMasterList bool              // Master list that server receives from client that used to be server
+	ReceivedFirstElevator  bool              // First elevator
 )
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
@@ -34,11 +36,12 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 	go udp.BroadcastLife()
 	go udp.LookForLife(LivingIPsChan)
 
+	time.Sleep(3 * time.Second)
+
 	for {
 		select {
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
-
 			if !slicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
@@ -52,6 +55,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 					communication.BroadcastMessage(nil, masterElevator)
 				}
 				ActiveIPs = livingIPs
+				log.Println("ActiveIPs: ", ActiveIPs)
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
@@ -64,6 +68,7 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 	var counter int
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
+			log.Println("Reassigning from: ", elevIP)
 			for _, e := range masterElevator.Elevators {
 				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
@@ -82,7 +87,7 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 			}
 		}
 	}
-	fmt.Println(counter, " orders reassigned")
+	log.Println(counter, " orders reassigned")
 }
 
 // Used when elevators still are online, but one or more elevators are inoperative
@@ -98,6 +103,10 @@ func ReassignOrders2(masterList *defs.MasterList) {
 			operativeElevators = append(operativeElevators, e.Ip)
 		}
 	}
+
+	log.Println("Online elevators:", onlineElevators)
+	log.Println("Operative elevators:", operativeElevators)
+
 	if (len(onlineElevators) > len(operativeElevators)) && (len(operativeElevators) > 0) {
 		ReassignOrders(masterList, onlineElevators, operativeElevators)
 	}
@@ -112,7 +121,7 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		pointerElevator.Role = defs.MASTER
 		return
 	}
-
+	log.Println("Active IPs inside: ", ActiveIPs)
 	//Finds the lowestIP and sets the ServerIP equal to it
 	lowestIP := strings.Split(ActiveIPs[0], ":")[0]
 	if defs.ServerIP != lowestIP {
@@ -126,23 +135,20 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 	}
 
 	if defs.MyIP == lowestIP && !defs.ServerListening {
-		//Set role to master and starts a new server on
-		fmt.Println("defs.MyIP == lowestIP && !defs.ServerListening")
+		//Set role to master and starts a new server
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
 	} else if defs.MyIP != lowestIP && defs.ServerListening {
 		//Stops the server and switches from master to slave role
-		fmt.Println("defs.MyIP != lowestIP && defs.ServerListening")
 		shutdownServer()
 		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
 	} else if !defs.ServerListening {
-		fmt.Println("!defs.ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
-			fmt.Println(connected, " is connected")
+			log.Println(connected, " is connected")
 			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
 			pointerElevator.Role = defs.SLAVE
 		}
@@ -156,7 +162,7 @@ func startServer(masterElevator *defs.MasterList) {
 
 	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if defs.ServerListening {
-		fmt.Println("Server is already running, attempting to shut down for role switch...")
+		log.Println("Server is already running, attempting to shut down for role switch...")
 		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
 
@@ -169,18 +175,12 @@ func startServer(masterElevator *defs.MasterList) {
 	listenAddr := "0.0.0.0:55555"
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		fmt.Printf("Failed to start server: %s\n", err)
+		log.Printf("Failed to start server: %s\n", err)
 		defs.ServerListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
-	defer func() {
-		fmt.Println("Server shutting down")
-		listener.Close()
-		defs.ServerListening = false
-		fmt.Println("Server shutdown completed.")
-	}()
 
-	fmt.Println("Server listening on", listenAddr)
+	log.Println("Server listening on", listenAddr)
 
 	// Accept new connections unless server shutdown is requested
 	go func() {
@@ -193,8 +193,13 @@ func startServer(masterElevator *defs.MasterList) {
 					defs.ServerListening = false
 					listener.Close()
 					return
+				case <-ServerActive:
+					closeAllClientConnections() // Ensure all client connections are gracefully closed
+					defs.ServerListening = false
+					listener.Close()
+					return
 				default:
-					fmt.Printf("Failed to accept connection: %s\n", err)
+					log.Printf("Failed to accept connection: %s\n", err)
 					continue
 				}
 			}
@@ -211,6 +216,7 @@ func startServer(masterElevator *defs.MasterList) {
 		listener.Close()
 		return
 	}
+
 }
 
 // Ensure this function exists and is correctly implemented to close all client connections
@@ -221,7 +227,7 @@ func closeAllClientConnections() {
 	for conn := range defs.ClientConnections {
 		err := conn.Close()
 		if err != nil {
-			fmt.Printf("Error closing connection: %s\n", err)
+			log.Printf("Error closing connection: %s\n", err)
 		}
 		delete(defs.ClientConnections, conn)
 	}
@@ -246,16 +252,16 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
-	fmt.Printf("Client connected: %s\n", clientAddr)
+	log.Printf("Client connected: %s\n", clientAddr)
 
 	for {
-		buffer := make([]byte, 2048)
+		buffer := make([]byte, 8192)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Printf("Client %s disconnected gracefully.\n", clientAddr)
+				log.Printf("Client %s disconnected gracefully.\n", clientAddr)
 			} else {
-				fmt.Printf("Error reading from client %s: %s\n", clientAddr, err)
+				log.Printf("Error reading from client %s: %s\n", clientAddr, err)
 			}
 			break
 		}
@@ -263,28 +269,66 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		// Process each newline-separated message
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
-			if message == "" || message == " " {
+			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`) && !strings.HasPrefix(message, `init`)) {
 				continue // Skip empty messages
+			}
+
+			// Checks if the message contains a tag for previous master list
+			if strings.HasPrefix(message, "prev") {
+				message = strings.TrimPrefix(message, "prev")
+				ReceivedPrevMasterList = true
+			} else {
+				ReceivedPrevMasterList = false
+			}
+
+			if strings.HasPrefix(message, "init") {
+				message = strings.TrimPrefix(message, "init")
+				ReceivedFirstElevator = true
+			} else {
+				ReceivedFirstElevator = false
 			}
 
 			// Attempt to determine the struct type from the JSON keys
 			genericStruct, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 			if err != nil {
-				fmt.Printf("Failed to determine struct type or unmarshal message from client %s: %s\n", clientAddr, err)
+				log.Printf("Failed to determine struct type or unmarshal message from client %s: %s\n", clientAddr, err)
 				continue
 			}
 
 			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
 			case defs.MasterList:
-				// fmt.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
+				// log.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					fmt.Println("client received the correct masterList")
+					// log.Println("client received the correct masterList")
 				} else {
-					fmt.Println("Client did not receive the correct confirmation")
+					if ReceivedPrevMasterList {
+						if utility.IsIPInMasterList(defs.MyIP, v) {
+							*masterElevator = v
+							for index := range masterElevator.Elevators {
+								if masterElevator.Elevators[index].Ip == defs.MyIP {
+									masterElevator.Elevators[index].IsOnline = true
+								}
+							}
+							log.Println("Overwriting existing masterList")
+						} else {
+							for index := range v.Elevators {
+								if !(utility.IsIPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
+									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
+									log.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
+								}
+							}
+						}
+
+						communication.BroadcastMessage(nil, masterElevator)
+						elevData.UpdateLightsMasterList(masterElevator, defs.MyIP)
+						defs.UpdateLocal <- "true"
+						ReceivedPrevMasterList = false
+					}
+					log.Println("Server did not receive the correct confirmation")
 				}
 			case defs.ElevStatus:
-				// fmt.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
+				// log.Printf("Unmarshaled ElevStatus from client %s.\n", clientAddr)
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
 				// Handle ElevStatus-specific logic here
@@ -299,18 +343,28 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 					defs.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
 			case defs.Elevator:
-				// fmt.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
+				// log.Printf("Unmarshaled Elevator from client %s.\n", clientAddr)
 				// Handle Elevator-specific logic here
 				if !utility.IsIPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
 				} else {
-					elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+					if ReceivedFirstElevator {
+						for index_master := range masterElevator.Elevators {
+							if masterElevator.Elevators[index_master].Ip == v.Ip {
+								masterElevator.Elevators[index_master].Orders = utility.CombineOrders(masterElevator.Elevators[index_master].Orders, v.Orders)
+							}
+						}
+						ReceivedFirstElevator = false
+					} else {
+						elevData.UpdateOrdersMasterList(masterElevator, v.Orders, v.Ip)
+					}
+
 					elevData.UpdateLightsMasterList(masterElevator, v.Ip)
 				}
 
 				communication.BroadcastMessage(nil, masterElevator)
 			default:
-				fmt.Printf("Received unknown type from client %s\n", clientAddr)
+				log.Printf("Received unknown type from client %s\n", clientAddr)
 			}
 		}
 	}
@@ -323,7 +377,7 @@ func shutdownServer() {
 	for conn := range defs.ClientConnections {
 		err := conn.Close()
 		if err != nil {
-			fmt.Printf("Error closing connection: %s\n", err)
+			log.Printf("Error closing connection: %s\n", err)
 		}
 		delete(defs.ClientConnections, conn)
 	}
@@ -331,7 +385,7 @@ func shutdownServer() {
 
 	// Finally, mark the server as not listening
 	defs.ServerListening = false
-	fmt.Println("Server has been shut down and all connections are closed.")
+	log.Println("Server has been shut down and all connections are closed.")
 }
 
 func slicesAreEqual(a, b []string) bool {

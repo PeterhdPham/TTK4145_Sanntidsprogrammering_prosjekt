@@ -2,7 +2,7 @@ package main
 
 import (
 	"Driver-go/elevio"
-	"fmt"
+	"log"
 	"project/communication"
 	"project/defs"
 	elevalgo "project/elevAlgo"
@@ -27,27 +27,27 @@ func main() {
 	myOrders := make(chan [][]bool)                     // channel to receive order updates
 	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
 
-	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
-
 	defs.MyIP, defs.MyPort, _ = udp.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
+
+	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
 	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 
 	for {
 		select {
 		case newStatus := <-myStatus:
-			// fmt.Println("status update: ", string(utility.MarshalJson(newStatus)))
+			// log.Println("status update: ", string(utility.MarshalJson(newStatus)))
 
 			//Sends message to server
 			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
 					// Convert message to byte slice
-					err := communication.SendMessage(tcp.ServerConnection, newStatus) // Assign the error value to "err"
+					err := communication.SendMessage(tcp.ServerConnection, newStatus, "") // Assign the error value to "err"
 					if err != nil {
-						fmt.Printf("Error sending elevator data: %s\n", err)
+						log.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
 			} else if elevator.Role == defs.MASTER {
@@ -55,28 +55,29 @@ func main() {
 				elevData.UpdateStatusMasterList(&masterElevator, elevator.Status, defs.MyIP)
 				communication.BroadcastMessage(nil, &masterElevator)
 			}
-			elevalgo.SetAllLights(masterElevator)
+			elevData.SetAllLights(masterElevator)
 
 		case newOrders := <-myOrders:
 			if elevator.Role == defs.MASTER {
 				elevData.UpdateLightsMasterList(&masterElevator, defs.MyIP)
-				elevalgo.SetAllLights(masterElevator)
+				elevData.SetAllLights(masterElevator)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				fmt.Println("Orders: ", newOrders)
+				log.Println("Orders: ", newOrders)
 				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					// Convert message to byte slice
-					err := communication.SendMessage(tcp.ServerConnection, elevator) // Assign the error value to "err"
+					err := communication.SendMessage(tcp.ServerConnection, elevator, "") // Assign the error value to "err"
 					if err != nil {
-						fmt.Printf("Error sending elevator data: %s\n", err)
+						log.Printf("Error sending elevator data: %s\n", err)
 					}
 				}
 			}
 		case <-ticker.C:
 			bytes := utility.MarshalJson(masterElevator)
-			fmt.Println("MasterList: ", string(bytes))
-			// fmt.Println("Active ips: ", tcp.ActiveIPs)
+			log.Println("")
+			log.Println("MasterList: ", string(bytes))
+			// log.Println("Active ips: ", tcp.ActiveIPs)
 			continue
 		}
 	}

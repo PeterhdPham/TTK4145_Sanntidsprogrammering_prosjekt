@@ -1,8 +1,8 @@
-package elevAlgo
+package elevalgo
 
 import (
 	"Driver-go/elevio"
-	"fmt"
+	"log"
 	"project/communication"
 	"project/defs"
 	"project/elevData"
@@ -78,22 +78,18 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			communication.BroadcastMessage(nil, masterList)
 		case <-defs.UpdateLocal:
 			myStatus, myOrders = FSM_RequestFloor(masterList, myStatus, myOrders, -1, -1, "", defs.SLAVE)
-			SetAllLights(*masterList)
+			elevData.SetAllLights(*masterList)
 
 		case mode := <-failureTimerChannel:
 			failureTimerStop()
-			if (role == defs.MASTER) && (myStatus.Operative) {
-				tcp.ReassignOrders2(masterList)
-				communication.BroadcastMessage(nil, masterList)
-			}
 
 			switch mode {
 			case 0:
-				fmt.Println("DOORS ARE STUCK")
+				log.Println("DOORS ARE STUCK")
 				myStatus.Operative = false
 			case 1:
 				if myStatus.FSM_State != defs.IDLE {
-					fmt.Println("MOTOR HAS FAILED. TRYING AGAIN")
+					log.Println("MOTOR HAS FAILED. TRYING AGAIN")
 					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
 					myStatus.Operative = false
 				}
@@ -102,9 +98,14 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 				failureTimerStop()
 				failureTimerStart(failureTimeoutDuration, mode)
 			}
+			if (role == defs.MASTER) && !(myStatus.Operative) {
+				elevData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
+				tcp.ReassignOrders2(masterList)
+				communication.BroadcastMessage(nil, masterList)
+			}
 		}
 
-		SetAllLights(*masterList)
+		elevData.SetAllLights(*masterList)
 
 		elevStatus <- myStatus
 		orders <- myOrders
