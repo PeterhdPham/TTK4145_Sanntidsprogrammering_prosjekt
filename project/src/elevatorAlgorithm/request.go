@@ -6,8 +6,8 @@ import (
 	"project/types"
 )
 
-func allOrdersFalse(orders [][]bool) bool {
-	for _, floor := range orders {
+func allOrdersFalse(myOrders [][]bool) bool {
+	for _, floor := range myOrders {
 		for _, order := range floor {
 			if order {
 				return false
@@ -17,17 +17,17 @@ func allOrdersFalse(orders [][]bool) bool {
 	return true
 }
 
-func requestShouldStop(status types.ElevStatus, orders [][]bool, floor int) bool {
-	if allOrdersFalse(orders) {
+func requestShouldStop(myStatus types.ElevStatus, myOrders [][]bool, floor int) bool {
+	if allOrdersFalse(myOrders) {
 		return true
 	}
-	switch status.Direction {
+	switch myStatus.Direction {
 	case elevio.MD_Down:
-		if orders[floor][elevio.BT_HallDown] || orders[floor][elevio.BT_Cab] || !requestsBelow(status, orders) {
+		if myOrders[floor][elevio.BT_HallDown] || myOrders[floor][elevio.BT_Cab] || !requestsBelow(myStatus, myOrders) {
 			return true
 		}
 	case int(elevio.MD_Up):
-		if orders[floor][elevio.BT_HallUp] || orders[floor][elevio.BT_Cab] || !requestsAbove(status, orders) {
+		if myOrders[floor][elevio.BT_HallUp] || myOrders[floor][elevio.BT_Cab] || !requestsAbove(myStatus, myOrders) {
 			return true
 		}
 	}
@@ -66,10 +66,10 @@ func requestShouldClearImmediately(myStatus types.ElevStatus, floor int, btn int
 		btn == int(elevio.BT_Cab))
 }
 
-func requestsAbove(status types.ElevStatus, orders [][]bool) bool {
-	for f := status.Floor + 1; f < constants.N_FLOORS; f++ {
+func requestsAbove(myStatus types.ElevStatus, myOrders [][]bool) bool {
+	for f := myStatus.Floor + 1; f < constants.N_FLOORS; f++ {
 		for btn := 0; btn < constants.N_BUTTONS; btn++ {
-			if orders[f][btn] {
+			if myOrders[f][btn] {
 				return true
 			}
 		}
@@ -77,10 +77,10 @@ func requestsAbove(status types.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func requestsBelow(status types.ElevStatus, orders [][]bool) bool {
-	for f := 0; f < status.Floor; f++ {
+func requestsBelow(myStatus types.ElevStatus, myOrders [][]bool) bool {
+	for f := 0; f < myStatus.Floor; f++ {
 		for btn := 0; btn < constants.N_BUTTONS; btn++ {
-			if orders[f][btn] {
+			if myOrders[f][btn] {
 				return true
 			}
 		}
@@ -88,43 +88,43 @@ func requestsBelow(status types.ElevStatus, orders [][]bool) bool {
 	return false
 }
 
-func requestsHere(status types.ElevStatus, orders [][]bool) bool {
+func requestsHere(myStatus types.ElevStatus, myOrders [][]bool) bool {
 	for btn := 0; btn < constants.N_BUTTONS; btn++ {
-		if orders[status.Floor][btn] {
+		if myOrders[myStatus.Floor][btn] {
 			return true
 		}
 	}
 	return false
 }
 
-func requestsChooseDirection(status types.ElevStatus, orders [][]bool) types.DirnBehaviourPair {
-	switch status.Direction {
+func requestsChooseDirection(myStatus types.ElevStatus, myOrders [][]bool) types.DirnBehaviourPair {
+	switch myStatus.Direction {
 	case int(elevio.MD_Up):
-		if requestsAbove(status, orders) {
+		if requestsAbove(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: constants.MOVING}
-		} else if requestsHere(status, orders) {
+		} else if requestsHere(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: constants.DOOR_OPEN}
-		} else if requestsBelow(status, orders) {
+		} else if requestsBelow(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: constants.MOVING}
 		} else {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: constants.IDLE}
 		}
 	case int(elevio.MD_Down):
-		if requestsBelow(status, orders) {
+		if requestsBelow(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: constants.MOVING}
-		} else if requestsHere(status, orders) {
+		} else if requestsHere(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: constants.DOOR_OPEN}
-		} else if requestsAbove(status, orders) {
+		} else if requestsAbove(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: constants.MOVING}
 		} else {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: constants.IDLE}
 		}
 	case int(elevio.MD_Stop):
-		if requestsHere(status, orders) {
+		if requestsHere(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: constants.DOOR_OPEN}
-		} else if requestsAbove(status, orders) {
+		} else if requestsAbove(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Up, Behaviour: constants.MOVING}
-		} else if requestsBelow(status, orders) {
+		} else if requestsBelow(myStatus, myOrders) {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Down, Behaviour: constants.MOVING}
 		} else {
 			return types.DirnBehaviourPair{Dirn: elevio.MD_Stop, Behaviour: constants.IDLE}

@@ -37,7 +37,7 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 		select {
 		case a := <-drvButtons:
 			if role == constants.MASTER {
-				myStatus, myOrders = requestFloor(masterList, myStatus, myOrders, a.Floor, int(a.Button), variables.MyIP, role)
+				myStatus, myOrders = floorRequested(masterList, myStatus, myOrders, a.Floor, int(a.Button), variables.MyIP, role)
 			}
 			myStatus.Buttonfloor = a.Floor
 			myStatus.Buttontype = int(a.Button)
@@ -71,7 +71,7 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 		case a := <-variables.ButtonReceived:
 			floor := a.Event.Floor
 			button := int(a.Event.Button)
-			myStatus, myOrders = requestFloor(masterList, myStatus, myOrders, floor, button, a.IP, constants.MASTER)
+			myStatus, myOrders = floorRequested(masterList, myStatus, myOrders, floor, button, a.IP, constants.MASTER)
 
 		case ipAddress := <-variables.StatusReceived:
 			elevatorData.UpdateStatusMasterList(masterList, variables.RemoteStatus, ipAddress)
@@ -80,7 +80,7 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 			}
 			communication.BroadcastMessage(masterList)
 		case <-variables.UpdateLocal:
-			myStatus, myOrders = requestFloor(masterList, myStatus, myOrders, -1, -1, "", constants.SLAVE)
+			myStatus, myOrders = floorRequested(masterList, myStatus, myOrders, -1, -1, "", constants.SLAVE)
 			elevatorData.SetAllLights(*masterList)
 
 		case mode := <-failureTimerChannel:

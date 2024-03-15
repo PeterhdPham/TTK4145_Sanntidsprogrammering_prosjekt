@@ -13,35 +13,35 @@ import (
 const DOOR_STUCK types.FailureMode = 0
 const MOTOR_FAIL types.FailureMode = 1
 
-func initBetweenFloors(status types.ElevStatus) types.ElevStatus {
+func initBetweenFloors(myStatus types.ElevStatus) types.ElevStatus {
 	elevio.SetMotorDirection(-1)
-	status.FSM_State = constants.MOVING
+	myStatus.FSM_State = constants.MOVING
 	failureTimerStop()
 	failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
-	status.Direction = -1
+	myStatus.Direction = -1
 
-	return status
+	return myStatus
 }
 
-func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
+func arrivalAtFloor(myStatus types.ElevStatus, myOrders [][]bool, floor int) (types.ElevStatus, [][]bool) {
 	elevio.SetFloorIndicator(floor)
-	status.Floor = floor
-	status.Buttonfloor = -1
-	status.Buttontype = -1
-	switch status.FSM_State {
+	myStatus.Floor = floor
+	myStatus.Buttonfloor = -1
+	myStatus.Buttontype = -1
+	switch myStatus.FSM_State {
 	case constants.MOVING:
-		if requestShouldStop(status, orders, floor) {
+		if requestShouldStop(myStatus, myOrders, floor) {
 
 			elevio.SetMotorDirection(elevio.MD_Stop)
 
 			elevio.SetDoorOpenLamp(true)
-			status.Doors = true
+			myStatus.Doors = true
 			doorTimerStart(doorOpenDuration)
-			status.FSM_State = constants.DOOR_OPEN
+			myStatus.FSM_State = constants.DOOR_OPEN
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(DOOR_STUCK))
 
-			status, orders = requestClearAtFloor(status, orders, floor)
+			myStatus, myOrders = requestClearAtFloor(myStatus, myOrders, floor)
 		} else {
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
@@ -50,10 +50,10 @@ func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.
 	default:
 		break
 	}
-	return status, orders
+	return myStatus, myOrders
 }
 
-func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]bool, floor int, button int, fromIP string, myRole types.ElevatorRole) (types.ElevStatus, [][]bool) {
+func floorRequested(master *types.MasterList, myStatus types.ElevStatus, myOrders [][]bool, floor int, button int, fromIP string, myRole types.ElevatorRole) (types.ElevStatus, [][]bool) {
 
 	if myRole == constants.MASTER {
 		orderAssignment.FindAndAssign(master, floor, button, fromIP)
@@ -64,33 +64,33 @@ func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]
 
 	for _, e := range master.Elevators {
 		if e.Ip == variables.MyIP {
-			orders = e.Orders
+			myOrders = e.Orders
 		}
 	}
-	switch status.FSM_State {
+	switch myStatus.FSM_State {
 	case constants.DOOR_OPEN:
-		if requestShouldClearImmediately(status, floor, button) {
-			orders[floor][button] = false
+		if requestShouldClearImmediately(myStatus, floor, button) {
+			myOrders[floor][button] = false
 			doorTimerStop()
 			doorTimerStart(doorOpenDuration)
-			status.FSM_State = constants.DOOR_OPEN
-			status.Doors = true
+			myStatus.FSM_State = constants.DOOR_OPEN
+			myStatus.Doors = true
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(DOOR_STUCK))
 
 		}
 	case constants.IDLE:
 		floor = elevio.GetFloor()
-		pair := requestsChooseDirection(status, orders)
-		status.Direction = int(pair.Dirn)
+		pair := requestsChooseDirection(myStatus, myOrders)
+		myStatus.Direction = int(pair.Dirn)
 		elevio.SetMotorDirection(pair.Dirn)
-		status.FSM_State = pair.Behaviour
+		myStatus.FSM_State = pair.Behaviour
 		if pair.Behaviour == constants.DOOR_OPEN {
-			status, orders = requestClearAtFloor(status, orders, floor)
+			myStatus, myOrders = requestClearAtFloor(myStatus, myOrders, floor)
 			elevio.SetDoorOpenLamp(true)
-			status.Doors = true
+			myStatus.Doors = true
 			doorTimerStart(doorOpenDuration)
-			status.FSM_State = constants.DOOR_OPEN
+			myStatus.FSM_State = constants.DOOR_OPEN
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(DOOR_STUCK))
 		} else {
@@ -98,29 +98,29 @@ func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]
 			failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
 		}
 	}
-	return status, orders
+	return myStatus, myOrders
 }
 
-func onDoorTimeout(status types.ElevStatus, orders [][]bool, floor int) (types.ElevStatus, [][]bool) {
+func onDoorTimeout(myStatus types.ElevStatus, myOrders [][]bool, floor int) (types.ElevStatus, [][]bool) {
 
-	switch status.FSM_State {
+	switch myStatus.FSM_State {
 	case constants.DOOR_OPEN:
-		pair := requestsChooseDirection(status, orders)
-		status.Direction = int(pair.Dirn)
-		status.FSM_State = pair.Behaviour
+		pair := requestsChooseDirection(myStatus, myOrders)
+		myStatus.Direction = int(pair.Dirn)
+		myStatus.FSM_State = pair.Behaviour
 
-		switch status.FSM_State {
+		switch myStatus.FSM_State {
 		case constants.DOOR_OPEN:
 			doorTimerStart(doorOpenDuration)
-			status, orders = requestClearAtFloor(status, orders, floor)
+			myStatus, myOrders = requestClearAtFloor(myStatus, myOrders, floor)
 		case constants.MOVING, constants.IDLE:
 			elevio.SetDoorOpenLamp(false)
-			status.Doors = false
-			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
+			myStatus.Doors = false
+			elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
 		}
 	}
 
-	return status, orders
+	return myStatus, myOrders
 }
