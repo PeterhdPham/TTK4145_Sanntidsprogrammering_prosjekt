@@ -99,6 +99,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 		if addrString == "10.100.23.34" {
 			fmt.Println("Received Message from kristian")
+			fmt.Println(IPLifetimes)
 		}
 
 		if err != nil {
