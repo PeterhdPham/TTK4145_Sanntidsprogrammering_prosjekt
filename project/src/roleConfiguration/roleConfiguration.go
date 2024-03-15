@@ -20,7 +20,7 @@ const DELAY_INIT_ROLES = 3 * time.Second
 var ServerListening bool = false
 var ServerIP string
 
-func ConfigureRoles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
+func ConfigureRoles(pointerElevator *types.Elevator, masterList *types.MasterList) {
 
 	go aliveMessages.BroadcastLife()
 	go aliveMessages.LookForLife(LivingIPsChan)
@@ -39,33 +39,33 @@ func ConfigureRoles(pointerElevator *types.Elevator, masterElevator *types.Maste
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 
-					elevatorData.UpdateIsOnline(masterElevator, ActiveIPs, livingIPs)
-					ReassignOrders(masterElevator, ActiveIPs, livingIPs)
-					communication.BroadcastMessage(masterElevator)
+					elevatorData.UpdateIsOnline(masterList, ActiveIPs, livingIPs)
+					ReassignOrders(masterList, ActiveIPs, livingIPs)
+					communication.BroadcastMessage(masterList)
 				}
 				ActiveIPs = livingIPs
 				ActiveIPsMutex.Unlock()
-				updateRoles(pointerElevator, masterElevator)
+				updateRoles(pointerElevator, masterList)
 			}
 		}
 	}
 }
 
-func ReassignOrders(masterElevator *types.MasterList, oldList []string, newList []string) {
+func ReassignOrders(masterList *types.MasterList, oldList []string, newList []string) {
 	var counter int
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
-			for _, e := range masterElevator.Elevators {
+			for _, e := range masterList.Elevators {
 				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
 						if floorOrders[elevio.BT_HallUp] {
 							floorOrders[elevio.BT_HallUp] = false
-							orderAssignment.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevIP)
+							orderAssignment.FindAndAssign(masterList, floorIndex, int(elevio.BT_HallUp), elevIP)
 							counter++
 						}
 						if floorOrders[elevio.BT_HallDown] {
 							floorOrders[elevio.BT_HallDown] = false
-							orderAssignment.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevIP)
+							orderAssignment.FindAndAssign(masterList, floorIndex, int(elevio.BT_HallDown), elevIP)
 							counter++
 						}
 					}
@@ -93,7 +93,7 @@ func ReassignOrdersIfInoperative(masterList *types.MasterList) {
 	}
 }
 
-func updateRoles(pointerElevator *types.Elevator, masterElevator *types.MasterList) {
+func updateRoles(pointerElevator *types.Elevator, masterList *types.MasterList) {
 	ActiveIPsMutex.Lock()
 	defer ActiveIPsMutex.Unlock()
 
@@ -116,18 +116,18 @@ func updateRoles(pointerElevator *types.Elevator, masterElevator *types.MasterLi
 	if variables.MyIP == lowestIP && !ServerListening {
 
 		shutdownServer()
-		go startServer(masterElevator)
+		go startServer(masterList)
 		pointerElevator.Role = constants.MASTER
 	} else if variables.MyIP != lowestIP && ServerListening {
 
 		shutdownServer()
 		ServerActive <- false
-		go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterElevator)
+		go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterList)
 		pointerElevator.Role = constants.SLAVE
 	} else if !ServerListening {
 
 		if !connected {
-			go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterElevator)
+			go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterList)
 			pointerElevator.Role = constants.SLAVE
 		}
 	}

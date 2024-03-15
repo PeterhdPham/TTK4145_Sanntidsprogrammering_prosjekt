@@ -19,12 +19,12 @@ import (
 const UPDATE_IP_PERIOD = 5 * time.Second
 
 var elevator types.Elevator
-var masterElevator types.MasterList
+var masterList types.MasterList
 
 func main() {
 	elevio.Init("localhost:15657", constants.N_FLOORS)
 	elevator = elevatorData.InitElevator()
-	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
+	masterList.Elevators = append(masterList.Elevators, elevator)
 	myStatus := make(chan types.ElevStatus)
 	myOrders := make(chan [][]bool)
 
@@ -33,8 +33,8 @@ func main() {
 	variables.MyIP = aliveMessages.GetPrimaryIP()
 	ipCheck := time.NewTicker(UPDATE_IP_PERIOD)
 
-	go roleConfiguration.ConfigureRoles(&elevator, &masterElevator)
-	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
+	go roleConfiguration.ConfigureRoles(&elevator, &masterList)
+	go elevatorAlgorithm.ElevatorControlLoop(&masterList, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
@@ -50,15 +50,15 @@ func main() {
 				}
 			} else if elevator.Role == constants.MASTER {
 				elevator.Status = newStatus
-				elevatorData.UpdateStatusMasterList(&masterElevator, elevator.Status, variables.MyIP)
-				communication.BroadcastMessage(&masterElevator)
+				elevatorData.UpdateStatusMasterList(&masterList, elevator.Status, variables.MyIP)
+				communication.BroadcastMessage(&masterList)
 			}
-			elevatorData.SetAllLights(masterElevator)
+			elevatorData.SetAllLights(masterList)
 
 		case newOrders := <-myOrders:
 			if elevator.Role == constants.MASTER {
-				elevatorData.UpdateLightsMasterList(&masterElevator, variables.MyIP)
-				elevatorData.SetAllLights(masterElevator)
+				elevatorData.UpdateLightsMasterList(&masterList, variables.MyIP)
+				elevatorData.SetAllLights(masterList)
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
@@ -74,8 +74,8 @@ func main() {
 			currentIP := aliveMessages.GetPrimaryIP()
 			if variables.MyIP != currentIP && currentIP != "" {
 				variables.MyIP = currentIP
-				for index := range masterElevator.Elevators {
-					masterElevator.Elevators[index].Ip = variables.MyIP
+				for index := range masterList.Elevators {
+					masterList.Elevators[index].Ip = variables.MyIP
 				}
 			}
 			continue
