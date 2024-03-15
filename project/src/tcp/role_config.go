@@ -19,15 +19,12 @@ import (
 	"time"
 )
 
-var (
-	LivingIPsChan  = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs      []string                      //List of active IPs
-	connected      bool                  = false //Client connection state
-
-	WaitingForConfirmation bool              //
-	ServerActive           = make(chan bool) //Server state
-)
+var LivingIPsChan = make(chan []string) //Stores living IPs from the Look_for_life function
+var ActiveIPsMutex sync.Mutex           //Mutex for protecting active IPs
+var ActiveIPs []string                  //List of active IPs
+var connected bool = false              //Client connection state
+var WaitingForConfirmation bool         //
+var ServerActive = make(chan bool)      //Server state
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	//Go routines for finding active IPs

@@ -3,11 +3,11 @@ package tcp
 import (
 	"fmt"
 	"net"
+	"project/communication"
 	"project/defs"
 	"project/utility"
 	"strings"
 	"time"
-	"project/communication"
 )
 
 var ServerConnection net.Conn

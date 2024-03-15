@@ -4,15 +4,12 @@ import (
 	"time"
 )
 
-var (
-	timerEndTime time.Time
-	timerActive  bool
-	timerChannel chan bool // Channel to signal the timeout event
-
-	failureDeadline     time.Time
-	failuretimerActive  bool
-	failureTimerChannel chan int
-)
+var timerEndTime time.Time
+var timerActive bool
+var timerChannel chan bool // Channel to signal the timeout event
+var failureDeadline time.Time
+var failuretimerActive bool
+var failureTimerChannel chan int
 
 func init() {
 	// Initialize the timerChannel

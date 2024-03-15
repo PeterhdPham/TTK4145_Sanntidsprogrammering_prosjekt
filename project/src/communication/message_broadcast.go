@@ -8,8 +8,10 @@ import (
 	"time"
 )
 
-var error_buffer = 3
-var ShouldReconnect bool
+
+var	error_buffer    = 3
+var	ShouldReconnect bool
+
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(origin net.Conn, masterElevator *defs.MasterList) error {
