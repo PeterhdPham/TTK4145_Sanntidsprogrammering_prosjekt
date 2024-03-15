@@ -5,8 +5,6 @@ import (
 	"project/defs"
 )
 
-var N_BUTTONS = 3
-
 func areAllOrdersFalse(orders [][]bool) bool {
 	for _, floor := range orders {
 		for _, order := range floor {
@@ -71,7 +69,7 @@ func requestShouldClearImmediately(myStatus defs.ElevStatus, floor int, btn int)
 
 func requestsAbove(status defs.ElevStatus, orders [][]bool) bool {
 	for f := status.Floor + 1; f < defs.N_FLOORS; f++ {
-		for btn := 0; btn < N_BUTTONS; btn++ {
+		for btn := 0; btn < defs.N_BUTTONS; btn++ {
 			if orders[f][btn] {
 				return true
 			}
@@ -82,7 +80,7 @@ func requestsAbove(status defs.ElevStatus, orders [][]bool) bool {
 
 func requestsBelow(status defs.ElevStatus, orders [][]bool) bool {
 	for f := 0; f < status.Floor; f++ {
-		for btn := 0; btn < N_BUTTONS; btn++ {
+		for btn := 0; btn < defs.N_BUTTONS; btn++ {
 			if orders[f][btn] {
 				return true
 			}
@@ -92,7 +90,7 @@ func requestsBelow(status defs.ElevStatus, orders [][]bool) bool {
 }
 
 func requestsHere(status defs.ElevStatus, orders [][]bool) bool {
-	for btn := 0; btn < N_BUTTONS; btn++ {
+	for btn := 0; btn < defs.N_BUTTONS; btn++ {
 		if orders[status.Floor][btn] {
 			return true
 		}

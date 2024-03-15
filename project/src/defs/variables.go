@@ -7,7 +7,7 @@ import (
 
 // Variables for server
 
-var ServerListening bool = false        // Flag to indicate if server is listening for new connections
+// Flag to indicate if server is listening for new connections
 var ClientConnections map[net.Conn]bool // Updated to track multiple client connections.
 var ClientMutex sync.Mutex              // Protects access to clientConnections
 var ShouldServerReconnect bool          // Flag to indicate if the server should reconnect

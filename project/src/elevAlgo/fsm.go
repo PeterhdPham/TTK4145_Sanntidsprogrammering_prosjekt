@@ -12,7 +12,7 @@ func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
 	elevio.SetMotorDirection(-1)
 	status.FSM_State = defs.MOVING
 	failureTimerStop()
-	failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
+	failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.MOTOR_FAIL))
 	status.Direction = -1
 
 	return status
@@ -32,16 +32,16 @@ func FSM_ArrivalAtFloor(status defs.ElevStatus, orders [][]bool, floor int) (def
 			//Opens elevator door and updates status accordingly
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
-			timerStart(doorOpenDuration)
+			timerStart(defs.DOOR_OPEN_DURATION)
 			status.FSM_State = defs.DOOR_OPEN
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.DOOR_STUCK))
 
 			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
 		} else {
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.MOTOR_FAIL))
 
 		}
 	default:
@@ -71,11 +71,11 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 		if requestShouldClearImmediately(status, floor, button) {
 			orders[floor][button] = false
 			timerStop()
-			timerStart(doorOpenDuration)
+			timerStart(defs.DOOR_OPEN_DURATION)
 			status.FSM_State = defs.DOOR_OPEN
 			status.Doors = true
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.DOOR_STUCK))
 
 		}
 	case defs.IDLE:
@@ -88,13 +88,13 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 			status, orders = requestClearAtFloor(status, orders, floor)
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
-			timerStart(doorOpenDuration)
+			timerStart(defs.DOOR_OPEN_DURATION)
 			status.FSM_State = defs.DOOR_OPEN
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.DOOR_STUCK))
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.DOOR_STUCK))
 		} else {
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.MOTOR_FAIL))
 		}
 
 	}
@@ -112,15 +112,14 @@ func FSM_onDoorTimeout(status defs.ElevStatus, orders [][]bool, floor int) (defs
 
 		switch status.FSM_State {
 		case defs.DOOR_OPEN:
-			timerStart(doorOpenDuration)
+			timerStart(defs.DOOR_OPEN_DURATION)
 			status, orders = requestClearAtFloor(status, orders, floor)
 		case defs.MOVING, defs.IDLE:
 			elevio.SetDoorOpenLamp(false)
 			status.Doors = false
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
 			failureTimerStop()
-			failureTimerStart(failureTimeoutDuration, int(defs.MOTOR_FAIL))
-
+			failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, int(defs.MOTOR_FAIL))
 		}
 
 	default:

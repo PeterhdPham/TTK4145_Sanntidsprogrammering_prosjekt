@@ -25,7 +25,7 @@ func main() {
 
 	myStatus := make(chan defs.ElevStatus)              // channel to receive status updates
 	myOrders := make(chan [][]bool)                     // channel to receive order updates
-	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
+	elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
 
 	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 

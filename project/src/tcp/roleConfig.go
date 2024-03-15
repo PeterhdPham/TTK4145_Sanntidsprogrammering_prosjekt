@@ -25,6 +25,7 @@ var ActiveIPs []string                  //List of active IPs
 var connected bool = false              //Client connection state
 var WaitingForConfirmation bool         //
 var ServerActive = make(chan bool)      //Server state
+var ServerListening bool = false        //Server state
 
 func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterList) {
 	//Go routines for finding active IPs
@@ -36,7 +37,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 		case livingIPs := <-LivingIPsChan:
 			// Update the list of active IPs whenever a new list is received.
 
-			if !slicesAreEqual(ActiveIPs, livingIPs) {
+			if !utility.SlicesAreEqual(ActiveIPs, livingIPs) {
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
@@ -122,21 +123,18 @@ func updateRole(pointerElevator *defs.Elevator, masterElevator *defs.MasterList)
 		return
 	}
 
-	if defs.MyIP == lowestIP && !defs.ServerListening {
+	if defs.MyIP == lowestIP && !ServerListening {
 		//Set role to master and starts a new server on
-		fmt.Println("defs.MyIP == lowestIP && !defs.ServerListening")
 		shutdownServer()
 		go startServer(masterElevator) // Ensure server starts in a non-blocking manner
 		pointerElevator.Role = defs.MASTER
-	} else if defs.MyIP != lowestIP && defs.ServerListening {
-		//Stops the server and switches from master to slave role
-		fmt.Println("defs.MyIP != lowestIP && defs.ServerListening")
-		shutdownServer()
+	} else if defs.MyIP != lowestIP && ServerListening {
+		//Stops the server and switches from master to slave role		shutdownServer()
 		ServerActive <- false                                                  // Stop the server
 		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator) // Transition to client
 		pointerElevator.Role = defs.SLAVE
-	} else if !defs.ServerListening {
-		fmt.Println("!defs.ServerListenings")
+	} else if !ServerListening {
+		fmt.Println("!ServerListenings")
 		//Starts a client connection to the server, and sets role to slave
 		if !connected {
 			fmt.Println(connected, " is connected")
@@ -152,7 +150,7 @@ func startServer(masterElevator *defs.MasterList) {
 	ShouldReconnect = true
 
 	// Check if the server is already running, and if so, initiate shutdown for role switch
-	if defs.ServerListening {
+	if ServerListening {
 		fmt.Println("Server is already running, attempting to shut down for role switch...")
 		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
 	}
@@ -161,19 +159,19 @@ func startServer(masterElevator *defs.MasterList) {
 	var ctx context.Context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	defs.ServerListening = true
+	ServerListening = true
 
 	listenAddr := "0.0.0.0:55555"
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err)
-		defs.ServerListening = false // Ensure the state reflects that the server didn't start
+		ServerListening = false // Ensure the state reflects that the server didn't start
 		return
 	}
 	defer func() {
 		fmt.Println("Server shutting down")
 		listener.Close()
-		defs.ServerListening = false
+		ServerListening = false
 		fmt.Println("Server shutdown completed.")
 	}()
 
@@ -187,7 +185,7 @@ func startServer(masterElevator *defs.MasterList) {
 				select {
 				case <-ctx.Done(): // Shutdown was requested
 					closeAllClientConnections() // Ensure all client connections are gracefully closed
-					defs.ServerListening = false
+					ServerListening = false
 					listener.Close()
 					return
 				default:
@@ -195,7 +193,7 @@ func startServer(masterElevator *defs.MasterList) {
 					continue
 				}
 			}
-			go handleConnection(conn, masterElevator)
+			go handleClientMessages(conn, masterElevator)
 		}
 	}()
 
@@ -204,7 +202,7 @@ func startServer(masterElevator *defs.MasterList) {
 	select {
 	case <-ServerActive:
 		closeAllClientConnections() // Ensure all client connections are gracefully closed
-		defs.ServerListening = false
+		ServerListening = false
 		listener.Close()
 		return
 	}
@@ -230,7 +228,7 @@ func CompareMasterLists(list1, list2 []byte) bool {
 }
 
 // Handles individual client connections.
-func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
+func handleClientMessages(conn net.Conn, masterElevator *defs.MasterList) {
 	defs.ClientMutex.Lock()
 	defs.ClientConnections[conn] = true
 	defs.ClientMutex.Unlock()
@@ -327,18 +325,6 @@ func shutdownServer() {
 	defs.ClientMutex.Unlock()
 
 	// Finally, mark the server as not listening
-	defs.ServerListening = false
+	ServerListening = false
 	fmt.Println("Server has been shut down and all connections are closed.")
-}
-
-func slicesAreEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

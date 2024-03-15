@@ -4,24 +4,17 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"project/defs"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
 
-const PORT = "9999" // Port used to broadcast and listen to "I'm alive"-messages
-
-const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm alive"-msg
-const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
-const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
-const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
-const NODE_LIFE = 5 * time.Second                // Time added to node-lifetime when msg is received
-
 func BroadcastLife() {
 
 	// Dial the UDP connection using the IPv4 broadcast address
-	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+	conn, err := net.Dial("udp4", defs.BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -29,7 +22,7 @@ func BroadcastLife() {
 	defer conn.Close()
 
 	// Create a ticker that ticks every 2 seconds
-	ticker := time.NewTicker(BROADCAST_PERIOD)
+	ticker := time.NewTicker(defs.BROADCAST_PERIOD)
 	defer ticker.Stop()
 
 	var errCount int = 0
@@ -44,7 +37,7 @@ func BroadcastLife() {
 			if errCount > 10 {
 				fmt.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
-				conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+				conn, err = net.Dial("udp4", defs.BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -66,7 +59,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	IPLifetimes := make(map[string]time.Time)
 
 	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
+	pc, err := net.ListenPacket("udp", defs.LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -78,7 +71,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 	for {
 
-		err := pc.SetReadDeadline(time.Now().Add(LISTEN_TIMEOUT))
+		err := pc.SetReadDeadline(time.Now().Add(defs.LISTEN_TIMEOUT))
 		if err != nil {
 			fmt.Println("Failed to set a deadline for the read operation:", err)
 		}
@@ -118,7 +111,7 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP st
 				fmt.Println("This is my IP: ", myIP)
 			}
 		}
-		IPLifetimes[newAddr.String()] = time.Now().Add(NODE_LIFE)
+		IPLifetimes[newAddr.String()] = time.Now().Add(defs.NODE_LIFE)
 	}
 	return IPLifetimes
 }

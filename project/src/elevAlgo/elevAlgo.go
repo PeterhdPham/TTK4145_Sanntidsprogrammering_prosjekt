@@ -7,11 +7,7 @@ import (
 	"project/defs"
 	"project/elevData"
 	"project/tcp"
-	"time"
 )
-
-var doorOpenDuration time.Duration = 3 * time.Second
-var failureTimeoutDuration time.Duration = 7 * time.Second
 
 func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orders chan [][]bool, init_order [][]bool, role defs.ElevatorRole) {
 	myStatus := elevData.InitStatus()
@@ -62,7 +58,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case <-timerChannel:
 			timerStop()
 			if myStatus.Obstructed {
-				timerStart(doorOpenDuration)
+				timerStart(defs.DOOR_OPEN_DURATION)
 			} else {
 				failureTimerStop()
 				myStatus, myOrders = FSM_onDoorTimeout(myStatus, myOrders, elevio.GetFloor())
@@ -100,7 +96,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			}
 			if myStatus.Doors || myStatus.FSM_State != defs.IDLE {
 				failureTimerStop()
-				failureTimerStart(failureTimeoutDuration, mode)
+				failureTimerStart(defs.FAILURE_TIMEOUT_DURATION, mode)
 			}
 		}
 
