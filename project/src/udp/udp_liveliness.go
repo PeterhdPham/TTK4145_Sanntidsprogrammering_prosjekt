@@ -84,8 +84,12 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
-
-		addrString := strings.Split(addr.String(), ":")[0]
+		var addrString string
+		if (addr != nil) {
+			addrString = strings.Split(addr.String(), ":")[0]
+		} else {
+			addrString = ""
+		}
 
 		if err != nil {
 			if os.IsTimeout(err) {
