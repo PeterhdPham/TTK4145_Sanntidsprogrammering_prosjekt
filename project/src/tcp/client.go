@@ -20,7 +20,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 	for {
 		ServerConnection, ServerError = net.Dial("tcp", serverAddr)
 		if ServerError != nil {
-			log.Printf("Failed to connect to server: %s\n", ServerError)
+			log.Printf("Failed to connect to server with ip %s: %s\n", serverAddr, ServerError)
 			connected = false
 		} else {
 			break
