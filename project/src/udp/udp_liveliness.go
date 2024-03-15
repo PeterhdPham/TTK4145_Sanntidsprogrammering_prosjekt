@@ -22,6 +22,8 @@ const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutiv
 
 func BroadcastLife() {
 
+	myIP := defs.MyIP
+
 	// Dial the UDP connection using the IPv4 broadcast address
 	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
 	if err != nil {
@@ -52,6 +54,16 @@ func BroadcastLife() {
 					return
 				}
 				errCount = 0
+			}
+		}
+		if defs.MyIP != myIP {
+			myIP = defs.MyIP
+			log.Println("Changed IP, Restarting UDP connection")
+			conn.Close()
+			conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+			if err != nil {
+				log.Println(err)
+				return
 			}
 		}
 	}
