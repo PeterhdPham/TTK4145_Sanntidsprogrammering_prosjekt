@@ -75,6 +75,7 @@ func main() {
 			}
 		case <-ticker.C:
 			bytes := utility.MarshalJson(masterElevator)
+			fmt.Println("")
 			fmt.Println("MasterList: ", string(bytes))
 			// fmt.Println("Active ips: ", tcp.ActiveIPs)
 			continue
