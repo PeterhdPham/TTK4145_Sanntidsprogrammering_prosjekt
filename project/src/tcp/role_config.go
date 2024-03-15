@@ -250,7 +250,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 	log.Printf("Client connected: %s\n", clientAddr)
 
 	for {
-		buffer := make([]byte, 8192)
+		buffer := make([]byte, 32768)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {
