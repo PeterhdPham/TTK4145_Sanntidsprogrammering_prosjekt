@@ -307,15 +307,17 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 				} else {
 					if ReceivedPrevMasterList {
 						if utility.IsIPInMasterList(defs.MyIP, v) {
-							*masterElevator = v
 							for index := range masterElevator.Elevators {
-								if masterElevator.Elevators[index].Ip == defs.MyIP {
-									masterElevator.Elevators[index].IsOnline = true
-								}
 								for v_index := range v.Elevators {
 									if masterElevator.Elevators[v_index].Ip == v.Elevators[v_index].Ip {
-										masterElevator.Elevators[index].Orders = utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
+										log.Println()
+										combinedOrders := utility.CombineOrders(masterElevator.Elevators[index].Orders, v.Elevators[v_index].Orders)
+										masterElevator.Elevators[index] = v.Elevators[v_index]
+										masterElevator.Elevators[index].Orders = combinedOrders
 									}
+								}
+								if masterElevator.Elevators[index].Ip == defs.MyIP {
+									masterElevator.Elevators[index].IsOnline = true
 								}
 							}
 							log.Println("Overwriting existing masterList")
