@@ -25,9 +25,9 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 		} else {
 			break
 		}
-	}
-	if ActiveIPs[0] != serverIP {
-		return
+		if ActiveIPs[0] != serverIP {
+			return
+		}
 	}
 	log.Println("Connected to server at", serverAddr)
 	connected = true
