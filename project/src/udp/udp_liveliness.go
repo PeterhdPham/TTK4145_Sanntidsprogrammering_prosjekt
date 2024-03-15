@@ -17,7 +17,7 @@ const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm al
 const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
 const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
 const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
-const NODE_LIFE = 5 * time.Second                // Time added to node-lifetime when msg is received
+const NODE_LIFE = 3 * time.Second                // Time added to node-lifetime when msg is received
 const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutive udp error
 
 func BroadcastLife() {
