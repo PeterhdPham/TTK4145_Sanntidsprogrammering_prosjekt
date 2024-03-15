@@ -112,7 +112,9 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 
 	if newAddr == "" {
 		for addrInList := range IPLifetimes {
-			IPLifetimes[addrInList] = time.Now()
+			if addrInList != myIP{
+				IPLifetimes[addrInList] = time.Now()
+			}
 		}
 	} else {
 		_, ok := IPLifetimes[newAddr]
