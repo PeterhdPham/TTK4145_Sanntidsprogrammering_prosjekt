@@ -3,9 +3,9 @@ package elevalgo
 import (
 	"Driver-go/elevio"
 	"project/communication"
-	"project/cost"
 	"project/defs"
 	"project/elevData"
+	"project/orderAssignment"
 )
 
 func FSM_InitBetweenFloors(status defs.ElevStatus) defs.ElevStatus {
@@ -54,7 +54,7 @@ func FSM_RequestFloor(master *defs.MasterList, status defs.ElevStatus, orders []
 
 	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == defs.MASTER {
-		cost.FindAndAssign(master, floor, button, fromIP)
+		orderAssignment.FindAndAssign(master, floor, button, fromIP)
 		elevData.UpdateLightsMasterList(master, defs.MyIP)
 		communication.BroadcastMessage(nil, master)
 	}

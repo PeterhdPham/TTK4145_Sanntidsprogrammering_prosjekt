@@ -1,4 +1,4 @@
-package tcp
+package roleConfiguration
 
 import (
 	"Driver-go/elevio"
@@ -8,9 +8,9 @@ import (
 	"log"
 	"net"
 	"project/communication"
-	"project/cost"
 	"project/defs"
 	"project/elevData"
+	"project/orderAssignment"
 	"project/udp"
 	"project/utility"
 	"reflect"
@@ -73,12 +73,12 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 					for floorIndex, floorOrders := range e.Orders {
 						if floorOrders[elevio.BT_HallUp] {
 							floorOrders[elevio.BT_HallUp] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevIP)
+							orderAssignment.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallUp), elevIP)
 							counter++
 						}
 						if floorOrders[elevio.BT_HallDown] {
 							floorOrders[elevio.BT_HallDown] = false
-							cost.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevIP)
+							orderAssignment.FindAndAssign(masterElevator, floorIndex, int(elevio.BT_HallDown), elevIP)
 							counter++
 						}
 					}

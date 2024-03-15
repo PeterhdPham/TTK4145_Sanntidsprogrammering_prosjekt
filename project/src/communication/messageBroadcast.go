@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var error_buffer = 3
+var errorBuffer = 3
 var ShouldReconnect bool
 
 // Implement or adjust broadcastMessage to be compatible with the above modifications
@@ -63,15 +63,15 @@ func SendMessage(conn net.Conn, message interface{}, prefix string) error {
 		_, err := conn.Write(messageJson)
 		if err != nil {
 			log.Printf("Error sending message: %s\n", err)
-			if error_buffer == 0 {
+			if errorBuffer == 0 {
 				log.Println("Too many consecutive errors, stopping...")
 				ShouldReconnect = true
 				return err // Stop if there are too many consecutive errors
 			} else {
-				error_buffer--
+				errorBuffer--
 			}
 		} else {
-			error_buffer = 3 // Reset the error buffer on successful send
+			errorBuffer = 3 // Reset the error buffer on successful send
 			break
 		}
 		time.Sleep(100 * time.Millisecond)

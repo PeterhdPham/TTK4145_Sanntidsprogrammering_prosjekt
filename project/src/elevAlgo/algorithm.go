@@ -6,7 +6,7 @@ import (
 	"project/communication"
 	"project/defs"
 	"project/elevData"
-	"project/tcp"
+	"project/roleConfiguration"
 	"time"
 )
 
@@ -75,7 +75,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 		case ipAddress := <-defs.StatusReceived:
 			elevData.UpdateStatusMasterList(masterList, defs.RemoteStatus, ipAddress)
 			if defs.RemoteStatus.Operative {
-				tcp.ReassignOrders2(masterList)
+				roleConfiguration.ReassignOrders2(masterList)
 			}
 			communication.BroadcastMessage(nil, masterList)
 		case <-defs.UpdateLocal:
@@ -102,7 +102,7 @@ func ElevAlgo(masterList *defs.MasterList, elevStatus chan defs.ElevStatus, orde
 			}
 			if (role == defs.MASTER) && !(myStatus.Operative) {
 				elevData.UpdateStatusMasterList(masterList, myStatus, defs.MyIP)
-				tcp.ReassignOrders2(masterList)
+				roleConfiguration.ReassignOrders2(masterList)
 				communication.BroadcastMessage(nil, masterList)
 			}
 		}

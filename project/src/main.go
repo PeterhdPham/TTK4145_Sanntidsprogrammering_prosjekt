@@ -7,9 +7,10 @@ import (
 	"project/defs"
 	elevalgo "project/elevAlgo"
 	"project/elevData"
-	"project/tcp"
+	"project/roleConfiguration"
 	"project/udp"
 	"project/utility"
+
 	"reflect"
 	"time"
 )
@@ -31,7 +32,7 @@ func main() {
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
+	go roleConfiguration.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
 	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 
@@ -41,11 +42,11 @@ func main() {
 			// log.Println("status update: ", string(utility.MarshalJson(newStatus)))
 
 			//Sends message to server
-			if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
+			if roleConfiguration.ServerConnection != nil && elevator.Role == defs.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
 					// Convert message to byte slice
-					err := communication.SendMessage(tcp.ServerConnection, newStatus, "") // Assign the error value to "err"
+					err := communication.SendMessage(roleConfiguration.ServerConnection, newStatus, "") // Assign the error value to "err"
 					if err != nil {
 						log.Printf("Error sending elevator data: %s\n", err)
 					}
@@ -64,9 +65,9 @@ func main() {
 			}
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
-				if tcp.ServerConnection != nil && elevator.Role == defs.SLAVE {
+				if roleConfiguration.ServerConnection != nil && elevator.Role == defs.SLAVE {
 					// Convert message to byte slice
-					err := communication.SendMessage(tcp.ServerConnection, elevator, "") // Assign the error value to "err"
+					err := communication.SendMessage(roleConfiguration.ServerConnection, elevator, "") // Assign the error value to "err"
 					if err != nil {
 						log.Printf("Error sending elevator data: %s\n", err)
 					}
@@ -76,7 +77,7 @@ func main() {
 			bytes := utility.MarshalJson(masterElevator)
 			log.Println("")
 			log.Println("MasterList: ", string(bytes))
-			log.Println("\nActive ips: ", tcp.ActiveIPs)
+			log.Println("\nActive ips: ", roleConfiguration.ActiveIPs)
 			currentIP, _, _ := udp.GetPrimaryIP()
 			if defs.MyIP != currentIP && currentIP != "" {
 				defs.MyIP = currentIP
