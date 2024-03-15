@@ -204,7 +204,13 @@ func startServer(masterElevator *defs.MasterList) {
 
 	// Wait for the shutdown signal to clean up and exit the function
 	// <-ctx.Done()
-	<-ServerActive
+	select {
+	case <-ServerActive:
+		closeAllClientConnections() // Ensure all client connections are gracefully closed
+		defs.ServerListening = false
+		listener.Close()
+		return
+	}
 
 }
 
