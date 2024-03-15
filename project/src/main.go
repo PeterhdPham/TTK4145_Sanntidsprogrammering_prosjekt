@@ -27,11 +27,11 @@ func main() {
 	myOrders := make(chan [][]bool)                     // channel to receive order updates
 	go elevData.InitOrdersChan(myOrders, defs.N_FLOORS) // initialize the orders channel
 
-	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
-
 	defs.MyIP, defs.MyPort, _ = udp.GetPrimaryIP()
 
 	ticker := time.NewTicker(5 * time.Second)
+
+	go tcp.Config_Roles(&elevator, &masterElevator) // initialize the server and client connections
 
 	go elevalgo.ElevAlgo(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
 

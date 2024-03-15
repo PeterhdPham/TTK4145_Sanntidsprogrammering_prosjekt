@@ -56,6 +56,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 					communication.BroadcastMessage(nil, masterElevator)
 				}
 				ActiveIPs = livingIPs
+				fmt.Println("ActiveIPs: ", ActiveIPs)
 				ActiveIPsMutex.Unlock()
 				updateRole(pointerElevator, masterElevator)
 			}
