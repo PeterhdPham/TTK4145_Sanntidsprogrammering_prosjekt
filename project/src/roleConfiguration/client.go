@@ -1,7 +1,6 @@
 package roleConfiguration
 
 import (
-	"log"
 	"net"
 	"project/communication"
 	"project/types"
@@ -9,8 +8,9 @@ import (
 
 	"project/utility"
 	"strings"
-	"time"
 )
+
+const BUFFER_SIZE = 32768
 
 var ServerConnection net.Conn
 var ServerError error
@@ -33,16 +33,13 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 	connected = true
 	ShouldReconnect = false
 
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
 	communication.SendMessage(ServerConnection, *pointerElevator, "init")
 
 	communication.SendMessage(ServerConnection, *masterElevator, "prev")
 
 	go func() {
 		for {
-			buffer := make([]byte, 32768)
+			buffer := make([]byte, BUFFER_SIZE)
 			n, err := ServerConnection.Read(buffer)
 
 			if err != nil {
@@ -82,6 +79,5 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 	}
 
 	connected = false
-	log.Println("Shutting down client connection...")
 	ServerConnection.Close()
 }

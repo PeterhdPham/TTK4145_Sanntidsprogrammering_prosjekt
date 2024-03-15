@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+const UPDATE_IP_PERIOD = 5 * time.Second
+
 var elevator types.Elevator
 var masterElevator types.MasterList
 
@@ -29,7 +31,7 @@ func main() {
 	go elevatorData.InitOrdersChan(myOrders)
 
 	variables.MyIP = aliveMessages.GetPrimaryIP()
-	ticker := time.NewTicker(5 * time.Second)
+	ipCheck := time.NewTicker(UPDATE_IP_PERIOD)
 
 	go roleConfiguration.ConfigureRoles(&elevator, &masterElevator)
 	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
@@ -68,7 +70,7 @@ func main() {
 					}
 				}
 			}
-		case <-ticker.C:
+		case <-ipCheck.C:
 			currentIP := aliveMessages.GetPrimaryIP()
 			if variables.MyIP != currentIP && currentIP != "" {
 				variables.MyIP = currentIP

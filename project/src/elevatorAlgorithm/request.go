@@ -6,8 +6,6 @@ import (
 	"project/types"
 )
 
-const N_BUTTONS = 3
-
 func allOrdersFalse(orders [][]bool) bool {
 	for _, floor := range orders {
 		for _, order := range floor {
@@ -25,11 +23,11 @@ func requestShouldStop(status types.ElevStatus, orders [][]bool, floor int) bool
 	}
 	switch status.Direction {
 	case elevio.MD_Down:
-		if orders[floor][1] || orders[floor][2] || !requestsBelow(status, orders) {
+		if orders[floor][elevio.BT_HallDown] || orders[floor][elevio.BT_Cab] || !requestsBelow(status, orders) {
 			return true
 		}
 	case int(elevio.MD_Up):
-		if orders[floor][0] || orders[floor][2] || !requestsAbove(status, orders) {
+		if orders[floor][elevio.BT_HallUp] || orders[floor][elevio.BT_Cab] || !requestsAbove(status, orders) {
 			return true
 		}
 	}
@@ -39,24 +37,24 @@ func requestShouldStop(status types.ElevStatus, orders [][]bool, floor int) bool
 
 func requestClearAtFloor(myStatus types.ElevStatus, myOrders [][]bool, floor int) (types.ElevStatus, [][]bool) {
 	switch myStatus.Direction {
-	case 1:
-		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][0] {
-			myOrders[floor][1] = false
+	case int(elevio.MD_Up):
+		if !requestsAbove(myStatus, myOrders) && !myOrders[floor][elevio.BT_HallUp] {
+			myOrders[floor][elevio.BT_HallDown] = false
 		}
-		myOrders[floor][0] = false
+		myOrders[floor][elevio.BT_HallUp] = false
 
-	case -1:
-		if !requestsBelow(myStatus, myOrders) && !myOrders[floor][1] {
-			myOrders[floor][0] = false
+	case int(elevio.MD_Down):
+		if !requestsBelow(myStatus, myOrders) && !myOrders[floor][elevio.BT_HallDown] {
+			myOrders[floor][elevio.BT_HallUp] = false
 		}
-		myOrders[floor][1] = false
+		myOrders[floor][elevio.BT_HallDown] = false
 	default:
-		myOrders[floor][0] = false
-		myOrders[floor][1] = false
+		myOrders[floor][elevio.BT_HallUp] = false
+		myOrders[floor][elevio.BT_HallDown] = false
 
 	}
 
-	myOrders[floor][2] = false
+	myOrders[floor][elevio.BT_Cab] = false
 
 	return myStatus, myOrders
 }
@@ -70,7 +68,7 @@ func requestShouldClearImmediately(myStatus types.ElevStatus, floor int, btn int
 
 func requestsAbove(status types.ElevStatus, orders [][]bool) bool {
 	for f := status.Floor + 1; f < constants.N_FLOORS; f++ {
-		for btn := 0; btn < N_BUTTONS; btn++ {
+		for btn := 0; btn < constants.N_BUTTONS; btn++ {
 			if orders[f][btn] {
 				return true
 			}
@@ -81,7 +79,7 @@ func requestsAbove(status types.ElevStatus, orders [][]bool) bool {
 
 func requestsBelow(status types.ElevStatus, orders [][]bool) bool {
 	for f := 0; f < status.Floor; f++ {
-		for btn := 0; btn < N_BUTTONS; btn++ {
+		for btn := 0; btn < constants.N_BUTTONS; btn++ {
 			if orders[f][btn] {
 				return true
 			}
@@ -91,7 +89,7 @@ func requestsBelow(status types.ElevStatus, orders [][]bool) bool {
 }
 
 func requestsHere(status types.ElevStatus, orders [][]bool) bool {
-	for btn := 0; btn < N_BUTTONS; btn++ {
+	for btn := 0; btn < constants.N_BUTTONS; btn++ {
 		if orders[status.Floor][btn] {
 			return true
 		}

@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+const SERVERPORT = ":55555"
+const DELAY_INIT_ROLES = 3 * time.Second
+
 var ServerListening bool = false
 var ServerIP string
 
@@ -22,7 +25,7 @@ func ConfigureRoles(pointerElevator *types.Elevator, masterElevator *types.Maste
 	go aliveMessages.BroadcastLife()
 	go aliveMessages.LookForLife(LivingIPsChan)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(DELAY_INIT_ROLES)
 
 	for {
 		select {
@@ -119,12 +122,12 @@ func updateRoles(pointerElevator *types.Elevator, masterElevator *types.MasterLi
 
 		shutdownServer()
 		ServerActive <- false
-		go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
+		go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterElevator)
 		pointerElevator.Role = constants.SLAVE
 	} else if !ServerListening {
 
 		if !connected {
-			go connectToServer(lowestIP+":55555", pointerElevator, masterElevator)
+			go connectToServer(lowestIP+SERVERPORT, pointerElevator, masterElevator)
 			pointerElevator.Role = constants.SLAVE
 		}
 	}

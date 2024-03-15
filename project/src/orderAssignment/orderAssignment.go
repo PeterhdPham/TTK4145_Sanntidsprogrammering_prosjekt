@@ -5,6 +5,8 @@ import (
 	"project/types"
 )
 
+const INIT_MIN_ORDERS = 1000
+
 func FindAndAssign(master *types.MasterList, floor int, button int, fromIP string) {
 	for index := range master.Elevators {
 		if button == int(elevio.BT_Cab) {
@@ -52,7 +54,7 @@ func findBestElevIP(master *types.MasterList) string {
 	}
 
 	bestElevIP := ""
-	bestElevVal := 1000
+	bestElevVal := INIT_MIN_ORDERS
 	for _, ipRequest := range ipRequests {
 		if (ipRequest.Requests < bestElevVal) && ipRequest.Operative && ipRequest.Online {
 			bestElevVal = ipRequest.Requests

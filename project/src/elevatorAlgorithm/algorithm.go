@@ -87,9 +87,9 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 			failureTimerStop()
 
 			switch mode {
-			case 0:
+			case int(DOOR_STUCK):
 				myStatus.Operative = false
-			case 1:
+			case int(MOTOR_FAIL):
 				if myStatus.FSM_State != constants.IDLE {
 					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
 					myStatus.Operative = false

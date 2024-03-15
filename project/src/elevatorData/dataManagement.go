@@ -35,7 +35,7 @@ func InitStatus() types.ElevStatus {
 func initOrdersAndLights() [][]bool {
 	orders := make([][]bool, constants.N_FLOORS)
 	for i := range orders {
-		orders[i] = make([]bool, 3)
+		orders[i] = make([]bool, constants.N_BUTTONS)
 	}
 	return orders
 }
@@ -43,7 +43,7 @@ func initOrdersAndLights() [][]bool {
 func InitOrdersChan(orders chan [][]bool) {
 	o := make([][]bool, constants.N_FLOORS)
 	for i := 0; i < constants.N_FLOORS; i++ {
-		o[i] = make([]bool, 3)
+		o[i] = make([]bool, constants.N_BUTTONS)
 	}
 	orders <- o
 }
@@ -65,7 +65,7 @@ func UpdateOrdersMasterList(masterList *types.MasterList, newOrders [][]bool, ip
 
 func UpdateLightsMasterList(masterList *types.MasterList, ip string) {
 	for floor := 0; floor < constants.N_FLOORS; floor++ {
-		for btn := 0; btn < 2; btn++ {
+		for btn := 0; btn < constants.N_BUTTONS-1; btn++ {
 			lightActive := false
 			for index := range masterList.Elevators {
 				if masterList.Elevators[index].Orders[floor][btn] {
@@ -78,10 +78,10 @@ func UpdateLightsMasterList(masterList *types.MasterList, ip string) {
 			}
 		}
 		for index := range masterList.Elevators {
-			if masterList.Elevators[index].Orders[floor][2] {
-				masterList.Elevators[index].Lights[floor][2] = true
+			if masterList.Elevators[index].Orders[floor][elevio.BT_Cab] {
+				masterList.Elevators[index].Lights[floor][elevio.BT_Cab] = true
 			} else {
-				masterList.Elevators[index].Lights[floor][2] = false
+				masterList.Elevators[index].Lights[floor][elevio.BT_Cab] = false
 			}
 		}
 	}

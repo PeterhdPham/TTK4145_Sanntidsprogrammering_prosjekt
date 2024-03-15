@@ -9,7 +9,10 @@ import (
 	"time"
 )
 
-var errorBuffer = 3
+const DELAY_ATTEMPTS = 100 * time.Millisecond
+const MAX_ALLOWED_CONSECUTIVE_ERRORS = 3
+
+var errorBuffer = 0
 var ShouldReconnect bool
 
 func BroadcastMessage(masterElevator *types.MasterList) error {
@@ -27,17 +30,17 @@ func BroadcastMessage(masterElevator *types.MasterList) error {
 			_, err := conn.Write(message)
 			if err != nil {
 				log.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
-				if errorBuffer == 0 {
-					log.Println("Too many consecutive errors, stopping...")
+				if errorBuffer == MAX_ALLOWED_CONSECUTIVE_ERRORS {
+					log.Println("Failed to broadcast message to client consecutive times, stopping...")
 					return err
 				} else {
-					errorBuffer--
+					errorBuffer++
 				}
 			} else {
-				errorBuffer = 3
+				errorBuffer = 0
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(DELAY_ATTEMPTS)
 		}
 	}
 	return nil
@@ -56,18 +59,18 @@ func SendMessage(conn net.Conn, message interface{}, prefix string) error {
 		_, err := conn.Write(messageJson)
 		if err != nil {
 			log.Printf("Error sending message: %s\n", err)
-			if errorBuffer == 0 {
-				log.Println("Too many consecutive errors, stopping...")
+			if errorBuffer == MAX_ALLOWED_CONSECUTIVE_ERRORS {
+				log.Println("Failed to send message to server consecutive times, stopping...")
 				ShouldReconnect = true
 				return err
 			} else {
-				errorBuffer--
+				errorBuffer++
 			}
 		} else {
-			errorBuffer = 3
+			errorBuffer = 0
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(DELAY_ATTEMPTS)
 	}
 
 	ShouldReconnect = false

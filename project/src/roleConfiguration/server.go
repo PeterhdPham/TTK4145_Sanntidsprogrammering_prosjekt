@@ -109,7 +109,7 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 	clientAddr := conn.RemoteAddr().String()
 
 	for {
-		buffer := make([]byte, 32768)
+		buffer := make([]byte, BUFFER_SIZE)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			if err == io.EOF {

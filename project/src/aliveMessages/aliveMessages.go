@@ -18,6 +18,7 @@ const LISTEN_ADDR = "0.0.0.0:" + PORT
 const LISTEN_TIMEOUT = 10 * time.Second
 const NODE_LIFE = 3 * time.Second
 const ALLOWED_CONSECUTIVE_ERRORS = 100
+const BUFFER_SIZE = 1024
 
 func BroadcastLife() {
 
@@ -30,12 +31,12 @@ func BroadcastLife() {
 	}
 	defer conn.Close()
 
-	ticker := time.NewTicker(BROADCAST_PERIOD)
-	defer ticker.Stop()
+	broadcastInterval := time.NewTicker(BROADCAST_PERIOD)
+	defer broadcastInterval.Stop()
 
 	var errCount int = 0
 
-	for range ticker.C {
+	for range broadcastInterval.C {
 
 		message := "Please give us an A on the project:)"
 		_, err := conn.Write([]byte(message))
@@ -84,7 +85,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 	}
 	defer pc.Close()
 
-	buffer := make([]byte, 32768)
+	buffer := make([]byte, BUFFER_SIZE)
 
 	for {
 		if variables.MyIP != myIP {
