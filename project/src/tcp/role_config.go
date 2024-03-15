@@ -68,6 +68,7 @@ func ReassignOrders(masterElevator *defs.MasterList, oldList []string, newList [
 	var counter int
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
+			log.Println("Reassigning from: ", elevIP)
 			for _, e := range masterElevator.Elevators {
 				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
@@ -102,7 +103,7 @@ func ReassignOrders2(masterList *defs.MasterList) {
 			operativeElevators = append(operativeElevators, e.Ip)
 		}
 	}
-	
+
 	log.Println("Online elevators:", onlineElevators)
 	log.Println("Operative elevators:", operativeElevators)
 
@@ -269,7 +270,6 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
 			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`) && !strings.HasPrefix(message, `init`)) {
-				log.Println("Skipped: ", message, "\n")
 				continue // Skip empty messages
 			}
 
@@ -300,7 +300,7 @@ func handleConnection(conn net.Conn, masterElevator *defs.MasterList) {
 			case defs.MasterList:
 				// log.Printf("Unmarshaled MasterList from client %s.\n", clientAddr)
 				if reflect.DeepEqual(v, *masterElevator) {
-					log.Println("client received the correct masterList")
+					// log.Println("client received the correct masterList")
 				} else {
 					if ReceivedPrevMasterList {
 						if utility.IsIPInMasterList(defs.MyIP, v) {
