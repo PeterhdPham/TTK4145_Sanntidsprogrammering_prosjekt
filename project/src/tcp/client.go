@@ -93,5 +93,4 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 	connected = false
 	log.Println("Shutting down client connection...")
-	ServerConnection.Close() // Explicitly close the connection
 }
