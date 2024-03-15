@@ -46,7 +46,7 @@ func Config_Roles(pointerElevator *defs.Elevator, masterElevator *defs.MasterLis
 				ActiveIPsMutex.Lock()
 				// check if livingIPs is empty or not
 				if len(livingIPs) == 0 {
-					ActiveIPs = append(livingIPs, "127.0.0.1")
+					livingIPs = append(livingIPs, "127.0.0.1")
 				}
 				if pointerElevator.Ip == livingIPs[0] {
 					// If I'm the master i should reassign orders of the dead node
