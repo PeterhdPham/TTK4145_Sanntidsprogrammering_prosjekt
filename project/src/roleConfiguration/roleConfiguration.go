@@ -2,7 +2,6 @@ package roleConfiguration
 
 import (
 	"Driver-go/elevio"
-	"log"
 	"project/aliveMessages"
 	"project/communication"
 	"project/constants"
@@ -53,7 +52,6 @@ func ReassignOrders(masterElevator *types.MasterList, oldList []string, newList 
 	var counter int
 	for _, elevIP := range oldList {
 		if !utility.Contains(newList, elevIP) {
-			log.Println("Reassigning from: ", elevIP)
 			for _, e := range masterElevator.Elevators {
 				if e.Ip == elevIP {
 					for floorIndex, floorOrders := range e.Orders {
@@ -72,7 +70,6 @@ func ReassignOrders(masterElevator *types.MasterList, oldList []string, newList 
 			}
 		}
 	}
-	log.Println(counter, " orders reassigned")
 }
 
 func ReassignOrdersIfInoperative(masterList *types.MasterList) {

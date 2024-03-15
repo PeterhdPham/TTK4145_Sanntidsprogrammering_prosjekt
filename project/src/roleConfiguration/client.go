@@ -30,7 +30,6 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 			return
 		}
 	}
-	log.Println("Connected to server at", serverAddr)
 	connected = true
 	ShouldReconnect = false
 
@@ -59,7 +58,6 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
-					log.Printf("Error determining struct type or unmarshaling message: %v\n", err)
 					continue
 				}
 
@@ -69,13 +67,8 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 					*masterElevator = msg
 					communication.SendMessage(ServerConnection, msg, "")
 					variables.UpdateLocal <- "true"
-				case types.Elevator:
-					log.Println("Received Elevator message")
-
-				case types.ElevStatus:
-					log.Println("Received ElevStatus message")
 				default:
-					log.Println("Received an unknown type of message")
+					continue
 				}
 
 			}

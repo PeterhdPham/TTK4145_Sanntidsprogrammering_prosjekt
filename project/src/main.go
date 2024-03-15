@@ -69,10 +69,6 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			bytes := utility.MarshalJson(masterElevator)
-			log.Println("")
-			log.Println("MasterList: ", string(bytes))
-			log.Println("\nActive ips: ", roleConfiguration.ActiveIPs)
 			currentIP := aliveMessages.GetPrimaryIP()
 			if variables.MyIP != currentIP && currentIP != "" {
 				variables.MyIP = currentIP

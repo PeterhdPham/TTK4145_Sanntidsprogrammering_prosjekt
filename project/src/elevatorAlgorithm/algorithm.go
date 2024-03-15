@@ -2,7 +2,6 @@ package elevatorAlgorithm
 
 import (
 	"Driver-go/elevio"
-	"log"
 	"project/communication"
 	"project/constants"
 	"project/elevatorData"
@@ -89,11 +88,9 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 
 			switch mode {
 			case 0:
-				log.Println("DOORS ARE STUCK")
 				myStatus.Operative = false
 			case 1:
 				if myStatus.FSM_State != constants.IDLE {
-					log.Println("MOTOR HAS FAILED. TRYING AGAIN")
 					elevio.SetMotorDirection(elevio.MotorDirection(myStatus.Direction))
 					myStatus.Operative = false
 				}

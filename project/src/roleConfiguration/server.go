@@ -33,11 +33,6 @@ func startServer(masterElevator *types.MasterList) {
 	variables.ClientConnections = make(map[net.Conn]bool)
 	ShouldReconnect = true
 
-	if ServerListening {
-		log.Println("Server is already running, attempting to shut down for role switch...")
-		time.Sleep(1 * time.Second)
-	}
-
 	var ctx context.Context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -50,8 +45,6 @@ func startServer(masterElevator *types.MasterList) {
 		ServerListening = false
 		return
 	}
-
-	log.Println("Server listening on", listenAddr)
 
 	go func() {
 		for {
@@ -114,7 +107,6 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 	}()
 
 	clientAddr := conn.RemoteAddr().String()
-	log.Printf("Client connected: %s\n", clientAddr)
 
 	for {
 		buffer := make([]byte, 32768)
@@ -150,7 +142,6 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 
 			genericStruct, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 			if err != nil {
-				log.Printf("Failed to determine struct type or unmarshal message from client %s: %s\n", clientAddr, err)
 				continue
 			}
 
@@ -175,12 +166,10 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 									masterElevator.Elevators[index].IsOnline = true
 								}
 							}
-							log.Println("Overwriting existing masterList")
 						} else {
 							for index := range v.Elevators {
 								if !(utility.IPInMasterList(v.Elevators[index].Ip, *masterElevator)) {
 									(*masterElevator).Elevators = append((*masterElevator).Elevators, v.Elevators[index])
-									log.Printf("Adding %s to current masterList", v.Elevators[index].Ip)
 								}
 							}
 						}
@@ -245,5 +234,4 @@ func shutdownServer() {
 	variables.ClientMutex.Unlock()
 
 	ServerListening = false
-	log.Println("Server has been shut down and all connections are closed.")
 }

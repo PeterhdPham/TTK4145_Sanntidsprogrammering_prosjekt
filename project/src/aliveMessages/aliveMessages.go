@@ -25,7 +25,7 @@ func BroadcastLife() {
 
 	conn, err := net.Dial("udp4", BROADCAST_ADDR)
 	if err != nil {
-		log.Println(err)
+		log.Println("Error in BroadcastLife() net.Dial: ", err)
 		return
 	}
 	defer conn.Close()
@@ -48,7 +48,7 @@ func BroadcastLife() {
 				for {
 					conn, err = net.Dial("udp4", BROADCAST_ADDR)
 					if err != nil {
-						log.Println(err)
+						log.Println("Error in BroadcastLife() net.Dial: ", err)
 						time.Sleep(time.Second)
 					} else {
 						break
@@ -64,7 +64,7 @@ func BroadcastLife() {
 			conn.Close()
 			conn, err = net.Dial("udp4", BROADCAST_ADDR)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error in BroadcastLife() net.Dial: ", err)
 			}
 		}
 	}
@@ -79,7 +79,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 
 	pc, err := net.ListenPacket("udp", LISTEN_ADDR)
 	if err != nil {
-		log.Println(err)
+		log.Println("Error on LookForLife(): ", err)
 		return
 	}
 	defer pc.Close()
@@ -134,12 +134,6 @@ func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP stri
 	} else {
 		_, ok := IPLifetimes[newAddr]
 		if !ok {
-			if newAddr != myIP {
-				log.Println("New node discovered: ", newAddr)
-			} else {
-				log.Println()
-				log.Println("This is my IP: ", myIP)
-			}
 			IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
 		} else {
 			if myIP != newAddr {
