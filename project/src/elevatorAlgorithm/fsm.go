@@ -31,10 +31,9 @@ func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.
 	switch status.FSM_State {
 	case constants.MOVING:
 		if requestShouldStop(status, orders, floor) {
-			//Stops elevator and updates status accordingly
+
 			elevio.SetMotorDirection(elevio.MD_Stop)
 
-			//Opens elevator door and updates status accordingly
 			elevio.SetDoorOpenLamp(true)
 			status.Doors = true
 			doorTimerStart(doorOpenDuration)
@@ -42,7 +41,6 @@ func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(DOOR_STUCK))
 
-			//Clears the request at current floor
 			status, orders = requestClearAtFloor(status, orders, floor)
 		} else {
 			failureTimerStop()
@@ -57,7 +55,6 @@ func arrivalAtFloor(status types.ElevStatus, orders [][]bool, floor int) (types.
 
 func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]bool, floor int, button int, fromIP string, myRole types.ElevatorRole) (types.ElevStatus, [][]bool) {
 
-	//Find the best elevator to take the order, update the masterlist and broadcast to all slaves
 	if myRole == constants.MASTER {
 		orderAssignment.FindAndAssign(master, floor, button, fromIP)
 		elevatorData.UpdateLightsMasterList(master, variables.MyIP)
@@ -65,7 +62,6 @@ func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]
 	}
 	elevatorData.SetAllLights(*master)
 
-	//Check orders and starts moving
 	for _, e := range master.Elevators {
 		if e.Ip == variables.MyIP {
 			orders = e.Orders
@@ -101,9 +97,7 @@ func requestFloor(master *types.MasterList, status types.ElevStatus, orders [][]
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
 		}
-
 	}
-
 	return status, orders
 }
 
@@ -125,11 +119,7 @@ func onDoorTimeout(status types.ElevStatus, orders [][]bool, floor int) (types.E
 			elevio.SetMotorDirection(elevio.MotorDirection(status.Direction))
 			failureTimerStop()
 			failureTimerStart(failureTimeoutDuration, int(MOTOR_FAIL))
-
 		}
-
-	default:
-		// No action for default case
 	}
 
 	return status, orders

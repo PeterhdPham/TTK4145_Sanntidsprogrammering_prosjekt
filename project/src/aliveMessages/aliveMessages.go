@@ -11,44 +11,42 @@ import (
 	"time"
 )
 
-const PORT = "9999"                              // Port used to broadcast and listen to "I'm alive"-messages
-const BROADCAST_ADDR = "255.255.255.255:" + PORT // Address to broadcast "I'm alive"-msg
-const BROADCAST_PERIOD = 100 * time.Millisecond  // Time to wait before broadcasting new msg
-const LISTEN_ADDR = "0.0.0.0:" + PORT            // Address to listen for "I'm alive"-msg
-const LISTEN_TIMEOUT = 10 * time.Second          // Time to listen before giving up
-const NODE_LIFE = 3 * time.Second                // Time added to node-lifetime when msg is received
-const ALLOWED_CONSECUTIVE_ERRORS = 100           // Number of allowed consecutive udp error
+const PORT = "9999"
+const BROADCAST_ADDR = "255.255.255.255:" + PORT
+const BROADCAST_PERIOD = 100 * time.Millisecond
+const LISTEN_ADDR = "0.0.0.0:" + PORT
+const LISTEN_TIMEOUT = 10 * time.Second
+const NODE_LIFE = 3 * time.Second
+const ALLOWED_CONSECUTIVE_ERRORS = 100
 
 func BroadcastLife() {
 
 	myIP := variables.MyIP
 
-	// Dial the UDP connection using the IPv4 broadcast address
-	conn, err := net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+	conn, err := net.Dial("udp4", BROADCAST_ADDR)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer conn.Close()
 
-	// Create a ticker that ticks every 2 seconds
 	ticker := time.NewTicker(BROADCAST_PERIOD)
 	defer ticker.Stop()
 
 	var errCount int = 0
 
 	for range ticker.C {
-		// Construct the message with timestamp and sender's IP
-		message := "Please give us an A on the project:)" // Simplified message for demonstration
+
+		message := "Please give us an A on the project:)"
 		_, err := conn.Write([]byte(message))
 		if err != nil {
 			errCount++
-			// log.Println("Error sending udp-message: ", err)
+
 			if errCount > ALLOWED_CONSECUTIVE_ERRORS {
 				log.Println("Too many consecutive udp errors, Restarting UDP connection")
 				conn.Close()
 				for {
-					conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+					conn, err = net.Dial("udp4", BROADCAST_ADDR)
 					if err != nil {
 						log.Println(err)
 						time.Sleep(time.Second)
@@ -64,7 +62,7 @@ func BroadcastLife() {
 			myIP = variables.MyIP
 			log.Println("Changed IP, Restarting UDP connection")
 			conn.Close()
-			conn, err = net.Dial("udp4", BROADCAST_ADDR) // "udp4" to explicitly use IPv4
+			conn, err = net.Dial("udp4", BROADCAST_ADDR)
 			if err != nil {
 				log.Println(err)
 			}
@@ -79,15 +77,13 @@ func LookForLife(livingIPsChan chan<- []string) {
 	IPLifetimes := make(map[string]time.Time)
 	IPLifetimes[myIP] = time.Now().Add(time.Hour)
 
-	// Create a UDP socket and listen on the port.
-	pc, err := net.ListenPacket("udp", LISTEN_ADDR) // 'udp' listens for both udp4 and udp6 connections
+	pc, err := net.ListenPacket("udp", LISTEN_ADDR)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer pc.Close()
 
-	// Create a buffer to store received messages.
 	buffer := make([]byte, 32768)
 
 	for {
@@ -102,7 +98,6 @@ func LookForLife(livingIPsChan chan<- []string) {
 			log.Println("Failed to set a deadline for the read operation:", err)
 		}
 
-		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
 		var addrString string
 		if addr != nil {
@@ -121,7 +116,7 @@ func LookForLife(livingIPsChan chan<- []string) {
 				continue
 			}
 		} else {
-			// Handle the received message.
+
 			IPLifetimes = updateLivingIPs(IPLifetimes, addrString, myIP)
 			livingIPsChan <- getLivingIPs(IPLifetimes)
 		}
@@ -188,7 +183,7 @@ func ipSorter(ipStrings []string) []string {
 
 func GetPrimaryIP() string {
 	var primaryIP string
-	conn, err := net.Dial("udp", "8.8.8.8:80") // Using an external server to determine the preferred outbound IP.
+	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Println("Error at GetPrimaryIP(): ", err)
 		return ""

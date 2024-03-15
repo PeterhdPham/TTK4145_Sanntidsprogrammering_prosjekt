@@ -43,9 +43,8 @@ func initOrdersAndLights() [][]bool {
 func InitOrdersChan(orders chan [][]bool) {
 	o := make([][]bool, constants.N_FLOORS)
 	for i := 0; i < constants.N_FLOORS; i++ {
-		o[i] = make([]bool, 3) // Assuming 3 buttons per floor.
+		o[i] = make([]bool, 3)
 	}
-	// Send the initialized slice of slices through the channel.
 	orders <- o
 }
 

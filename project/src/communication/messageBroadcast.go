@@ -12,7 +12,6 @@ import (
 var errorBuffer = 3
 var ShouldReconnect bool
 
-// Implement or adjust broadcastMessage to be compatible with the above modifications
 func BroadcastMessage(masterElevator *types.MasterList) error {
 
 	message := utility.MarshalJson(masterElevator)
@@ -30,12 +29,12 @@ func BroadcastMessage(masterElevator *types.MasterList) error {
 				log.Printf("Failed to broadcast to client %s: %s\n", conn.RemoteAddr(), err)
 				if errorBuffer == 0 {
 					log.Println("Too many consecutive errors, stopping...")
-					return err // Stop if there are too many consecutive errors
+					return err
 				} else {
 					errorBuffer--
 				}
 			} else {
-				errorBuffer = 3 // Reset the error buffer on successful send
+				errorBuffer = 3
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -45,7 +44,7 @@ func BroadcastMessage(masterElevator *types.MasterList) error {
 }
 
 func SendMessage(conn net.Conn, message interface{}, prefix string) error {
-	// Marshal the message into JSON
+
 	messageJson := utility.MarshalJson(message)
 
 	if prefix != "" {
@@ -60,12 +59,12 @@ func SendMessage(conn net.Conn, message interface{}, prefix string) error {
 			if errorBuffer == 0 {
 				log.Println("Too many consecutive errors, stopping...")
 				ShouldReconnect = true
-				return err // Stop if there are too many consecutive errors
+				return err
 			} else {
 				errorBuffer--
 			}
 		} else {
-			errorBuffer = 3 // Reset the error buffer on successful send
+			errorBuffer = 3
 			break
 		}
 		time.Sleep(100 * time.Millisecond)

@@ -18,28 +18,26 @@ import (
 )
 
 var (
-	LivingIPsChan          = make(chan []string)         //Stores living IPs from the Look_for_life function
-	ActiveIPsMutex         sync.Mutex                    //Mutex for protecting active IPs
-	ActiveIPs              []string                      //List of active IPs
-	connected              bool                  = false //Client connection state
-	WaitingForConfirmation bool                          //
-	ServerActive           = make(chan bool)             //Server state
-	ReceivedPrevMasterList bool                          // Master list that server receives from client that used to be server
-	ReceivedFirstElevator  bool                          // First elevator
+	LivingIPsChan          = make(chan []string)
+	ActiveIPsMutex         sync.Mutex
+	ActiveIPs              []string
+	connected              bool = false
+	WaitingForConfirmation bool
+	ServerActive           = make(chan bool)
+	ReceivedPrevMasterList bool
+	ReceivedFirstElevator  bool
 )
 
 func startServer(masterElevator *types.MasterList) {
-	// Initialize the map to track client connections at the correct scope
+
 	variables.ClientConnections = make(map[net.Conn]bool)
 	ShouldReconnect = true
 
-	// Check if the server is already running, and if so, initiate shutdown for role switch
 	if ServerListening {
 		log.Println("Server is already running, attempting to shut down for role switch...")
-		time.Sleep(1 * time.Second) // Give it a moment to shut down before restarting
+		time.Sleep(1 * time.Second)
 	}
 
-	// Create a new context for this server instance
 	var ctx context.Context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -49,25 +47,24 @@ func startServer(masterElevator *types.MasterList) {
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		log.Printf("Failed to start server: %s\n", err)
-		ServerListening = false // Ensure the state reflects that the server didn't start
+		ServerListening = false
 		return
 	}
 
 	log.Println("Server listening on", listenAddr)
 
-	// Accept new connections unless server shutdown is requested
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
 				select {
-				case <-ctx.Done(): // Shutdown was requested
-					closeAllClientConnections() // Ensure all client connections are gracefully closed
+				case <-ctx.Done():
+					closeAllClientConnections()
 					ServerListening = false
 					listener.Close()
 					return
 				case <-ServerActive:
-					closeAllClientConnections() // Ensure all client connections are gracefully closed
+					closeAllClientConnections()
 					ServerListening = false
 					listener.Close()
 					return
@@ -81,11 +78,9 @@ func startServer(masterElevator *types.MasterList) {
 		}
 	}()
 
-	// Wait for the shutdown signal to clean up and exit the function
-	// <-ctx.Done()
 	select {
 	case <-ServerActive:
-		closeAllClientConnections() // Ensure all client connections are gracefully closed
+		closeAllClientConnections()
 		ServerListening = false
 		listener.Close()
 		return
@@ -93,7 +88,6 @@ func startServer(masterElevator *types.MasterList) {
 
 }
 
-// Ensure this function exists and is correctly implemented to close all client connections
 func closeAllClientConnections() {
 	variables.ClientMutex.Lock()
 	defer variables.ClientMutex.Unlock()
@@ -107,7 +101,6 @@ func closeAllClientConnections() {
 	}
 }
 
-// Handles individual client connections.
 func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 	variables.ClientMutex.Lock()
 	variables.ClientConnections[conn] = true
@@ -135,14 +128,12 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 			break
 		}
 
-		// Process each newline-separated message
 		messages := strings.Split(string(buffer[:n]), "%")
 		for _, message := range messages {
 			if message == "" || message == " " || (!strings.HasPrefix(message, `{"elevators":`) && !strings.HasPrefix(message, `{"ip":`) && !strings.HasPrefix(message, `{"direction":`) && !strings.HasPrefix(message, `prev`) && !strings.HasPrefix(message, `init`)) {
-				continue // Skip empty messages
+				continue
 			}
 
-			// Checks if the message contains a tag for previous master list
 			if strings.HasPrefix(message, "prev") {
 				message = strings.TrimPrefix(message, "prev")
 				ReceivedPrevMasterList = true
@@ -157,14 +148,12 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 				ReceivedFirstElevator = false
 			}
 
-			// Attempt to determine the struct type from the JSON keys
 			genericStruct, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 			if err != nil {
 				log.Printf("Failed to determine struct type or unmarshal message from client %s: %s\n", clientAddr, err)
 				continue
 			}
 
-			// Now handle the unmarshaled data based on its determined type
 			switch v := genericStruct.(type) {
 			case types.MasterList:
 				if reflect.DeepEqual(v, *masterElevator) {
@@ -205,7 +194,7 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 			case types.ElevStatus:
 				requestFloor := v.Buttonfloor
 				requestButton := v.Buttontype
-				// Handle ElevStatus-specific logic here
+
 				if requestButton != -1 || requestFloor != -1 {
 					variables.RemoteStatus = v
 					variables.ButtonReceived <- types.ButtonEventWithIP{
@@ -217,7 +206,7 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 					variables.StatusReceived <- strings.Split(clientAddr, ":")[0]
 				}
 			case types.Elevator:
-				// Handle Elevator-specific logic here
+
 				if !utility.IPInMasterList(v.Ip, *masterElevator) {
 					masterElevator.Elevators = append(masterElevator.Elevators, v)
 				} else {
@@ -245,7 +234,6 @@ func handleClientMessages(conn net.Conn, masterElevator *types.MasterList) {
 
 func shutdownServer() {
 
-	// Close all active client connections
 	variables.ClientMutex.Lock()
 	for conn := range variables.ClientConnections {
 		err := conn.Close()
@@ -256,7 +244,6 @@ func shutdownServer() {
 	}
 	variables.ClientMutex.Unlock()
 
-	// Finally, mark the server as not listening
 	ServerListening = false
 	log.Println("Server has been shut down and all connections are closed.")
 }

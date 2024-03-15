@@ -20,34 +20,28 @@ var elevator types.Elevator
 var masterElevator types.MasterList
 
 func main() {
-	elevio.Init("localhost:15657", constants.N_FLOORS) // connect to elevatorsimulator
-	elevator = elevatorData.InitElevator()             // initialize the elevator
+	elevio.Init("localhost:15657", constants.N_FLOORS)
+	elevator = elevatorData.InitElevator()
+	masterElevator.Elevators = append(masterElevator.Elevators, elevator)
+	myStatus := make(chan types.ElevStatus)
+	myOrders := make(chan [][]bool)
 
-	masterElevator.Elevators = append(masterElevator.Elevators, elevator) // append the elevator to the master list of elevators
-
-	myStatus := make(chan types.ElevStatus)  // channel to receive status updates
-	myOrders := make(chan [][]bool)          // channel to receive order updates
-	go elevatorData.InitOrdersChan(myOrders) // initialize the orders channel
+	go elevatorData.InitOrdersChan(myOrders)
 
 	variables.MyIP = aliveMessages.GetPrimaryIP()
-
 	ticker := time.NewTicker(5 * time.Second)
 
-	go roleConfiguration.ConfigureRoles(&elevator, &masterElevator) // initialize the server and client connections
-
-	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role) // initialize the elevator algorithm
+	go roleConfiguration.ConfigureRoles(&elevator, &masterElevator)
+	go elevatorAlgorithm.ElevatorControlLoop(&masterElevator, myStatus, myOrders, elevator.Orders, elevator.Role)
 
 	for {
 		select {
 		case newStatus := <-myStatus:
-			// log.Println("status update: ", string(utility.MarshalJson(newStatus)))
-
-			//Sends message to server
 			if roleConfiguration.ServerConnection != nil && elevator.Role == constants.SLAVE {
 				if !reflect.DeepEqual(elevator.Status, newStatus) {
 					elevator.Status = newStatus
-					// Convert message to byte slice
-					err := communication.SendMessage(roleConfiguration.ServerConnection, newStatus, "") // Assign the error value to "err"
+
+					err := communication.SendMessage(roleConfiguration.ServerConnection, newStatus, "")
 					if err != nil {
 						log.Printf("Error sending elevator data: %s\n", err)
 					}
@@ -67,8 +61,8 @@ func main() {
 			if !utility.SlicesAreEqual(elevator.Orders, newOrders) {
 				elevator.Orders = newOrders
 				if roleConfiguration.ServerConnection != nil && elevator.Role == constants.SLAVE {
-					// Convert message to byte slice
-					err := communication.SendMessage(roleConfiguration.ServerConnection, elevator, "") // Assign the error value to "err"
+
+					err := communication.SendMessage(roleConfiguration.ServerConnection, elevator, "")
 					if err != nil {
 						log.Printf("Error sending elevator data: %s\n", err)
 					}

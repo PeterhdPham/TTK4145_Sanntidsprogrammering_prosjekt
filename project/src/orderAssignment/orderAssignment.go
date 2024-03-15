@@ -41,7 +41,6 @@ func findBestElevIP(master *types.MasterList) string {
 		ipRequests = append(ipRequests, types.IpRequestCount{Ip: elevator.Ip, Requests: 0, Operative: elevator.Status.Operative, Online: elevator.IsOnline})
 	}
 
-	// Count requests for each elevator
 	for i, elevator := range master.Elevators {
 		for _, floor := range elevator.Orders {
 			for _, requested := range floor {
@@ -52,7 +51,6 @@ func findBestElevIP(master *types.MasterList) string {
 		}
 	}
 
-	// Find the elevator with the least number of requests
 	bestElevIP := ""
 	bestElevVal := 1000
 	for _, ipRequest := range ipRequests {

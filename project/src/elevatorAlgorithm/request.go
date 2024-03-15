@@ -12,12 +12,10 @@ func allOrdersFalse(orders [][]bool) bool {
 	for _, floor := range orders {
 		for _, order := range floor {
 			if order {
-				// Found an order (true), so not all values are false.
 				return false
 			}
 		}
 	}
-	// If we get here, it means all values were false.
 	return true
 }
 

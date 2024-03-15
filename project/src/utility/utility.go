@@ -27,7 +27,6 @@ func UnmarshalJson(data []byte, v interface{}) (reflect.Type, error) {
 
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Ptr {
-		// If v is a pointer, get the type it points to
 		return t.Elem(), nil
 	}
 	return t, nil
@@ -101,10 +100,10 @@ func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 func IPInMasterList(ip string, masterList types.MasterList) bool {
 	for _, elevator := range masterList.Elevators {
 		if elevator.Ip == ip {
-			return true // IP found in the list
+			return true
 		}
 	}
-	return false // IP not found in the list
+	return false
 }
 
 func Contains(slice []string, str string) bool {

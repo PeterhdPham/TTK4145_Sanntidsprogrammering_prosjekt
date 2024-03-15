@@ -39,43 +39,39 @@ func connectToServer(serverIP string, pointerElevator *types.Elevator, masterEle
 
 	communication.SendMessage(ServerConnection, *pointerElevator, "init")
 
-	// Sends previous master list
 	communication.SendMessage(ServerConnection, *masterElevator, "prev")
 
-	// Start a goroutine to listen for messages from the server
 	go func() {
 		for {
-			buffer := make([]byte, 32768)           // Create a buffer to store incoming data
-			n, err := ServerConnection.Read(buffer) // Read data into buffer
+			buffer := make([]byte, 32768)
+			n, err := ServerConnection.Read(buffer)
 
 			if err != nil {
-				// Handle error or EOF
-				return // Exit goroutine if connection is closed or an error occurs
+
+				return
 			}
 
-			messages := strings.Split(string(buffer[:n]), "%") // Process each newline-separated message
+			messages := strings.Split(string(buffer[:n]), "%")
 			for _, message := range messages {
 				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") || !strings.HasPrefix(message, `{"elevators":`) {
-					continue // Skip empty messages
+					continue
 				}
 
-				// Determine the struct type and unmarshal based on JSON content
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
 					log.Printf("Error determining struct type or unmarshaling message: %v\n", err)
 					continue
 				}
 
-				// Now, handle the unmarshaled data based on its type
 				switch msg := genericMessage.(type) {
 				case types.MasterList:
-					// Process MasterList message
+
 					*masterElevator = msg
 					communication.SendMessage(ServerConnection, msg, "")
-					variables.UpdateLocal <- "true" // Assuming this triggers some update logic
+					variables.UpdateLocal <- "true"
 				case types.Elevator:
 					log.Println("Received Elevator message")
-					// Process Elevator message
+
 				case types.ElevStatus:
 					log.Println("Received ElevStatus message")
 				default:

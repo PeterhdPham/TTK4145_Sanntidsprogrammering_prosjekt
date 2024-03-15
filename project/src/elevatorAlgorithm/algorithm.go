@@ -28,7 +28,6 @@ func ElevatorControlLoop(masterList *types.MasterList, elevStatus chan types.Ele
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollObstructionSwitch(drvObstr)
 
-	// Moves the elevator down if in between floors
 	if elevio.GetFloor() == -1 {
 		myStatus = initBetweenFloors(myStatus)
 	} else {
