@@ -25,7 +25,7 @@ func main() {
 
 	myStatus := make(chan defs.ElevStatus) // channel to receive status updates
 	myOrders := make(chan [][]bool)        // channel to receive order updates
-	elevatorData.InitOrdersChan(myOrders)  // initialize the orders channel
+	go elevatorData.InitOrdersChan(myOrders)  // initialize the orders channel
 
 	defs.MyIP = aliveMessages.GetPrimaryIP()
 
