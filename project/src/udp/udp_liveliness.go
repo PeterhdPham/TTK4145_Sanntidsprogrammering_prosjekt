@@ -84,9 +84,12 @@ func LookForLife(livingIPsChan chan<- []string) {
 		// Read from the UDP socket.
 		_, addr, err := pc.ReadFrom(buffer)
 
+		addrString := strings.Split(addr.String(),":")[0]
+
+
 		if err != nil {
 			if os.IsTimeout(err) {
-				IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
+				IPLifetimes = updateLivingIPs(IPLifetimes, "", myIP)
 				livingIPsChan <- getLivingIPs(IPLifetimes)
 				continue
 			} else {
@@ -95,29 +98,29 @@ func LookForLife(livingIPsChan chan<- []string) {
 			}
 		} else {
 			// Handle the received message.
-			IPLifetimes = updateLivingIPs(IPLifetimes, addr, myIP)
+			IPLifetimes = updateLivingIPs(IPLifetimes, addrString, myIP)
 			livingIPsChan <- getLivingIPs(IPLifetimes)
 		}
 	}
 }
 
-func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr net.Addr, myIP string) map[string]time.Time {
+func updateLivingIPs(IPLifetimes map[string]time.Time, newAddr string, myIP string) map[string]time.Time {
 
-	if newAddr == nil {
+	if newAddr == "" {
 		for addrInList := range IPLifetimes {
 			IPLifetimes[addrInList] = time.Now()
 		}
 	} else {
-		_, ok := IPLifetimes[newAddr.String()]
+		_, ok := IPLifetimes[newAddr]
 		if !ok {
-			if strings.Split(newAddr.String(), ":")[0] != myIP {
-				fmt.Println("New node discovered: ", newAddr.String())
+			if newAddr != myIP {
+				fmt.Println("New node discovered: ", newAddr)
 			} else {
-				fmt.Print(strings.Split(newAddr.String(), ":")[0], "!=", myIP)
+				fmt.Println()
 				fmt.Println("This is my IP: ", myIP)
 			}
 		}
-		IPLifetimes[strings.Split(newAddr.String(),":")[0]] = time.Now().Add(NODE_LIFE)
+		IPLifetimes[newAddr] = time.Now().Add(NODE_LIFE)
 	}
 	return IPLifetimes
 }
