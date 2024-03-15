@@ -22,12 +22,11 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 		if ServerError != nil {
 			log.Printf("Failed to connect to server: %s\n", ServerError)
 			connected = false
-		} 
+		}
 		if ActiveIPs[0] != serverIP || ServerError == nil {
 			break
 		}
 	}
-	defer ServerConnection.Close()
 	log.Println("Connected to server at", serverAddr)
 	connected = true
 	ShouldReconnect = false
@@ -56,7 +55,7 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 				if message == "" || message == " " || !strings.HasSuffix(message, "}]}") || !strings.HasPrefix(message, `{"elevators":`) {
 					continue // Skip empty messages
 				}
-				
+
 				// Determine the struct type and unmarshal based on JSON content
 				genericMessage, err := utility.DetermineStructTypeAndUnmarshal([]byte(message))
 				if err != nil {
@@ -92,4 +91,5 @@ func connectToServer(serverIP string, pointerElevator *defs.Elevator, masterElev
 
 	connected = false
 	log.Println("Shutting down client connection...")
+	ServerConnection.Close()
 }
