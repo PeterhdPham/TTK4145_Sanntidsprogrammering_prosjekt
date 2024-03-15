@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"project/defs"
+	"project/types"
 	"reflect"
 )
 
@@ -27,7 +27,6 @@ func UnmarshalJson(data []byte, v interface{}) (reflect.Type, error) {
 
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Ptr {
-		// If v is a pointer, get the type it points to
 		return t.Elem(), nil
 	}
 	return t, nil
@@ -57,6 +56,18 @@ func SlicesAreEqual(a, b interface{}) bool {
 	return true
 }
 
+func StringSlicesAreEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 	var tempMap map[string]interface{}
 	if err := json.Unmarshal(data, &tempMap); err != nil {
@@ -64,19 +75,19 @@ func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 	}
 
 	if _, ok := tempMap["elevators"]; ok {
-		var ml defs.MasterList
+		var ml types.MasterList
 		if err := json.Unmarshal(data, &ml); err != nil {
 			return nil, err
 		}
 		return ml, nil
 	} else if _, ok := tempMap["ip"]; ok {
-		var el defs.Elevator
+		var el types.Elevator
 		if err := json.Unmarshal(data, &el); err != nil {
 			return nil, err
 		}
 		return el, nil
 	} else if _, ok := tempMap["direction"]; ok {
-		var es defs.ElevStatus
+		var es types.ElevStatus
 		if err := json.Unmarshal(data, &es); err != nil {
 			return nil, err
 		}
@@ -86,13 +97,13 @@ func DetermineStructTypeAndUnmarshal(data []byte) (interface{}, error) {
 	return nil, fmt.Errorf("unable to determine struct type from JSON keys")
 }
 
-func IsIPInMasterList(ip string, masterList defs.MasterList) bool {
+func IPInMasterList(ip string, masterList types.MasterList) bool {
 	for _, elevator := range masterList.Elevators {
 		if elevator.Ip == ip {
-			return true // IP found in the list
+			return true
 		}
 	}
-	return false // IP not found in the list
+	return false
 }
 
 func Contains(slice []string, str string) bool {
